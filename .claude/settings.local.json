@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(go build:*)",
+      "Bash(/usr/local/go/bin/go build:*)",
+      "Bash(/opt/homebrew/bin/go build ./...)",
+      "Bash(curl:*)",
+      "Bash(VERGEOS_HOST=\"https://10.1.1.69\" VERGEOS_USERNAME=\"admin\" VERGEOS_PASSWORD=\"sell4m0re\" /opt/homebrew/bin/go run:*)"
     ]
   }
 }

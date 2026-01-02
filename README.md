@@ -56,7 +56,7 @@ func main() {
     }
 
     for _, node := range nodes {
-        fmt.Printf("Node: %s (Cluster: %s)\n", node.Name, node.Cluster)
+        fmt.Printf("Node: %s (Cluster: %d)\n", node.Name, node.Cluster)
     }
 }
 ```
@@ -103,8 +103,9 @@ vm, err := client.VMs.Create(ctx, &vergeos.VMCreateRequest{
 })
 
 // Update a VM
+newName := "renamed-vm"
 vm, err := client.VMs.Update(ctx, vmID, &vergeos.VMUpdateRequest{
-    Name: "renamed-vm",
+    Name: &newName,
 })
 
 // Delete a VM
@@ -122,16 +123,19 @@ err = client.VMs.PowerOff(ctx, vmID)
 networks, err := client.Networks.List(ctx)
 
 // Create a network
+dhcpEnabled := true
 network, err := client.Networks.Create(ctx, &vergeos.NetworkCreateRequest{
     Name:        "my-network",
     Network:     "10.0.0.0/24",
-    DHCPEnabled: true,
+    DHCPEnabled: &dhcpEnabled,
 })
 
 // Update a network
+dhcpStart := "10.0.0.100"
+dhcpStop := "10.0.0.200"
 network, err := client.Networks.Update(ctx, networkID, &vergeos.NetworkUpdateRequest{
-    DHCPStart: "10.0.0.100",
-    DHCPStop:  "10.0.0.200",
+    DHCPStart: &dhcpStart,
+    DHCPStop:  &dhcpStop,
 })
 ```
 
@@ -160,30 +164,41 @@ clusters, err := client.Clusters.List(ctx)
 // Get cluster details
 cluster, err := client.Clusters.Get(ctx, clusterID)
 
-// Get cluster statistics
-stats, err := client.Clusters.GetStats(ctx, clusterID)
+// Get cluster status
+status, err := client.Clusters.GetStatus(ctx, clusterID)
 ```
 
-### Storage Tiers
+### VM Drives
 
 ```go
-// List storage tiers
-tiers, err := client.StorageTiers.List(ctx)
+// List drives for a VM
+drives, err := client.VMDrives.List(ctx, vmMachineID)
 
-// Get cluster tier details
-clusterTiers, err := client.ClusterTiers.List(ctx)
+// Create a drive
+drive, err := client.VMDrives.Create(ctx, vmMachineID, &vergeos.VMDriveCreateRequest{
+    Name:      "disk0",
+    Interface: "virtio",
+    Media:     "disk",
+    SizeGB:    50,
+})
+
+// Update a drive (resize)
+drive, err := client.VMDrives.Update(ctx, driveID, &vergeos.VMDriveUpdateRequest{
+    SizeGB: ptr(100), // Increase size
+})
 ```
 
-### Drives
+### VM NICs
 
 ```go
-// List machine drives
-drives, err := client.Drives.List(ctx)
+// List NICs for a VM
+nics, err := client.VMNICs.List(ctx, vmMachineID)
 
-// List with filter
-drives, err := client.Drives.List(ctx,
-    vergeos.WithFilter("status eq 'online'"),
-)
+// Create a NIC
+nic, err := client.VMNICs.Create(ctx, vmMachineID, &vergeos.VMNICCreateRequest{
+    Name: "eth0",
+    VNET: networkID,
+})
 ```
 
 ### Users
@@ -215,15 +230,23 @@ err = client.Members.Add(ctx, groupID, userID)
 // Get system settings
 settings, err := client.Settings.List(ctx)
 
-// Get a specific setting
-cloudName, err := client.Settings.Get(ctx, "cloud_name")
+// Get a specific setting by key
+setting, err := client.Settings.GetByKey(ctx, "cloud_name")
+fmt.Printf("Cloud: %s\n", setting.Value)
+
+// Convenience method for cloud name
+cloudName, err := client.Settings.GetCloudName(ctx)
 ```
 
 ### System
 
 ```go
-// Get system version and update info
-info, err := client.System.GetUpdateDashboard(ctx)
+// Get system version info (uses /version.json endpoint)
+info, err := client.System.GetInfo(ctx)
+fmt.Printf("API: %s, Version: %s\n", info.Name, info.Version)
+
+// Get just the version string
+version, err := client.System.GetVersion(ctx)
 ```
 
 ### Additional Resources
@@ -320,9 +343,9 @@ The SDK client is safe for concurrent use. You can share a single client instanc
 
 See the [examples](./examples) directory for complete working examples:
 
-- [Basic Usage](./examples/basic) - Simple client setup and API calls
-- [List Resources](./examples/list-resources) - Listing nodes, clusters, and storage
-- [Metrics Collection](./examples/metrics) - Collecting system metrics
+- [Basic Usage](./examples/basic) - Simple client setup, list resources, and get system info
+- [VM Lifecycle](./examples/vm-lifecycle) - Create, configure, power, and delete VMs
+- [Network Management](./examples/network-management) - Create and manage virtual networks
 
 ## API Endpoints Reference
 
@@ -330,15 +353,16 @@ The SDK wraps the VergeOS API v4 (`/api/v4/`). Key endpoints include:
 
 | Resource | Endpoint | Operations |
 |----------|----------|------------|
-| VMs | `/api/v4/vms` | CRUD, power actions |
-| VM Actions | `/api/v4/vm_actions` | Power state changes |
-| Networks | `/api/v4/vnets` | CRUD, network actions |
+| VMs | `/api/v4/vms` | CRUD |
+| VM Actions | `/api/v4/vm_actions` | Power on/off, hotplug |
+| Networks | `/api/v4/vnets` | CRUD |
+| Network Actions | `/api/v4/vnet_actions` | Power on/off |
+| Network Addresses | `/api/v4/vnet_addresses` | IP assignment |
 | Nodes | `/api/v4/nodes` | Read |
 | Clusters | `/api/v4/clusters` | Read |
-| Storage Tiers | `/api/v4/storage_tiers` | Read |
-| Cluster Tiers | `/api/v4/cluster_tiers` | Read |
-| Drives | `/api/v4/machine_drives` | Read |
+| Drives | `/api/v4/machine_drives` | CRUD |
 | NICs | `/api/v4/machine_nics` | CRUD |
+| Devices | `/api/v4/machine_devices` | CRUD |
 | Users | `/api/v4/users` | CRUD |
 | Groups | `/api/v4/groups` | Read |
 | Members | `/api/v4/members` | CRUD |
@@ -346,6 +370,7 @@ The SDK wraps the VergeOS API v4 (`/api/v4/`). Key endpoints include:
 | Media Sources | `/api/v4/files` | Read |
 | CloudInit Files | `/api/v4/cloudinit_files` | CRUD |
 | Resource Groups | `/api/v4/resource_groups` | Read |
+| System Info | `/version.json` | Read (outside API v4) |
 
 ## Related Projects
 

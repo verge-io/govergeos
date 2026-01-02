@@ -9,8 +9,13 @@ import (
 
 const (
 	// Power action constants
-	vmActionPowerOn = "poweron"
-	vmActionKill    = "kill"
+	vmActionPowerOn     = "poweron"
+	vmActionPowerOff    = "poweroff"
+	vmActionReset       = "reset"
+	vmActionKill        = "kill"
+	vmActionClone       = "clone"
+	vmActionSnapshot    = "quiesce_snapshot"
+	vmActionGuestReboot = "guestreboot"
 
 	// Polling configuration
 	powerStateMaxRetries   = 30
@@ -205,4 +210,114 @@ func (s *VMService) waitForPowerState(ctx context.Context, id int, desiredState 
 	}
 
 	return fmt.Errorf("vergeos: timeout waiting for VM %d to become %s", id, stateStr)
+}
+
+// Reset sends a reset signal to a running VM (equivalent to pressing the reset button).
+func (s *VMService) Reset(ctx context.Context, id int) error {
+	action := vmAction{
+		VM:     id,
+		Action: vmActionReset,
+		Params: vmActionParams{},
+	}
+
+	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to reset VM %d: %w", id, err)
+	}
+	return nil
+}
+
+// GuestReboot sends a reboot request to the guest OS via ACPI.
+func (s *VMService) GuestReboot(ctx context.Context, id int) error {
+	action := vmAction{
+		VM:     id,
+		Action: vmActionGuestReboot,
+		Params: vmActionParams{},
+	}
+
+	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to guest reboot VM %d: %w", id, err)
+	}
+	return nil
+}
+
+// GuestShutdown sends a graceful shutdown request to the guest OS via ACPI (poweroff action).
+func (s *VMService) GuestShutdown(ctx context.Context, id int) error {
+	action := vmAction{
+		VM:     id,
+		Action: vmActionPowerOff,
+		Params: vmActionParams{},
+	}
+
+	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to guest shutdown VM %d: %w", id, err)
+	}
+	return nil
+}
+
+// VMCloneOptions contains options for cloning a VM.
+type VMCloneOptions struct {
+	// Name is the name for the cloned VM. Defaults to "${NAME}_${TIMESTAMP}".
+	Name string
+	// PreserveMACs indicates whether to preserve MAC addresses from the source VM.
+	PreserveMACs bool
+}
+
+// Clone creates a copy of a VM.
+func (s *VMService) Clone(ctx context.Context, id int, opts *VMCloneOptions) error {
+	params := map[string]interface{}{}
+	if opts != nil {
+		if opts.Name != "" {
+			params["name"] = opts.Name
+		}
+		params["preserve_macs"] = opts.PreserveMACs
+	}
+
+	action := struct {
+		VM     int                    `json:"vm"`
+		Action string                 `json:"action"`
+		Params map[string]interface{} `json:"params"`
+	}{
+		VM:     id,
+		Action: vmActionClone,
+		Params: params,
+	}
+
+	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to clone VM %d: %w", id, err)
+	}
+	return nil
+}
+
+// VMSnapshotOptions contains options for taking a VM snapshot.
+type VMSnapshotOptions struct {
+	// Retention is the snapshot retention duration in seconds. Defaults to 86400 (24 hours).
+	Retention int
+	// Quiesce indicates whether to quiesce the filesystem before snapshot (requires guest agent).
+	Quiesce bool
+}
+
+// Snapshot takes a snapshot of a VM.
+func (s *VMService) Snapshot(ctx context.Context, id int, opts *VMSnapshotOptions) error {
+	params := map[string]interface{}{}
+	if opts != nil {
+		if opts.Retention > 0 {
+			params["retention"] = opts.Retention
+		}
+		params["quiesce"] = opts.Quiesce
+	}
+
+	action := struct {
+		VM     int                    `json:"vm"`
+		Action string                 `json:"action"`
+		Params map[string]interface{} `json:"params"`
+	}{
+		VM:     id,
+		Action: vmActionSnapshot,
+		Params: params,
+	}
+
+	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to snapshot VM %d: %w", id, err)
+	}
+	return nil
 }

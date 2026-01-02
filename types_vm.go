@@ -3,7 +3,9 @@ package vergeos
 // VM represents a VergeOS virtual machine.
 type VM struct {
 	// ID is the unique identifier for the VM.
-	ID int `json:"$key,omitempty"`
+	ID FlexInt `json:"$key,omitempty"`
+	// UUID is the universally unique identifier for the VM.
+	UUID string `json:"uuid,omitempty"`
 	// Machine is the machine reference ID.
 	Machine int `json:"machine,omitempty"`
 	// Name is the VM name.
@@ -267,7 +269,7 @@ type vmActionParams struct {
 }
 
 // vmListFields are the fields to request when listing VMs.
-const vmListFields = "$key,machine,name,description,enabled,cluster,cpu_cores,cpu_type,ram,machine_type,uefi,secure_boot,boot_order,boot_delay,console,display,video,sound,serial_port,os_family,os_description,rtc_base,allow_hotplug,guest_agent,nested_virtualization,cloudinit_datasource,preferred_node,ha_group,snapshot_profile,machine#status#running as powerstate"
+const vmListFields = "$key,uuid,machine,name,description,enabled,cluster,cpu_cores,cpu_type,ram,machine_type,uefi,secure_boot,boot_order,boot_delay,console,display,video,sound,serial_port,os_family,os_description,rtc_base,allow_hotplug,guest_agent,nested_virtualization,cloudinit_datasource,preferred_node,ha_group,snapshot_profile,machine#status#running as powerstate"
 
 // vmGetFields are the fields to request when getting a single VM.
 const vmGetFields = vmListFields + ",console_pass_enabled,console_pass,usb_tablet,disable_powercycle,disable_hypervisor,advanced"
