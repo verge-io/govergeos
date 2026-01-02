@@ -1,3 +1,6 @@
+# Claude Code
+.claude/
+
 # Binaries
 *.exe
 *.exe~
