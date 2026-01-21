@@ -63,7 +63,7 @@ func (s *ClusterService) GetByName(ctx context.Context, name string) (*Cluster, 
 // GetStatus returns detailed status for a cluster.
 func (s *ClusterService) GetStatus(ctx context.Context, id int) (*ClusterStatus, error) {
 	params := url.Values{}
-	params.Set("fields", "status")
+	params.Set("fields", "status["+clusterStatusFields+"]")
 
 	var cluster struct {
 		Status ClusterStatus `json:"status"`

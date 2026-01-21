@@ -43,3 +43,8 @@ Thumbs.db
 # Debug files
 debug
 *.log
+# Claude Code local files
+.claude/settings.local.json
+.claude/CLAUDE.local.md
+.claude/logs/*.log
+.mcp.json
