@@ -217,3 +217,70 @@ This document captures key design decisions made during the development of the V
 **Consequences:**
 - Users can use SDK in proprietary projects
 - No copyleft obligations
+
+---
+
+## ADR-011: "VergeOS Go SDK" Naming Convention
+
+**Date:** 2026-01-21
+
+**Status:** Accepted
+
+**Context:** The project needed a clear identity that reflects its scope and maturity. In the Go ecosystem:
+- "Library" typically implies a low-level wrapper around a single API
+- "SDK" (Software Development Kit) implies a comprehensive package including client, high-level helpers, authentication logic, and potentially additional tooling
+
+This project serves as the foundation for the Terraform Provider, Prometheus Exporter, and the upcoming Cluster API (CAPI) provider.
+
+**Decision:** Refer to this project as the "VergeOS Go SDK" rather than "Verge OS Go library" or similar alternatives.
+
+**Rationale:**
+- Signals operational readiness and enterprise worthiness to external consumers
+- Represents a significant milestone in VergeOS platform maturity
+- Consolidates API client logic into a single source of truth, drastically simplifying maintenance of downstream consumers (Terraform Provider, Prometheus Exporter)
+- Provides a solid foundation for the upcoming CAPI provider
+- Accurately reflects scope: this is a platform for developers to build on VergeOS, not just an endpoint wrapper
+- Aligns with industry conventions (AWS SDK, Google Cloud SDK, Azure SDK)
+
+**Consequences:**
+- Consistent naming across documentation, package references, and marketing materials
+- Sets expectations for comprehensive functionality beyond basic API wrapping
+- Establishes branding pattern for potential future SDKs (Python, JavaScript)
+
+---
+
+## ADR-012: Service Interfaces for Mock Testing
+
+**Date:** 2026-01-21
+
+**Status:** Proposed
+
+**Context:** The SDK currently implements all services as concrete structs with no corresponding interfaces. This makes it difficult for consumers (Terraform Provider, Prometheus Exporter, CAPI Provider) to:
+- Write unit tests with mocked SDK calls
+- Swap implementations for different behaviors
+- Use dependency injection patterns
+
+Currently, testing SDK consumers requires either:
+- Spinning up a real VergeOS instance (integration testing only)
+- HTTP-level mocking with `httptest`, which is brittle and couples tests to implementation details
+
+**Decision:** Add interface definitions for all services to enable mock testing and dependency injection.
+
+**Proposed Implementation:**
+1. Define an interface for each service (e.g., `VMServiceInterface`, `NetworkServiceInterface`)
+2. Update Client struct to use interface types instead of concrete pointers
+3. Concrete service structs continue to implement the interfaces
+4. Optionally provide a `mock` subpackage with test doubles or `mockgen` compatibility
+
+**Rationale:**
+- Enables consumers to write fast, isolated unit tests
+- Follows Go best practices for testable library design
+- Matches patterns in other infrastructure SDKs (AWS, GCP, Azure)
+- Supports dependency injection for advanced use cases
+- No breaking changes for existing consumers (interfaces are additive)
+
+**Consequences:**
+- Additional code to maintain (interface definitions mirror method signatures)
+- Must keep interfaces in sync when adding/modifying service methods
+- Enables significantly better testing experience for all SDK consumers
+- Positions SDK as enterprise-ready with professional testing support
