@@ -222,6 +222,49 @@ type VNetRuleAliasServiceInterface interface {
 	Delete(ctx context.Context, id int) error
 }
 
+// TenantServiceInterface defines the interface for Tenant operations.
+type TenantServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]Tenant, error)
+	Get(ctx context.Context, id int) (*Tenant, error)
+	GetByName(ctx context.Context, name string) (*Tenant, error)
+	Create(ctx context.Context, req *TenantCreateRequest) (*Tenant, error)
+	Update(ctx context.Context, id int, req *TenantUpdateRequest) (*Tenant, error)
+	Delete(ctx context.Context, id int) error
+	PowerOn(ctx context.Context, id int) error
+	PowerOnWithNode(ctx context.Context, id int, preferredNode int) error
+	PowerOff(ctx context.Context, id int) error
+	Reset(ctx context.Context, id int) error
+	Clone(ctx context.Context, id int, opts *TenantCloneOptions) error
+	IsolateOn(ctx context.Context, id int) error
+	IsolateOff(ctx context.Context, id int) error
+}
+
+// TenantNodeServiceInterface defines the interface for TenantNode operations.
+type TenantNodeServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantNode, error)
+	ListByTenant(ctx context.Context, tenantID int, opts ...ListOption) ([]TenantNode, error)
+	Get(ctx context.Context, id int) (*TenantNode, error)
+	GetByName(ctx context.Context, tenantID int, name string) (*TenantNode, error)
+	Create(ctx context.Context, req *TenantNodeCreateRequest) (*TenantNode, error)
+	Update(ctx context.Context, id int, req *TenantNodeUpdateRequest) (*TenantNode, error)
+	Delete(ctx context.Context, id int) error
+	PowerOn(ctx context.Context, id int) error
+	PowerOff(ctx context.Context, id int) error
+	Reset(ctx context.Context, id int) error
+	Kill(ctx context.Context, id int) error
+	Migrate(ctx context.Context, id int, targetNode int) error
+}
+
+// TenantStorageServiceInterface defines the interface for TenantStorage operations.
+type TenantStorageServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantStorage, error)
+	ListByTenant(ctx context.Context, tenantID int, opts ...ListOption) ([]TenantStorage, error)
+	Get(ctx context.Context, id int) (*TenantStorage, error)
+	Create(ctx context.Context, req *TenantStorageCreateRequest) (*TenantStorage, error)
+	Update(ctx context.Context, id int, req *TenantStorageUpdateRequest) (*TenantStorage, error)
+	Delete(ctx context.Context, id int) error
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface            = (*VMService)(nil)
@@ -245,4 +288,7 @@ var (
 	_ VolumeServiceInterface        = (*VolumeService)(nil)
 	_ VNetRuleServiceInterface      = (*VNetRuleService)(nil)
 	_ VNetRuleAliasServiceInterface = (*VNetRuleAliasService)(nil)
+	_ TenantServiceInterface        = (*TenantService)(nil)
+	_ TenantNodeServiceInterface    = (*TenantNodeService)(nil)
+	_ TenantStorageServiceInterface = (*TenantStorageService)(nil)
 )

@@ -399,6 +399,98 @@ err = client.Volumes.Disable(ctx, volumeID)
 err = client.Volumes.Reset(ctx, volumeID)
 ```
 
+### Tenants
+
+Manage multi-tenant virtual data centers.
+
+```go
+// List all tenants
+tenants, err := client.Tenants.List(ctx)
+
+// Get a tenant by ID
+tenant, err := client.Tenants.Get(ctx, tenantID)
+
+// Get a tenant by name
+tenant, err := client.Tenants.GetByName(ctx, "customer-a")
+
+// Create a tenant
+tenant, err := client.Tenants.Create(ctx, &vergeos.TenantCreateRequest{
+    Name:        "customer-a",
+    Password:    "admin-password",
+    Description: ptr("Customer A production environment"),
+})
+
+// Update a tenant
+tenant, err := client.Tenants.Update(ctx, tenantID, &vergeos.TenantUpdateRequest{
+    Description: ptr("Updated description"),
+})
+
+// Delete a tenant
+err = client.Tenants.Delete(ctx, tenantID)
+
+// Power operations
+err = client.Tenants.PowerOn(ctx, tenantID)
+err = client.Tenants.PowerOff(ctx, tenantID)
+err = client.Tenants.Reset(ctx, tenantID)
+
+// Clone a tenant
+err = client.Tenants.Clone(ctx, tenantID, &vergeos.TenantCloneOptions{
+    Name:      "customer-a-clone",
+    NoStorage: false,
+    NoNodes:   false,
+})
+
+// Network isolation
+err = client.Tenants.IsolateOn(ctx, tenantID)
+err = client.Tenants.IsolateOff(ctx, tenantID)
+```
+
+### Tenant Nodes
+
+Manage virtual nodes within tenants.
+
+```go
+// List nodes for a tenant
+nodes, err := client.TenantNodes.ListByTenant(ctx, tenantID)
+
+// Create a tenant node
+node, err := client.TenantNodes.Create(ctx, &vergeos.TenantNodeCreateRequest{
+    Tenant:   tenantID,
+    Name:     "node1",
+    CPUCores: 4,
+    RAM:      16384, // 16GB in MB
+})
+
+// Power operations
+err = client.TenantNodes.PowerOn(ctx, nodeID)
+err = client.TenantNodes.PowerOff(ctx, nodeID)
+err = client.TenantNodes.Reset(ctx, nodeID)
+
+// Migrate a node to another host
+err = client.TenantNodes.Migrate(ctx, nodeID, targetHostNodeID)
+```
+
+### Tenant Storage
+
+Manage storage allocations for tenants.
+
+```go
+// List storage allocations for a tenant
+storage, err := client.TenantStorage.ListByTenant(ctx, tenantID)
+
+// Create a storage allocation
+storage, err := client.TenantStorage.Create(ctx, &vergeos.TenantStorageCreateRequest{
+    Tenant:      tenantID,
+    Tier:        tierID,
+    Provisioned: 100 * 1024 * 1024 * 1024, // 100GB in bytes
+})
+
+// Update storage allocation
+storage, err := client.TenantStorage.Update(ctx, storageID, &vergeos.TenantStorageUpdateRequest{
+    Provisioned: ptr(int64(200 * 1024 * 1024 * 1024)), // 200GB
+})
+```
+
 ### Additional Resources
 
 The SDK also supports:
@@ -530,6 +622,9 @@ The SDK wraps the VergeOS API v4 (`/api/v4/`). Key endpoints include:
 | Firewall Rules | `/api/v4/vnet_rules` | CRUD |
 | Rule Aliases | `/api/v4/vnet_rule_aliases` | CRUD |
 | Volumes | `/api/v4/volumes` | CRUD |
+| Tenants | `/api/v4/tenants` | CRUD + Power + Clone |
+| Tenant Nodes | `/api/v4/tenant_nodes` | CRUD + Power + Migrate |
+| Tenant Storage | `/api/v4/tenant_storage` | CRUD |
 | System Info | `/version.json` | Read (outside API v4) |
 
 ## Related Projects

@@ -58,6 +58,9 @@ type Client struct {
 	Volumes         VolumeServiceInterface
 	VNetRules       VNetRuleServiceInterface
 	VNetRuleAliases VNetRuleAliasServiceInterface
+	Tenants         TenantServiceInterface
+	TenantNodes     TenantNodeServiceInterface
+	TenantStorage   TenantStorageServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -176,6 +179,9 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Volumes = &VolumeService{client: c}
 	c.VNetRules = &VNetRuleService{client: c}
 	c.VNetRuleAliases = &VNetRuleAliasService{client: c}
+	c.Tenants = &TenantService{client: c}
+	c.TenantNodes = &TenantNodeService{client: c}
+	c.TenantStorage = &TenantStorageService{client: c}
 
 	return c, nil
 }
