@@ -52,6 +52,8 @@ type Client struct {
 	Settings       *SettingsService
 	System         *SystemService
 	Schema         *SchemaService
+	Tags           *TagService
+	TagMembers     *TagMemberService
 }
 
 // ClientOption is a function that configures a Client.
@@ -165,6 +167,8 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Settings = &SettingsService{client: c}
 	c.System = &SystemService{client: c}
 	c.Schema = &SchemaService{client: c}
+	c.Tags = &TagService{client: c}
+	c.TagMembers = &TagMemberService{client: c}
 
 	return c, nil
 }
