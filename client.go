@@ -37,25 +37,27 @@ type Client struct {
 
 	// Services for interacting with different API resources.
 	// All services implement their corresponding interfaces for mock testing.
-	VMs            VMServiceInterface
-	VMNICs         VMNICServiceInterface
-	VMDrives       VMDriveServiceInterface
-	VMDevices      VMDeviceServiceInterface
-	Networks       NetworkServiceInterface
-	Users          UserServiceInterface
-	Members        MemberServiceInterface
-	CloudInitFiles CloudInitServiceInterface
-	Clusters       ClusterServiceInterface
-	Nodes          NodeServiceInterface
-	Groups         GroupServiceInterface
-	MediaSources   MediaSourceServiceInterface
-	ResourceGroups ResourceGroupServiceInterface
-	Settings       SettingsServiceInterface
-	System         SystemServiceInterface
-	Schema         SchemaServiceInterface
-	Tags           TagServiceInterface
-	TagMembers     TagMemberServiceInterface
-	Volumes        VolumeServiceInterface
+	VMs             VMServiceInterface
+	VMNICs          VMNICServiceInterface
+	VMDrives        VMDriveServiceInterface
+	VMDevices       VMDeviceServiceInterface
+	Networks        NetworkServiceInterface
+	Users           UserServiceInterface
+	Members         MemberServiceInterface
+	CloudInitFiles  CloudInitServiceInterface
+	Clusters        ClusterServiceInterface
+	Nodes           NodeServiceInterface
+	Groups          GroupServiceInterface
+	MediaSources    MediaSourceServiceInterface
+	ResourceGroups  ResourceGroupServiceInterface
+	Settings        SettingsServiceInterface
+	System          SystemServiceInterface
+	Schema          SchemaServiceInterface
+	Tags            TagServiceInterface
+	TagMembers      TagMemberServiceInterface
+	Volumes         VolumeServiceInterface
+	VNetRules       VNetRuleServiceInterface
+	VNetRuleAliases VNetRuleAliasServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -172,6 +174,8 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Tags = &TagService{client: c}
 	c.TagMembers = &TagMemberService{client: c}
 	c.Volumes = &VolumeService{client: c}
+	c.VNetRules = &VNetRuleService{client: c}
+	c.VNetRuleAliases = &VNetRuleAliasService{client: c}
 
 	return c, nil
 }

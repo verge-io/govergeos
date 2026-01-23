@@ -199,6 +199,29 @@ type VolumeServiceInterface interface {
 	Reset(ctx context.Context, id string) error
 }
 
+// VNetRuleServiceInterface defines the interface for network firewall rule operations.
+type VNetRuleServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetRule, error)
+	ListByNetwork(ctx context.Context, vnetID int, opts ...ListOption) ([]VNetRule, error)
+	Get(ctx context.Context, id int) (*VNetRule, error)
+	GetByName(ctx context.Context, vnetID int, name string) (*VNetRule, error)
+	Create(ctx context.Context, req *VNetRuleCreateRequest) (*VNetRule, error)
+	Update(ctx context.Context, id int, req *VNetRuleUpdateRequest) (*VNetRule, error)
+	Delete(ctx context.Context, id int) error
+	Enable(ctx context.Context, id int, apply bool, forceApply bool) error
+	Disable(ctx context.Context, id int, apply bool, forceApply bool) error
+}
+
+// VNetRuleAliasServiceInterface defines the interface for network rule alias operations.
+type VNetRuleAliasServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetRuleAlias, error)
+	Get(ctx context.Context, id int) (*VNetRuleAlias, error)
+	GetByName(ctx context.Context, name string) (*VNetRuleAlias, error)
+	Create(ctx context.Context, req *VNetRuleAliasCreateRequest) (*VNetRuleAlias, error)
+	Update(ctx context.Context, id int, req *VNetRuleAliasUpdateRequest) (*VNetRuleAlias, error)
+	Delete(ctx context.Context, id int) error
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface            = (*VMService)(nil)
@@ -220,4 +243,6 @@ var (
 	_ TagServiceInterface           = (*TagService)(nil)
 	_ TagMemberServiceInterface     = (*TagMemberService)(nil)
 	_ VolumeServiceInterface        = (*VolumeService)(nil)
+	_ VNetRuleServiceInterface      = (*VNetRuleService)(nil)
+	_ VNetRuleAliasServiceInterface = (*VNetRuleAliasService)(nil)
 )
