@@ -66,6 +66,11 @@ type Client struct {
 	Alarms                 AlarmServiceInterface
 	AlarmTypes             AlarmTypeServiceInterface
 	Tasks                  TaskServiceInterface
+	VNetAddresses          VNetAddressServiceInterface
+	VNetDNSViews           VNetDNSViewServiceInterface
+	VNetDNSZones           VNetDNSZoneServiceInterface
+	VNetDNSRecords         VNetDNSRecordServiceInterface
+	VNetHosts              VNetHostServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -192,6 +197,11 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Alarms = &AlarmService{client: c}
 	c.AlarmTypes = &AlarmTypeService{client: c}
 	c.Tasks = &TaskService{client: c}
+	c.VNetAddresses = &VNetAddressService{client: c}
+	c.VNetDNSViews = &VNetDNSViewService{client: c}
+	c.VNetDNSZones = &VNetDNSZoneService{client: c}
+	c.VNetDNSRecords = &VNetDNSRecordService{client: c}
+	c.VNetHosts = &VNetHostService{client: c}
 
 	return c, nil
 }

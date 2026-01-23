@@ -326,6 +326,65 @@ type TaskServiceInterface interface {
 	Disable(ctx context.Context, id int) error
 }
 
+// VNetAddressServiceInterface defines the interface for network IP address operations.
+type VNetAddressServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetAddress, error)
+	ListByNetwork(ctx context.Context, vnetID int, opts ...ListOption) ([]VNetAddress, error)
+	ListByType(ctx context.Context, vnetID int, addrType string, opts ...ListOption) ([]VNetAddress, error)
+	Get(ctx context.Context, id int) (*VNetAddress, error)
+	GetByIP(ctx context.Context, vnetID int, ip string) (*VNetAddress, error)
+	GetByMAC(ctx context.Context, vnetID int, mac string) (*VNetAddress, error)
+	Create(ctx context.Context, req *VNetAddressCreateRequest) (*VNetAddress, error)
+	Update(ctx context.Context, id int, req *VNetAddressUpdateRequest) (*VNetAddress, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// VNetDNSViewServiceInterface defines the interface for network DNS view operations.
+type VNetDNSViewServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetDNSView, error)
+	ListByNetwork(ctx context.Context, vnetID int, opts ...ListOption) ([]VNetDNSView, error)
+	Get(ctx context.Context, id int) (*VNetDNSView, error)
+	GetByName(ctx context.Context, vnetID int, name string) (*VNetDNSView, error)
+	Create(ctx context.Context, req *VNetDNSViewCreateRequest) (*VNetDNSView, error)
+	Update(ctx context.Context, id int, req *VNetDNSViewUpdateRequest) (*VNetDNSView, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// VNetDNSZoneServiceInterface defines the interface for network DNS zone operations.
+type VNetDNSZoneServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetDNSZone, error)
+	ListByView(ctx context.Context, viewID int, opts ...ListOption) ([]VNetDNSZone, error)
+	Get(ctx context.Context, id int) (*VNetDNSZone, error)
+	GetByDomain(ctx context.Context, viewID int, domain string) (*VNetDNSZone, error)
+	Create(ctx context.Context, req *VNetDNSZoneCreateRequest) (*VNetDNSZone, error)
+	Update(ctx context.Context, id int, req *VNetDNSZoneUpdateRequest) (*VNetDNSZone, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// VNetDNSRecordServiceInterface defines the interface for network DNS record operations.
+type VNetDNSRecordServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetDNSRecord, error)
+	ListByZone(ctx context.Context, zoneID int, opts ...ListOption) ([]VNetDNSRecord, error)
+	ListByType(ctx context.Context, zoneID int, recordType string, opts ...ListOption) ([]VNetDNSRecord, error)
+	Get(ctx context.Context, id int) (*VNetDNSRecord, error)
+	GetByHostAndType(ctx context.Context, zoneID int, host, recordType string) (*VNetDNSRecord, error)
+	Create(ctx context.Context, req *VNetDNSRecordCreateRequest) (*VNetDNSRecord, error)
+	Update(ctx context.Context, id int, req *VNetDNSRecordUpdateRequest) (*VNetDNSRecord, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// VNetHostServiceInterface defines the interface for network host override operations.
+type VNetHostServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetHost, error)
+	ListByNetwork(ctx context.Context, vnetID int, opts ...ListOption) ([]VNetHost, error)
+	Get(ctx context.Context, id int) (*VNetHost, error)
+	GetByHost(ctx context.Context, vnetID int, hostname string) (*VNetHost, error)
+	GetByIP(ctx context.Context, vnetID int, ip string) (*VNetHost, error)
+	Create(ctx context.Context, req *VNetHostCreateRequest) (*VNetHost, error)
+	Update(ctx context.Context, id int, req *VNetHostUpdateRequest) (*VNetHost, error)
+	Delete(ctx context.Context, id int) error
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface                    = (*VMService)(nil)
@@ -357,4 +416,9 @@ var (
 	_ AlarmServiceInterface                 = (*AlarmService)(nil)
 	_ AlarmTypeServiceInterface             = (*AlarmTypeService)(nil)
 	_ TaskServiceInterface                  = (*TaskService)(nil)
+	_ VNetAddressServiceInterface           = (*VNetAddressService)(nil)
+	_ VNetDNSViewServiceInterface           = (*VNetDNSViewService)(nil)
+	_ VNetDNSZoneServiceInterface           = (*VNetDNSZoneService)(nil)
+	_ VNetDNSRecordServiceInterface         = (*VNetDNSRecordService)(nil)
+	_ VNetHostServiceInterface              = (*VNetHostService)(nil)
 )

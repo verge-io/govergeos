@@ -361,6 +361,156 @@ alias, err := client.VNetRuleAliases.Update(ctx, aliasID, &vergeos.VNetRuleAlias
 err = client.VNetRuleAliases.Delete(ctx, aliasID)
 ```
 
+### Network Addresses
+
+Manage IP addresses within a network (static, DHCP, IP aliases, proxy ARP, virtual IPs).
+
+```go
+// List all addresses in a network
+addresses, err := client.VNetAddresses.ListByNetwork(ctx, networkID)
+
+// List static addresses only
+addresses, err := client.VNetAddresses.ListByType(ctx, networkID, vergeos.AddressTypeStatic)
+
+// Get an address by IP
+address, err := client.VNetAddresses.GetByIP(ctx, networkID, "192.168.1.100")
+
+// Create a static address
+address, err := client.VNetAddresses.Create(ctx, &vergeos.VNetAddressCreateRequest{
+    VNet:     networkID,
+    Type:     vergeos.AddressTypeStatic,
+    IP:       "192.168.1.100",
+    Hostname: "web-server",
+})
+
+// Update an address
+address, err := client.VNetAddresses.Update(ctx, addressID, &vergeos.VNetAddressUpdateRequest{
+    Hostname: ptr("web-server-01"),
+})
+
+// Delete an address
+err = client.VNetAddresses.Delete(ctx, addressID)
+```
+
+### DNS Views
+
+DNS views allow different DNS responses based on client IP addresses.
+
+```go
+// List all DNS views in a network
+views, err := client.VNetDNSViews.ListByNetwork(ctx, networkID)
+
+// Create a DNS view with recursion enabled
+view, err := client.VNetDNSViews.Create(ctx, &vergeos.VNetDNSViewCreateRequest{
+    VNet:         networkID,
+    Name:         "internal",
+    Recursion:    ptr(true),
+    MatchClients: ptr("10.0.0.0/8;172.16.0.0/12;"),
+})
+
+// Update a view
+view, err := client.VNetDNSViews.Update(ctx, viewID, &vergeos.VNetDNSViewUpdateRequest{
+    MatchClients: ptr("10.0.0.0/8;172.16.0.0/12;192.168.0.0/16;"),
+})
+
+// Delete a view
+err = client.VNetDNSViews.Delete(ctx, viewID)
+```
+
+### DNS Zones
+
+Manage DNS zones within DNS views.
+
+```go
+// List all zones in a view
+zones, err := client.VNetDNSZones.ListByView(ctx, viewID)
+
+// Create a primary DNS zone
+zone, err := client.VNetDNSZones.Create(ctx, &vergeos.VNetDNSZoneCreateRequest{
+    View:       viewID,
+    Domain:     "example.com",
+    Type:       ptr(vergeos.DNSZoneTypeMaster),
+    Nameserver: ptr("ns1.example.com"),
+    Email:      ptr("admin@example.com"),
+})
+
+// Get a zone by domain
+zone, err := client.VNetDNSZones.GetByDomain(ctx, viewID, "example.com")
+
+// Update a zone
+zone, err := client.VNetDNSZones.Update(ctx, zoneID, &vergeos.VNetDNSZoneUpdateRequest{
+    DefaultTTL: ptr("2h"),
+})
+
+// Delete a zone
+err = client.VNetDNSZones.Delete(ctx, zoneID)
+```
+
+### DNS Records
+
+Manage DNS records within zones.
+
+```go
+// List all records in a zone
+records, err := client.VNetDNSRecords.ListByZone(ctx, zoneID)
+
+// List only A records
+records, err := client.VNetDNSRecords.ListByType(ctx, zoneID, vergeos.DNSRecordTypeA)
+
+// Create an A record
+record, err := client.VNetDNSRecords.Create(ctx, &vergeos.VNetDNSRecordCreateRequest{
+    Zone:  zoneID,
+    Host:  "www",
+    Type:  vergeos.DNSRecordTypeA,
+    Value: "192.168.1.100",
+    TTL:   ptr("1h"),
+})
+
+// Create an MX record
+record, err := client.VNetDNSRecords.Create(ctx, &vergeos.VNetDNSRecordCreateRequest{
+    Zone:         zoneID,
+    Host:         "@",
+    Type:         vergeos.DNSRecordTypeMX,
+    Value:        "mail.example.com",
+    MXPreference: ptr(10),
+})
+
+// Update a record
+record, err := client.VNetDNSRecords.Update(ctx, recordID, &vergeos.VNetDNSRecordUpdateRequest{
+    Value: ptr("192.168.1.101"),
+})
+
+// Delete a record
+err = client.VNetDNSRecords.Delete(ctx, recordID)
+```
+
+### Host Overrides
+
+Static hostname-to-IP mappings for DNS and DHCP.
+
+```go
+// List all host overrides in a network
+hosts, err := client.VNetHosts.ListByNetwork(ctx, networkID)
+
+// Get a host by hostname
+host, err := client.VNetHosts.GetByHost(ctx, networkID, "printer.local")
+
+// Create a host override
+host, err := client.VNetHosts.Create(ctx, &vergeos.VNetHostCreateRequest{
+    VNet: networkID,
+    Host: "printer.local",
+    IP:   "192.168.1.50",
+})
+
+// Update a host override
+host, err := client.VNetHosts.Update(ctx, hostID, &vergeos.VNetHostUpdateRequest{
+    IP: ptr("192.168.1.51"),
+})
+
+// Delete a host override
+err = client.VNetHosts.Delete(ctx, hostID)
+```
+
 ### Volumes
 
 Manage NAS volumes for storage. Note: Volumes use SHA1 hash strings as IDs.
@@ -751,6 +901,7 @@ See the [examples](./examples) directory for complete working examples:
 - [Media Sources](./examples/media-sources) - List available ISOs and boot media
 - [Snapshot Profiles](./examples/snapshot-profiles) - Create and manage snapshot schedules with periods
 - [Monitoring](./examples/monitoring) - System alarms, alarm types, and scheduled tasks
+- [Networking](./examples/networking) - IP addresses, DNS views/zones/records, and host overrides
 
 ## API Endpoints Reference
 
@@ -779,6 +930,11 @@ The SDK wraps the VergeOS API v4 (`/api/v4/`). Key endpoints include:
 | Tag Members | `/api/v4/tag_members` | CRUD (v26+) |
 | Firewall Rules | `/api/v4/vnet_rules` | CRUD |
 | Rule Aliases | `/api/v4/vnet_rule_aliases` | CRUD |
+| Network Addresses | `/api/v4/vnet_addresses` | CRUD |
+| DNS Views | `/api/v4/vnet_dns_views` | CRUD |
+| DNS Zones | `/api/v4/vnet_dns_zones` | CRUD |
+| DNS Records | `/api/v4/vnet_dns_zone_records` | CRUD |
+| Host Overrides | `/api/v4/vnet_hosts` | CRUD |
 | Volumes | `/api/v4/volumes` | CRUD |
 | Tenants | `/api/v4/tenants` | CRUD + Power + Clone |
 | Tenant Nodes | `/api/v4/tenant_nodes` | CRUD + Power + Migrate |
