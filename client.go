@@ -79,6 +79,12 @@ type Client struct {
 	VNetIPSecPhase1s        VNetIPSecPhase1ServiceInterface
 	VNetIPSecPhase2s        VNetIPSecPhase2ServiceInterface
 	VNetIPSecConnections    VNetIPSecConnectionServiceInterface
+	Sites                   SiteServiceInterface
+	SiteSyncsIncoming       SiteSyncIncomingServiceInterface
+	SiteSyncsOutgoing       SiteSyncOutgoingServiceInterface
+	CloudSnapshots          CloudSnapshotServiceInterface
+	CloudSnapshotVMs        CloudSnapshotVMServiceInterface
+	CloudSnapshotTenants    CloudSnapshotTenantServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -218,6 +224,12 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.VNetIPSecPhase1s = &VNetIPSecPhase1Service{client: c}
 	c.VNetIPSecPhase2s = &VNetIPSecPhase2Service{client: c}
 	c.VNetIPSecConnections = &VNetIPSecConnectionService{client: c}
+	c.Sites = &SiteService{client: c}
+	c.SiteSyncsIncoming = &SiteSyncIncomingService{client: c}
+	c.SiteSyncsOutgoing = &SiteSyncOutgoingService{client: c}
+	c.CloudSnapshots = &CloudSnapshotService{client: c}
+	c.CloudSnapshotVMs = &CloudSnapshotVMService{client: c}
+	c.CloudSnapshotTenants = &CloudSnapshotTenantService{client: c}
 
 	return c, nil
 }

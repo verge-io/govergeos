@@ -470,6 +470,84 @@ type VNetIPSecConnectionServiceInterface interface {
 	Get(ctx context.Context, id int) (*VNetIPSecConnection, error)
 }
 
+// SiteServiceInterface defines the interface for Site operations.
+type SiteServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]Site, error)
+	Get(ctx context.Context, id int) (*Site, error)
+	GetByName(ctx context.Context, name string) (*Site, error)
+	GetBySiteID(ctx context.Context, siteID string) (*Site, error)
+	Create(ctx context.Context, req *SiteCreateRequest) (*Site, error)
+	Update(ctx context.Context, id int, req *SiteUpdateRequest) (*Site, error)
+	Delete(ctx context.Context, id int) error
+	Refresh(ctx context.Context, id int) error
+	RefreshSettings(ctx context.Context, id int) error
+	Reauthenticate(ctx context.Context, id int) error
+	RunUpdates(ctx context.Context, id int) error
+	ClearSyncedLogs(ctx context.Context, id int) error
+}
+
+// SiteSyncIncomingServiceInterface defines the interface for incoming sync operations.
+type SiteSyncIncomingServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]SiteSyncIncoming, error)
+	ListBySite(ctx context.Context, siteID int, opts ...ListOption) ([]SiteSyncIncoming, error)
+	Get(ctx context.Context, id int) (*SiteSyncIncoming, error)
+	GetByName(ctx context.Context, siteID int, name string) (*SiteSyncIncoming, error)
+	GetBySyncID(ctx context.Context, syncID string) (*SiteSyncIncoming, error)
+	Create(ctx context.Context, req *SiteSyncIncomingCreateRequest) (*SiteSyncIncoming, error)
+	Update(ctx context.Context, id int, req *SiteSyncIncomingUpdateRequest) (*SiteSyncIncoming, error)
+	Delete(ctx context.Context, id int) error
+	Enable(ctx context.Context, id int) error
+	Disable(ctx context.Context, id int) error
+}
+
+// SiteSyncOutgoingServiceInterface defines the interface for outgoing sync operations.
+type SiteSyncOutgoingServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]SiteSyncOutgoing, error)
+	ListBySite(ctx context.Context, siteID int, opts ...ListOption) ([]SiteSyncOutgoing, error)
+	Get(ctx context.Context, id int) (*SiteSyncOutgoing, error)
+	GetByName(ctx context.Context, siteID int, name string) (*SiteSyncOutgoing, error)
+	Create(ctx context.Context, req *SiteSyncOutgoingCreateRequest) (*SiteSyncOutgoing, error)
+	Update(ctx context.Context, id int, req *SiteSyncOutgoingUpdateRequest) (*SiteSyncOutgoing, error)
+	Delete(ctx context.Context, id int) error
+	Enable(ctx context.Context, id int) error
+	Disable(ctx context.Context, id int) error
+	Throttle(ctx context.Context, id int, throttle int) error
+	DisableThrottle(ctx context.Context, id int) error
+	RefreshSnapshots(ctx context.Context, id int) error
+}
+
+// CloudSnapshotServiceInterface defines the interface for cloud snapshot (system snapshot) operations.
+type CloudSnapshotServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]CloudSnapshot, error)
+	ListExpiring(ctx context.Context, opts ...ListOption) ([]CloudSnapshot, error)
+	ListLocal(ctx context.Context, opts ...ListOption) ([]CloudSnapshot, error)
+	ListByProfile(ctx context.Context, profileID int, opts ...ListOption) ([]CloudSnapshot, error)
+	Get(ctx context.Context, id int) (*CloudSnapshot, error)
+	GetByName(ctx context.Context, name string) (*CloudSnapshot, error)
+	Create(ctx context.Context, req *CloudSnapshotCreateRequest) (*CloudSnapshot, error)
+	Update(ctx context.Context, id int, req *CloudSnapshotUpdateRequest) (*CloudSnapshot, error)
+	Delete(ctx context.Context, id int) error
+	Refresh(ctx context.Context, id int) error
+	Clone(ctx context.Context, id int, opts *CloudSnapshotCloneOptions) error
+	RequestFromProvider(ctx context.Context, id int) error
+	FindTenants(ctx context.Context, id int) error
+	FindVMs(ctx context.Context, id int) error
+}
+
+// CloudSnapshotVMServiceInterface defines the interface for VM listings within cloud snapshots (read-only).
+type CloudSnapshotVMServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]CloudSnapshotVM, error)
+	ListBySnapshot(ctx context.Context, snapshotID int, opts ...ListOption) ([]CloudSnapshotVM, error)
+	Get(ctx context.Context, id int) (*CloudSnapshotVM, error)
+}
+
+// CloudSnapshotTenantServiceInterface defines the interface for tenant listings within cloud snapshots (read-only).
+type CloudSnapshotTenantServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]CloudSnapshotTenant, error)
+	ListBySnapshot(ctx context.Context, snapshotID int, opts ...ListOption) ([]CloudSnapshotTenant, error)
+	Get(ctx context.Context, id int) (*CloudSnapshotTenant, error)
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface                      = (*VMService)(nil)
@@ -514,4 +592,10 @@ var (
 	_ VNetIPSecPhase1ServiceInterface         = (*VNetIPSecPhase1Service)(nil)
 	_ VNetIPSecPhase2ServiceInterface         = (*VNetIPSecPhase2Service)(nil)
 	_ VNetIPSecConnectionServiceInterface     = (*VNetIPSecConnectionService)(nil)
+	_ SiteServiceInterface                    = (*SiteService)(nil)
+	_ SiteSyncIncomingServiceInterface        = (*SiteSyncIncomingService)(nil)
+	_ SiteSyncOutgoingServiceInterface        = (*SiteSyncOutgoingService)(nil)
+	_ CloudSnapshotServiceInterface           = (*CloudSnapshotService)(nil)
+	_ CloudSnapshotVMServiceInterface         = (*CloudSnapshotVMService)(nil)
+	_ CloudSnapshotTenantServiceInterface     = (*CloudSnapshotTenantService)(nil)
 )
