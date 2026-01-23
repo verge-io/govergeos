@@ -393,6 +393,9 @@ See the [examples](./examples) directory for complete working examples:
 - [VM Lifecycle](./examples/vm-lifecycle) - Create, configure, power, and delete VMs
 - [Network Management](./examples/network-management) - Create and manage virtual networks
 - [Tags](./examples/tags) - List tags and manage tag assignments on resources
+- [Users](./examples/users) - User management, groups, and memberships
+- [Cloud-Init](./examples/cloudinit) - Cloud-init file management for VM provisioning
+- [Media Sources](./examples/media-sources) - List available ISOs and boot media
 
 ## API Endpoints Reference
 
