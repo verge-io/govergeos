@@ -55,6 +55,7 @@ type Client struct {
 	Schema         SchemaServiceInterface
 	Tags           TagServiceInterface
 	TagMembers     TagMemberServiceInterface
+	Volumes        VolumeServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -170,6 +171,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Schema = &SchemaService{client: c}
 	c.Tags = &TagService{client: c}
 	c.TagMembers = &TagMemberService{client: c}
+	c.Volumes = &VolumeService{client: c}
 
 	return c, nil
 }

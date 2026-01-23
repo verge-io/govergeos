@@ -330,3 +330,48 @@ The internal API team clarified that filesystem schema files are pre-translation
 - GitHub Issue: https://github.com/verge-io/vergeos-go-sdk/issues/2
 - Related: ADR-002 (FlexInt Type for ID Handling)
 - Documentation: `.claude/reference/API-Schema/ENDPOINTS.md`
+
+---
+
+## ADR-014: Volume String Keys
+
+**Date:** 2026-01-23
+
+**Status:** Accepted
+
+**Context:** When implementing the Volumes service, testing against the live API revealed that volumes use SHA1 hash strings as their primary key (`$key`), not integers like other resources. The schema defines `"keyfield": "id"` where `id` is a 40-character SHA1 hash.
+
+API Response example:
+```json
+[{"$key":"0d25c256a0c561c0b5bb9087f04fcb49f16a8048","id":"0d25c256a0c561c0b5bb9087f04fcb49f16a8048","name":"system-logs",...}]
+```
+
+**Decision:** The Volume type uses `string` for its Key field instead of `FlexInt`. All Volume service methods accept string IDs.
+
+```go
+type Volume struct {
+    Key string `json:"$key,omitempty"`  // SHA1 hash, not FlexInt
+    ID  string `json:"id,omitempty"`    // Same as Key for volumes
+    // ...
+}
+
+func (s *VolumeService) Get(ctx context.Context, id string) (*Volume, error)
+func (s *VolumeService) Update(ctx context.Context, id string, req *VolumeUpdateRequest) (*Volume, error)
+func (s *VolumeService) Delete(ctx context.Context, id string) error
+```
+
+**Rationale:**
+- Volumes are the first (and possibly only) resource type with string keys
+- Using `string` directly is cleaner than extending `FlexInt` to handle this case
+- The schema clearly indicates `id` is a 40-character SHA1 hash string
+- Action endpoints (`volume_actions`) accept the string ID as the `volume` field
+
+**Consequences:**
+- Volume service has different method signatures than other services
+- Must document this exception in interface comments
+- Future resources with non-integer keys should follow this pattern
+- Added `getStringKey()` helper function for extracting string keys from API responses
+
+**Related:**
+- ADR-002 (FlexInt Type for ID Handling) - contrast with integer key handling
+- ADR-013 (API Schema Source) - verifying types against live API

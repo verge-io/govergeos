@@ -184,6 +184,21 @@ type TagMemberServiceInterface interface {
 	Unassign(ctx context.Context, tagID int, member string) error
 }
 
+// VolumeServiceInterface defines the interface for Volume operations.
+// Note: Unlike other resources, volumes use SHA1 hash strings as IDs instead of integers.
+type VolumeServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]Volume, error)
+	ListByService(ctx context.Context, serviceID int) ([]Volume, error)
+	Get(ctx context.Context, id string) (*Volume, error)
+	GetByName(ctx context.Context, serviceID int, name string) (*Volume, error)
+	Create(ctx context.Context, req *VolumeCreateRequest) (*Volume, error)
+	Update(ctx context.Context, id string, req *VolumeUpdateRequest) (*Volume, error)
+	Delete(ctx context.Context, id string) error
+	Enable(ctx context.Context, id string) error
+	Disable(ctx context.Context, id string) error
+	Reset(ctx context.Context, id string) error
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface            = (*VMService)(nil)
@@ -204,4 +219,5 @@ var (
 	_ SchemaServiceInterface        = (*SchemaService)(nil)
 	_ TagServiceInterface           = (*TagService)(nil)
 	_ TagMemberServiceInterface     = (*TagMemberService)(nil)
+	_ VolumeServiceInterface        = (*VolumeService)(nil)
 )
