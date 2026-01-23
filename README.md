@@ -249,6 +249,52 @@ fmt.Printf("API: %s, Version: %s\n", info.Name, info.Version)
 version, err := client.System.GetVersion(ctx)
 ```
 
+### Tags
+
+Tags allow you to categorize and organize resources. Requires VergeOS v26+.
+
+```go
+// List all tags
+tags, err := client.Tags.List(ctx)
+
+// Get a tag by ID
+tag, err := client.Tags.Get(ctx, tagID)
+
+// Get a tag by name
+tag, err := client.Tags.GetByName(ctx, "production")
+
+// List tags in a specific category
+tags, err := client.Tags.ListByCategory(ctx, categoryID)
+```
+
+### Tag Members
+
+Tag members represent tag assignments to resources (VMs, networks, etc.).
+
+```go
+// List all tag assignments
+members, err := client.TagMembers.List(ctx)
+
+// List tags assigned to a specific VM
+members, err := client.TagMembers.ListByMember(ctx, "vms/123")
+
+// List all resources with a specific tag
+members, err := client.TagMembers.ListByTag(ctx, tagID)
+
+// Assign a tag to a VM
+member, err := client.TagMembers.Assign(ctx, tagID, "vms/123")
+
+// Remove a tag from a VM
+err = client.TagMembers.Unassign(ctx, tagID, "vms/123")
+
+// Or use Create/Delete directly
+member, err := client.TagMembers.Create(ctx, &vergeos.TagMemberCreateRequest{
+    Tag:    tagID,
+    Member: "vms/123",  // format: "object_type/object_id"
+})
+err = client.TagMembers.Delete(ctx, memberID)
+```
+
 ### Additional Resources
 
 The SDK also supports:
@@ -346,6 +392,7 @@ See the [examples](./examples) directory for complete working examples:
 - [Basic Usage](./examples/basic) - Simple client setup, list resources, and get system info
 - [VM Lifecycle](./examples/vm-lifecycle) - Create, configure, power, and delete VMs
 - [Network Management](./examples/network-management) - Create and manage virtual networks
+- [Tags](./examples/tags) - List tags and manage tag assignments on resources
 
 ## API Endpoints Reference
 
@@ -370,6 +417,8 @@ The SDK wraps the VergeOS API v4 (`/api/v4/`). Key endpoints include:
 | Media Sources | `/api/v4/files` | Read |
 | CloudInit Files | `/api/v4/cloudinit_files` | CRUD |
 | Resource Groups | `/api/v4/resource_groups` | Read |
+| Tags | `/api/v4/tags` | Read (v26+) |
+| Tag Members | `/api/v4/tag_members` | CRUD (v26+) |
 | System Info | `/version.json` | Read (outside API v4) |
 
 ## Related Projects
