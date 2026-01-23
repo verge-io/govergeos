@@ -253,7 +253,7 @@ This project serves as the foundation for the Terraform Provider, Prometheus Exp
 
 **Date:** 2026-01-21
 
-**Status:** Proposed
+**Status:** Accepted
 
 **Context:** The SDK currently implements all services as concrete structs with no corresponding interfaces. This makes it difficult for consumers (Terraform Provider, Prometheus Exporter, CAPI Provider) to:
 - Write unit tests with mocked SDK calls

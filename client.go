@@ -36,24 +36,25 @@ type Client struct {
 	userAgent string
 
 	// Services for interacting with different API resources.
-	VMs            *VMService
-	VMNICs         *VMNICService
-	VMDrives       *VMDriveService
-	VMDevices      *VMDeviceService
-	Networks       *NetworkService
-	Users          *UserService
-	Members        *MemberService
-	CloudInitFiles *CloudInitService
-	Clusters       *ClusterService
-	Nodes          *NodeService
-	Groups         *GroupService
-	MediaSources   *MediaSourceService
-	ResourceGroups *ResourceGroupService
-	Settings       *SettingsService
-	System         *SystemService
-	Schema         *SchemaService
-	Tags           *TagService
-	TagMembers     *TagMemberService
+	// All services implement their corresponding interfaces for mock testing.
+	VMs            VMServiceInterface
+	VMNICs         VMNICServiceInterface
+	VMDrives       VMDriveServiceInterface
+	VMDevices      VMDeviceServiceInterface
+	Networks       NetworkServiceInterface
+	Users          UserServiceInterface
+	Members        MemberServiceInterface
+	CloudInitFiles CloudInitServiceInterface
+	Clusters       ClusterServiceInterface
+	Nodes          NodeServiceInterface
+	Groups         GroupServiceInterface
+	MediaSources   MediaSourceServiceInterface
+	ResourceGroups ResourceGroupServiceInterface
+	Settings       SettingsServiceInterface
+	System         SystemServiceInterface
+	Schema         SchemaServiceInterface
+	Tags           TagServiceInterface
+	TagMembers     TagMemberServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
