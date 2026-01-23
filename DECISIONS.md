@@ -284,3 +284,49 @@ Currently, testing SDK consumers requires either:
 - Must keep interfaces in sync when adding/modifying service methods
 - Enables significantly better testing experience for all SDK consumers
 - Positions SDK as enterprise-ready with professional testing support
+
+---
+
+## ADR-013: API Schema Source and Type Mapping
+
+**Date:** 2026-01-23
+
+**Status:** Accepted
+
+**Context:** The SDK initially used JSON schema files copied from `/usr/lib/appserver/schema/v4/` on a VergeOS system. Testing against live API revealed that these schema files describe *logical types* but not *runtime JSON serialization*. Key discrepancies discovered:
+
+1. **`parent_system` fields**: Schema shows `$type: "row"` (integer) but API returns `"self"` (string)
+2. **Nullable row fields**: Schema doesn't indicate when foreign key fields can be `null`
+3. **Polymorphic IDs**: `$key` fields sometimes serialize as strings instead of integers
+
+The internal API team clarified that filesystem schema files are pre-translation definitions and are **not authoritative**.
+
+**Decision:**
+
+1. **Schema Source**: Use runtime-extracted schema via `root-yb-api /v4 -f 'name,schema'` command as the authoritative source. Store in `.claude/reference/API-Schema/`.
+
+2. **Type Mapping Rules**:
+   - `parent_system` type fields → `string` (returns special values like `"self"`)
+   - Optional `row` fields → `*int` or `FlexInt` (may be `null`)
+   - Required `row` fields → `int` or `FlexInt`
+   - All `$key` fields → `FlexInt` (handles string/int polymorphism)
+   - `rows` type → omit from struct (one-to-many, not directly serialized)
+
+3. **Verification Requirement**: Always test new field mappings against live API before committing.
+
+**Rationale:**
+- Runtime schema reflects actual API behavior after server-side translation
+- Explicit type mapping rules prevent repeated discovery of the same issues
+- `FlexInt` already exists in SDK (ADR-002) and handles ID polymorphism
+- Documented exceptions prevent future developers from "fixing" correct behavior
+
+**Consequences:**
+- Schema in `.claude/reference/API-Schema/` is the single source of truth
+- Deprecated schema folders (`api-schema-old-local/`, `dz/`) can be removed
+- Type mapping exceptions documented in `ENDPOINTS.md` for quick reference
+- Must verify against live API when schema `$type` doesn't match expected Go type
+
+**References:**
+- GitHub Issue: https://github.com/verge-io/vergeos-go-sdk/issues/2
+- Related: ADR-002 (FlexInt Type for ID Handling)
+- Documentation: `.claude/reference/API-Schema/ENDPOINTS.md`

@@ -7,7 +7,9 @@ type Cluster struct {
 	// ID is the 40-character unique cluster identifier string.
 	ID string `json:"id,omitempty"`
 	// System is the parent system reference.
-	System int `json:"system,omitempty"`
+	// Returns "self" for the local system, or potentially a row key for tenant hierarchies.
+	// Note: Schema defines as type "row" but API returns string "self".
+	System string `json:"system,omitempty"`
 	// Name is the cluster name.
 	Name string `json:"name"`
 	// Description is the cluster description.
