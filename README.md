@@ -980,6 +980,180 @@ err = client.Tasks.Disable(ctx, taskID)
 err = client.Tasks.Delete(ctx, taskID)
 ```
 
+### Sites & DR
+
+Manage remote site connections for disaster recovery and data replication.
+
+```go
+// List all sites
+sites, err := client.Sites.List(ctx)
+
+// Get a site by name
+site, err := client.Sites.GetByName(ctx, "dr-site")
+
+// Create a site connection
+site, err := client.Sites.Create(ctx, &vergeos.SiteCreateRequest{
+    URL:      "https://dr-site.example.com",
+    Username: "sync-user",
+    Password: "sync-password",
+})
+
+// Refresh site connection
+err = client.Sites.Refresh(ctx, siteID)
+
+// Run updates from remote site
+err = client.Sites.RunUpdates(ctx, siteID)
+```
+
+### Cloud Snapshots
+
+Manage cloud-level snapshots for backup and recovery.
+
+```go
+// List all cloud snapshots
+snapshots, err := client.CloudSnapshots.List(ctx)
+
+// Create a cloud snapshot
+snapshot, err := client.CloudSnapshots.Create(ctx, &vergeos.CloudSnapshotCreateRequest{
+    Name:        "pre-upgrade-snapshot",
+    Description: ptr("Snapshot before system upgrade"),
+})
+
+// List VMs in a snapshot
+vms, err := client.CloudSnapshotVMs.ListBySnapshot(ctx, snapshotID)
+
+// List tenants in a snapshot
+tenants, err := client.CloudSnapshotTenants.ListBySnapshot(ctx, snapshotID)
+
+// Delete a snapshot
+err = client.CloudSnapshots.Delete(ctx, snapshotID)
+```
+
+### Volume Shares
+
+Manage CIFS (SMB) and NFS shares on volumes.
+
+```go
+// List all CIFS shares
+shares, err := client.VolumeCIFSShares.List(ctx)
+
+// Create a CIFS share
+share, err := client.VolumeCIFSShares.Create(ctx, &vergeos.VolumeCIFSShareCreateRequest{
+    Volume:     volumeID,
+    Name:       "shared-data",
+    Path:       "/data",
+    Browseable: ptr(true),
+    ReadOnly:   ptr(false),
+})
+
+// Create an NFS share
+share, err := client.VolumeNFSShares.Create(ctx, &vergeos.VolumeNFSShareCreateRequest{
+    Volume:     volumeID,
+    Name:       "nfs-export",
+    Path:       "/export",
+    AllowedIPs: ptr("10.0.0.0/8"),
+    Squash:     ptr(vergeos.NFSSquashRoot),
+})
+
+// Delete a share
+err = client.VolumeCIFSShares.Delete(ctx, shareID)
+```
+
+### Volume Browser
+
+Browse files within volumes asynchronously.
+
+```go
+// Simple browse (handles async polling internally)
+entries, err := client.VolumeBrowser.Browse(ctx, volumeID, "/", 100)
+for _, entry := range entries {
+    fmt.Printf("%s %s (%d bytes)\n", entry.Type, entry.Name, entry.Size)
+}
+
+// Advanced browse with options
+entries, err := client.VolumeBrowser.BrowseWithOptions(ctx, volumeID, "/data", 50,
+    ptr(0),       // offset
+    ".txt,.log",  // file extensions filter
+)
+```
+
+### Webhooks
+
+Configure webhook endpoints for event notifications.
+
+```go
+// List all webhook URLs
+webhooks, err := client.WebhookURLs.List(ctx)
+
+// Create a webhook endpoint
+webhook, err := client.WebhookURLs.Create(ctx, &vergeos.WebhookURLCreateRequest{
+    Name:              "slack-alerts",
+    URL:               "https://hooks.slack.com/services/xxx",
+    AuthorizationType: vergeos.WebhookAuthNone,
+    Timeout:           ptr(10),
+    Retries:           ptr(3),
+})
+
+// Create a webhook with bearer token auth
+webhook, err := client.WebhookURLs.Create(ctx, &vergeos.WebhookURLCreateRequest{
+    Name:               "api-endpoint",
+    URL:                "https://api.example.com/webhook",
+    AuthorizationType:  vergeos.WebhookAuthBearer,
+    AuthorizationValue: "your-bearer-token",
+})
+
+// Send a test message
+err = client.WebhookURLs.Send(ctx, webhookID, `{"text": "Test message"}`)
+
+// View webhook delivery log
+messages, err := client.Webhooks.List(ctx)
+
+// List failed deliveries
+failed, err := client.Webhooks.ListFailed(ctx)
+
+// Delete a webhook
+err = client.WebhookURLs.Delete(ctx, webhookID)
+```
+
+### User API Keys
+
+Manage API keys for programmatic access.
+
+```go
+// List all API keys
+keys, err := client.UserAPIKeys.List(ctx)
+
+// List API keys for a specific user
+keys, err := client.UserAPIKeys.ListByUser(ctx, userID)
+
+// Create an API key (token only returned on creation!)
+key, token, err := client.UserAPIKeys.Create(ctx, &vergeos.UserAPIKeyCreateRequest{
+    User:        userID,
+    Name:        "automation-key",
+    Description: "Key for CI/CD pipeline",
+    ExpiresType: vergeos.APIKeyExpiresDate,
+    Expires:     ptr(time.Now().AddDate(1, 0, 0).Unix()), // 1 year
+})
+fmt.Printf("Save this token (shown only once): %s\n", token)
+
+// Create a non-expiring key with IP restrictions
+key, token, err := client.UserAPIKeys.Create(ctx, &vergeos.UserAPIKeyCreateRequest{
+    User:        userID,
+    Name:        "restricted-key",
+    ExpiresType: vergeos.APIKeyExpiresNever,
+    IPAllowList: "10.0.0.0/8,192.168.1.0/24",
+})
+
+// Update an API key
+key, err := client.UserAPIKeys.Update(ctx, keyID, &vergeos.UserAPIKeyUpdateRequest{
+    Description: ptr("Updated description"),
+    IPDenyList:  ptr("192.168.1.100"),
+})
+
+// Delete an API key
+err = client.UserAPIKeys.Delete(ctx, keyID)
+```
+
 ### Additional Resources
 
 The SDK also supports:
@@ -1135,6 +1309,18 @@ The SDK wraps the VergeOS API v4 (`/api/v4/`). Key endpoints include:
 | IPSec Phase 2 | `/api/v4/vnet_ipsec_phase2s` | CRUD |
 | IPSec Connections | `/api/v4/vnet_ipsec_connections` | Read |
 | Certificates | `/api/v4/certificates` | CRUD + Renew |
+| Sites | `/api/v4/sites` | CRUD + Refresh |
+| Site Syncs Incoming | `/api/v4/site_syncs_incoming` | CRUD |
+| Site Syncs Outgoing | `/api/v4/site_syncs_outgoing` | CRUD |
+| Cloud Snapshots | `/api/v4/cloud_snapshots` | CRUD |
+| Cloud Snapshot VMs | `/api/v4/cloud_snapshot_vms` | Read |
+| Cloud Snapshot Tenants | `/api/v4/cloud_snapshot_tenants` | Read |
+| Volume CIFS Shares | `/api/v4/volume_cifs_shares` | CRUD |
+| Volume NFS Shares | `/api/v4/volume_nfs_shares` | CRUD |
+| Volume Browser | `/api/v4/volume_browser` | Async Browse |
+| Webhook URLs | `/api/v4/webhook_urls` | CRUD + Send |
+| Webhooks | `/api/v4/webhooks` | Read + Delete |
+| User API Keys | `/api/v4/user_api_keys` | CRUD |
 | System Info | `/version.json` | Read (outside API v4) |
 
 ## Related Projects
