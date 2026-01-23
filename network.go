@@ -9,7 +9,12 @@ import (
 
 const (
 	// Network action constants
-	networkActionKill = "kill"
+	networkActionPowerOn  = "poweron"
+	networkActionPowerOff = "poweroff"
+	networkActionKill     = "killpower"
+	networkActionReset    = "reset"
+	networkActionApply    = "apply"
+	networkActionApplyDNS = "applydns"
 
 	// Network power state polling
 	networkPowerStateMaxRetries   = 30
@@ -126,7 +131,7 @@ func (s *NetworkService) PowerOn(ctx context.Context, id int) error {
 	}
 
 	// Already running
-	if network.PowerState == "running" {
+	if network.PowerState {
 		return nil
 	}
 
@@ -142,7 +147,7 @@ func (s *NetworkService) PowerOn(ctx context.Context, id int) error {
 	}
 
 	// Wait for network to start
-	return s.waitForPowerState(ctx, id, "running")
+	return s.waitForPowerState(ctx, id, true)
 }
 
 // PowerOff powers off a network and waits for it to stop.
@@ -154,7 +159,7 @@ func (s *NetworkService) PowerOff(ctx context.Context, id int) error {
 	}
 
 	// Already stopped
-	if network.PowerState == "" || network.PowerState == "stopped" {
+	if !network.PowerState {
 		return nil
 	}
 
@@ -170,11 +175,16 @@ func (s *NetworkService) PowerOff(ctx context.Context, id int) error {
 	}
 
 	// Wait for network to stop
-	return s.waitForPowerState(ctx, id, "stopped")
+	return s.waitForPowerState(ctx, id, false)
 }
 
 // waitForPowerState waits for a network to reach the desired power state.
-func (s *NetworkService) waitForPowerState(ctx context.Context, id int, desiredState string) error {
+func (s *NetworkService) waitForPowerState(ctx context.Context, id int, desiredState bool) error {
+	stateDesc := "stopped"
+	if desiredState {
+		stateDesc = "running"
+	}
+
 	for i := 0; i < networkPowerStateMaxRetries; i++ {
 		select {
 		case <-ctx.Done():
@@ -187,15 +197,76 @@ func (s *NetworkService) waitForPowerState(ctx context.Context, id int, desiredS
 			return err
 		}
 
-		currentState := network.PowerState
-		if currentState == "" {
-			currentState = "stopped"
-		}
-
-		if currentState == desiredState {
+		if network.PowerState == desiredState {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("vergeos: timeout waiting for network %d to become %s", id, desiredState)
+	return fmt.Errorf("vergeos: timeout waiting for network %d to become %s", id, stateDesc)
+}
+
+// Kill forcefully powers off a network (hard power off).
+func (s *NetworkService) Kill(ctx context.Context, id int) error {
+	action := vnetAction{
+		VNet:   id,
+		Action: networkActionKill,
+		Params: struct{}{},
+	}
+
+	if err := s.client.post(ctx, "/vnet_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to kill network %d: %w", id, err)
+	}
+
+	return nil
+}
+
+// Reset restarts a network.
+func (s *NetworkService) Reset(ctx context.Context, id int, applyFirewall bool) error {
+	params := struct {
+		Apply bool `json:"apply"`
+	}{
+		Apply: applyFirewall,
+	}
+
+	action := vnetAction{
+		VNet:   id,
+		Action: networkActionReset,
+		Params: params,
+	}
+
+	if err := s.client.post(ctx, "/vnet_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to reset network %d: %w", id, err)
+	}
+
+	return nil
+}
+
+// ApplyRules applies firewall rules to a running network.
+func (s *NetworkService) ApplyRules(ctx context.Context, id int) error {
+	action := vnetAction{
+		VNet:   id,
+		Action: networkActionApply,
+		Params: struct{}{},
+	}
+
+	if err := s.client.post(ctx, "/vnet_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to apply rules to network %d: %w", id, err)
+	}
+
+	return nil
+}
+
+// ApplyDNS applies DNS configuration to a running network.
+func (s *NetworkService) ApplyDNS(ctx context.Context, id int) error {
+	action := vnetAction{
+		VNet:   id,
+		Action: networkActionApplyDNS,
+		Params: struct{}{},
+	}
+
+	if err := s.client.post(ctx, "/vnet_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to apply DNS to network %d: %w", id, err)
+	}
+
+	return nil
 }

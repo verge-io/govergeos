@@ -6,6 +6,19 @@ import (
 	"net/url"
 )
 
+const (
+	// User action constants
+	userActionEnable  = "enable"
+	userActionDisable = "disable"
+)
+
+// userAction represents a user action request.
+type userAction struct {
+	User   int         `json:"user"`
+	Action string      `json:"action"`
+	Params interface{} `json:"params"`
+}
+
 // UserService handles user operations.
 type UserService struct {
 	client *Client
@@ -118,5 +131,35 @@ func (s *UserService) Delete(ctx context.Context, id int) error {
 		}
 		return err
 	}
+	return nil
+}
+
+// Enable enables a user account.
+func (s *UserService) Enable(ctx context.Context, id int) error {
+	action := userAction{
+		User:   id,
+		Action: userActionEnable,
+		Params: struct{}{},
+	}
+
+	if err := s.client.post(ctx, "/user_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to enable user %d: %w", id, err)
+	}
+
+	return nil
+}
+
+// Disable disables a user account.
+func (s *UserService) Disable(ctx context.Context, id int) error {
+	action := userAction{
+		User:   id,
+		Action: userActionDisable,
+		Params: struct{}{},
+	}
+
+	if err := s.client.post(ctx, "/user_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to disable user %d: %w", id, err)
+	}
+
 	return nil
 }

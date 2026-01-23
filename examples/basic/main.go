@@ -66,7 +66,7 @@ func main() {
 		log.Fatalf("Failed to list clusters: %v", err)
 	}
 	for _, cluster := range clusters {
-		fmt.Printf("- %s (ID: %d, Enabled: %v)\n", cluster.Name, cluster.ID, cluster.Enabled)
+		fmt.Printf("- %s (Key: %v, Enabled: %v)\n", cluster.Name, cluster.Key, cluster.Enabled)
 	}
 
 	// List physical nodes

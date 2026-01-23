@@ -6,18 +6,30 @@ type VMDevice struct {
 	ID FlexInt `json:"$key,omitempty"`
 	// Machine is the machine reference ID.
 	Machine int `json:"machine,omitempty"`
-	// Type is the device type (tpm, node_usb_devices, node_pci_devices, node_nvidia_vgpu_devices).
+	// MachineType is the machine type (vm, container, node, etc.) - read-only.
+	MachineType string `json:"machine_type,omitempty"`
+	// OrderID is the device order (0-64).
+	OrderID int `json:"orderid,omitempty"`
+	// Type is the device type (tpm, node_usb_devices, node_pci_devices, node_nvidia_vgpu_devices, etc.).
 	Type string `json:"type"`
 	// Name is the device name.
 	Name string `json:"name"`
 	// Description is an optional description.
 	Description string `json:"description,omitempty"`
-	// ResourceGroup is the resource group.
-	ResourceGroup string `json:"resource_group,omitempty"`
+	// ResourceGroup is the resource group ID.
+	ResourceGroup FlexInt `json:"resource_group,omitempty"`
+	// UUID is the device UUID.
+	UUID string `json:"uuid,omitempty"`
 	// Enabled indicates whether the device is enabled.
 	Enabled bool `json:"enabled"`
-	// Status is the device status.
-	Status int `json:"status,omitempty"`
+	// Optional allows the machine to start without this device if unavailable.
+	Optional bool `json:"optional,omitempty"`
+	// Asset is the asset tag (used for recipe/snapshot identification).
+	Asset string `json:"asset,omitempty"`
+	// Created is the creation timestamp (Unix epoch).
+	Created int64 `json:"created,omitempty"`
+	// Modified is the last modification timestamp (Unix epoch).
+	Modified int64 `json:"modified,omitempty"`
 
 	// Settings contains device-specific settings based on Type.
 	// For USB devices: USBSettings
@@ -76,16 +88,26 @@ type VGPUDeviceSettings struct {
 type VMDeviceCreateRequest struct {
 	// Machine is the VM's machine ID.
 	Machine int `json:"machine"`
-	// Type is the device type (tpm, node_usb_devices, node_pci_devices, node_nvidia_vgpu_devices).
+	// OrderID is the device order (0-64, auto-assigned if not specified).
+	OrderID *int `json:"orderid,omitempty"`
+	// Type is the device type (tpm, node_usb_devices, node_pci_devices, node_nvidia_vgpu_devices, etc.).
 	Type string `json:"type"`
-	// Name is the device name.
+	// Name is the device name (auto-generated if blank).
 	Name string `json:"name"`
 	// Description is an optional description.
 	Description string `json:"description,omitempty"`
-	// ResourceGroup is the resource group.
-	ResourceGroup string `json:"resource_group,omitempty"`
+	// ResourceGroup is the resource group ID.
+	ResourceGroup int `json:"resource_group,omitempty"`
+	// UUID is the device UUID (leave blank for system-generated).
+	UUID string `json:"uuid,omitempty"`
 	// Enabled indicates whether the device is enabled.
 	Enabled *bool `json:"enabled,omitempty"`
+	// Optional allows the machine to start without this device if unavailable.
+	Optional *bool `json:"optional,omitempty"`
+	// Asset is the asset tag.
+	Asset string `json:"asset,omitempty"`
+	// Count creates X copies of this device (1-16).
+	Count *int `json:"count,omitempty"`
 
 	// USB settings (only for USB devices)
 	USBSettings *USBDeviceSettings `json:"-"`
@@ -97,14 +119,22 @@ type VMDeviceCreateRequest struct {
 
 // VMDeviceUpdateRequest is the request body for updating a device.
 type VMDeviceUpdateRequest struct {
+	// OrderID is the device order (0-64).
+	OrderID *int `json:"orderid,omitempty"`
 	// Name is the device name.
 	Name *string `json:"name,omitempty"`
 	// Description is the description.
 	Description *string `json:"description,omitempty"`
-	// ResourceGroup is the resource group.
-	ResourceGroup *string `json:"resource_group,omitempty"`
+	// ResourceGroup is the resource group ID.
+	ResourceGroup *int `json:"resource_group,omitempty"`
+	// UUID is the device UUID.
+	UUID *string `json:"uuid,omitempty"`
 	// Enabled indicates whether the device is enabled.
 	Enabled *bool `json:"enabled,omitempty"`
+	// Optional allows the machine to start without this device if unavailable.
+	Optional *bool `json:"optional,omitempty"`
+	// Asset is the asset tag.
+	Asset *string `json:"asset,omitempty"`
 
 	// USB settings (only for USB devices)
 	USBSettings *USBDeviceSettings `json:"-"`
@@ -123,4 +153,4 @@ const (
 )
 
 // deviceListFields are the fields to request when listing devices.
-const deviceListFields = "$key,machine,type,name,description,enabled,resource_group,status"
+const deviceListFields = "$key,machine,machine_type,orderid,type,name,description,resource_group,uuid,enabled,optional,asset,created,modified"

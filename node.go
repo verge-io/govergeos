@@ -6,6 +6,21 @@ import (
 	"net/url"
 )
 
+const (
+	// Node action constants
+	nodeActionEnableMaintenance  = "enable_maintenance"
+	nodeActionDisableMaintenance = "disable_maintenance"
+	nodeActionMaintenanceReboot  = "maintenance_reboot"
+	nodeActionClearPStore        = "clear_pstore"
+)
+
+// nodeAction represents a node action request.
+type nodeAction struct {
+	Node   int         `json:"node"`
+	Action string      `json:"action"`
+	Params interface{} `json:"params"`
+}
+
 // NodeService handles node read operations.
 type NodeService struct {
 	client *Client
@@ -82,4 +97,66 @@ func (s *NodeService) GetDashboard(ctx context.Context, id int) (*Node, error) {
 	}
 
 	return &node, nil
+}
+
+// EnableMaintenance puts a node into maintenance mode.
+// In maintenance mode, VMs are migrated off the node and no new VMs will be scheduled to it.
+func (s *NodeService) EnableMaintenance(ctx context.Context, id int) error {
+	action := nodeAction{
+		Node:   id,
+		Action: nodeActionEnableMaintenance,
+		Params: struct{}{},
+	}
+
+	if err := s.client.post(ctx, "/node_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to enable maintenance for node %d: %w", id, err)
+	}
+
+	return nil
+}
+
+// DisableMaintenance takes a node out of maintenance mode.
+func (s *NodeService) DisableMaintenance(ctx context.Context, id int) error {
+	action := nodeAction{
+		Node:   id,
+		Action: nodeActionDisableMaintenance,
+		Params: struct{}{},
+	}
+
+	if err := s.client.post(ctx, "/node_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to disable maintenance for node %d: %w", id, err)
+	}
+
+	return nil
+}
+
+// MaintenanceReboot reboots a node while in maintenance mode.
+// The node must already be in maintenance mode.
+func (s *NodeService) MaintenanceReboot(ctx context.Context, id int) error {
+	action := nodeAction{
+		Node:   id,
+		Action: nodeActionMaintenanceReboot,
+		Params: struct{}{},
+	}
+
+	if err := s.client.post(ctx, "/node_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to reboot node %d: %w", id, err)
+	}
+
+	return nil
+}
+
+// ClearPStore clears the persistent storage on a node.
+func (s *NodeService) ClearPStore(ctx context.Context, id int) error {
+	action := nodeAction{
+		Node:   id,
+		Action: nodeActionClearPStore,
+		Params: struct{}{},
+	}
+
+	if err := s.client.post(ctx, "/node_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to clear pstore for node %d: %w", id, err)
+	}
+
+	return nil
 }

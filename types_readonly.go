@@ -147,9 +147,9 @@ type ClusterStatus struct {
 
 // Node represents a VergeOS node.
 type Node struct {
-	// ID is the unique identifier for the node.
+	// ID is the unique identifier for the node (same as $key).
 	ID int `json:"id,omitempty"`
-	// Name is the node name.
+	// Name is the node hostname.
 	Name string `json:"name"`
 	// Description is the node description.
 	Description string `json:"description,omitempty"`
@@ -159,22 +159,88 @@ type Node struct {
 	Cluster int `json:"cluster,omitempty"`
 	// Machine is the machine ID.
 	Machine int `json:"machine,omitempty"`
+
+	// Hardware information
 	// Model is the hardware model.
 	Model string `json:"model,omitempty"`
+	// AssetTag is the hardware asset tag.
+	AssetTag string `json:"asset_tag,omitempty"`
 	// CPU is the CPU description.
 	CPU string `json:"cpu,omitempty"`
 	// CPUSpeed is the CPU speed.
 	CPUSpeed string `json:"cpu_speed,omitempty"`
-	// RAM is the total RAM in MB.
-	RAM int `json:"ram,omitempty"`
 	// Cores is the total CPU cores.
 	Cores int `json:"cores,omitempty"`
-	// Maintenance indicates whether the node is in maintenance mode.
-	Maintenance bool `json:"maintenance,omitempty"`
+	// IOMMU indicates whether IOMMU (VT-d) is supported.
+	IOMMU bool `json:"iommu,omitempty"`
+
+	// Memory configuration
+	// RAM is the total RAM in MB.
+	RAM int `json:"ram,omitempty"`
+	// Overcommit is the overcommit RAM in MB.
+	Overcommit int `json:"overcommit,omitempty"`
+	// VMRAM is the VM RAM limit in MB.
+	VMRAM int `json:"vm_ram,omitempty"`
+	// FailoverRAM is the failover RAM reserve in MB.
+	FailoverRAM int `json:"failover_ram,omitempty"`
+
+	// Software versions
 	// YBVersion is the VergeOS version.
 	YBVersion string `json:"yb_version,omitempty"`
 	// OSVersion is the OS version.
 	OSVersion string `json:"os_version,omitempty"`
+	// KernelVersion is the kernel version.
+	KernelVersion string `json:"kernel_version,omitempty"`
+	// AppserverVersion is the appserver version.
+	AppserverVersion string `json:"appserver_version,omitempty"`
+	// VSANVersion is the vSAN version.
+	VSANVersion string `json:"vsan_version,omitempty"`
+	// QEMUVersion is the QEMU version.
+	QEMUVersion string `json:"qemu_version,omitempty"`
+
+	// vSAN configuration
+	// VSANNodeID is the vSAN node ID (-1 if not in vSAN).
+	VSANNodeID int `json:"vsan_nodeid,omitempty"`
+	// VSANConnected indicates whether the node is connected to vSAN.
+	VSANConnected bool `json:"vsan_connected,omitempty"`
+
+	// Maintenance
+	// Maintenance indicates whether the node is in maintenance mode.
+	Maintenance bool `json:"maintenance,omitempty"`
+	// NeedRestart indicates whether the node needs to be rebooted.
+	NeedRestart bool `json:"need_restart,omitempty"`
+	// RestartReason explains why a restart is needed.
+	RestartReason string `json:"restart_reason,omitempty"`
+
+	// IPMI configuration
+	// IPMIAddress is the IPMI management IP address.
+	IPMIAddress string `json:"ipmi_address,omitempty"`
+	// IPMIUser is the IPMI username.
+	IPMIUser string `json:"ipmi_user,omitempty"`
+	// IPMIStatus is the IPMI connection status (offline, ready, connecting, error).
+	IPMIStatus string `json:"ipmi_status,omitempty"`
+	// IPMIStatusInfo provides additional IPMI status details.
+	IPMIStatusInfo string `json:"ipmi_status_info,omitempty"`
+
+	// Temperature thresholds
+	// MaxCoreTemp is the maximum core temperature in Celsius (0 = disabled, -1 = inherit from cluster).
+	MaxCoreTemp int `json:"max_core_temp,omitempty"`
+	// MaxCoreTempWarnPerc is the warning threshold percentage.
+	MaxCoreTempWarnPerc int `json:"max_core_temp_warn_perc,omitempty"`
+	// CriticalCoreTemp is the critical core temperature in Celsius.
+	CriticalCoreTemp int `json:"critical_core_temp,omitempty"`
+
+	// Networking
+	// PXEVnet is the PXE boot network ID (nullable).
+	PXEVnet *int `json:"pxe_vnet,omitempty"`
+	// CaptureLogs indicates whether to capture system logs.
+	CaptureLogs bool `json:"capture_logs,omitempty"`
+	// LLDP indicates whether to send/receive LLDP advertisements.
+	LLDP bool `json:"lldp,omitempty"`
+
+	// Notes
+	// Note is a free-form note about the node.
+	Note string `json:"note,omitempty"`
 }
 
 // NodeStatus contains node status information.
@@ -277,7 +343,7 @@ type TableField struct {
 const (
 	clusterListFields       = "$key,id,system,name,description,enabled,created,storage,compute,kvm_nested,allow_nested_virt_migration,allow_vgpu_migration,enable_split_lock_detection,recommended_cpu_type,default_cpu,disable_cpu_security_mitigations,spec_store_bypass_disable,disable_smt,disable_sleep,enable_nvme_power_management,x86_energy_perf_policy,scaling_governor,ram_per_unit,cores_per_unit,cost_per_unit,price_per_unit,max_ram_per_vm,max_cores_per_vm,storage_cachesize,storage_buffersize,storage_hugepages,target_ram_pct,ram_overcommit_pct,swap_tier,swap_per_drive,log_filter,max_core_temp,max_core_temp_warn_perc,critical_core_temp"
 	clusterStatusFields     = "cluster,status,status_info,state,last_update,total_nodes,online_nodes,running_machines,total_ram,online_ram,used_ram,total_cores,online_cores,used_cores,phys_ram_used,phys_vram_used,phys_total_cpu"
-	nodeListFields          = "id,name,description,physical,cluster,machine,model,cpu,cpu_speed,ram,cores,maintenance,yb_version,os_version"
+	nodeListFields          = "id,name,description,physical,cluster,machine,model,asset_tag,cpu,cpu_speed,cores,iommu,ram,overcommit,vm_ram,failover_ram,yb_version,os_version,kernel_version,appserver_version,vsan_version,qemu_version,vsan_nodeid,vsan_connected,maintenance,need_restart,restart_reason,ipmi_address,ipmi_user,ipmi_status,ipmi_status_info,max_core_temp,max_core_temp_warn_perc,critical_core_temp,pxe_vnet,capture_logs,lldp,note"
 	groupListFields         = "$key,name,description,enabled,type"
 	mediaSourceListFields   = "$key,name,description,type,size,path"
 	resourceGroupListFields = "$key,name,description,type,enabled"
