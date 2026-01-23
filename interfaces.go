@@ -587,6 +587,40 @@ type VolumeBrowserServiceInterface interface {
 	ListByVolume(ctx context.Context, volumeID string, opts ...ListOption) ([]VolumeBrowserJob, error)
 }
 
+// WebhookURLServiceInterface defines the interface for webhook URL configuration operations.
+type WebhookURLServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]WebhookURL, error)
+	Get(ctx context.Context, id int) (*WebhookURL, error)
+	GetByName(ctx context.Context, name string) (*WebhookURL, error)
+	Create(ctx context.Context, req *WebhookURLCreateRequest) (*WebhookURL, error)
+	Update(ctx context.Context, id int, req *WebhookURLUpdateRequest) (*WebhookURL, error)
+	Delete(ctx context.Context, id int) error
+	Send(ctx context.Context, id int, message string) error
+}
+
+// WebhookServiceInterface defines the interface for webhook message log operations (read-only).
+type WebhookServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]Webhook, error)
+	ListByWebhookURL(ctx context.Context, webhookURLID int, opts ...ListOption) ([]Webhook, error)
+	ListByStatus(ctx context.Context, status string, opts ...ListOption) ([]Webhook, error)
+	ListPending(ctx context.Context, opts ...ListOption) ([]Webhook, error)
+	ListFailed(ctx context.Context, opts ...ListOption) ([]Webhook, error)
+	Get(ctx context.Context, id int) (*Webhook, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// UserAPIKeyServiceInterface defines the interface for user API key operations.
+type UserAPIKeyServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]UserAPIKey, error)
+	ListByUser(ctx context.Context, userID int, opts ...ListOption) ([]UserAPIKey, error)
+	Get(ctx context.Context, id int) (*UserAPIKey, error)
+	GetByName(ctx context.Context, userID int, name string) (*UserAPIKey, error)
+	Create(ctx context.Context, req *UserAPIKeyCreateRequest) (*UserAPIKey, string, error)
+	Update(ctx context.Context, id int, req *UserAPIKeyUpdateRequest) (*UserAPIKey, error)
+	Delete(ctx context.Context, id int) error
+	ListExpired(ctx context.Context, opts ...ListOption) ([]UserAPIKey, error)
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface                      = (*VMService)(nil)
@@ -640,4 +674,7 @@ var (
 	_ VolumeCIFSShareServiceInterface         = (*VolumeCIFSShareService)(nil)
 	_ VolumeNFSShareServiceInterface          = (*VolumeNFSShareService)(nil)
 	_ VolumeBrowserServiceInterface           = (*VolumeBrowserService)(nil)
+	_ WebhookURLServiceInterface              = (*WebhookURLService)(nil)
+	_ WebhookServiceInterface                 = (*WebhookService)(nil)
+	_ UserAPIKeyServiceInterface              = (*UserAPIKeyService)(nil)
 )

@@ -88,6 +88,9 @@ type Client struct {
 	VolumeCIFSShares        VolumeCIFSShareServiceInterface
 	VolumeNFSShares         VolumeNFSShareServiceInterface
 	VolumeBrowser           VolumeBrowserServiceInterface
+	WebhookURLs             WebhookURLServiceInterface
+	Webhooks                WebhookServiceInterface
+	UserAPIKeys             UserAPIKeyServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -236,6 +239,9 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.VolumeCIFSShares = &VolumeCIFSShareService{client: c}
 	c.VolumeNFSShares = &VolumeNFSShareService{client: c}
 	c.VolumeBrowser = &VolumeBrowserService{client: c}
+	c.WebhookURLs = &WebhookURLService{client: c}
+	c.Webhooks = &WebhookService{client: c}
+	c.UserAPIKeys = &UserAPIKeyService{client: c}
 
 	return c, nil
 }
