@@ -295,6 +295,110 @@ member, err := client.TagMembers.Create(ctx, &vergeos.TagMemberCreateRequest{
 err = client.TagMembers.Delete(ctx, memberID)
 ```
 
+### Firewall Rules
+
+Manage network firewall rules for traffic control.
+
+```go
+// List all firewall rules
+rules, err := client.VNetRules.List(ctx)
+
+// List rules for a specific network
+rules, err := client.VNetRules.ListByNetwork(ctx, networkID)
+
+// Get a rule by ID
+rule, err := client.VNetRules.Get(ctx, ruleID)
+
+// Get a rule by name within a network
+rule, err := client.VNetRules.GetByName(ctx, networkID, "allow-ssh")
+
+// Create a firewall rule
+rule, err := client.VNetRules.Create(ctx, &vergeos.VNetRuleCreateRequest{
+    VNet:             networkID,
+    Name:             "allow-ssh",
+    Protocol:         ptr("tcp"),
+    Direction:        ptr("incoming"),
+    DestinationPorts: ptr("22"),
+    Action:           ptr("accept"),
+})
+
+// Update a rule
+rule, err := client.VNetRules.Update(ctx, ruleID, &vergeos.VNetRuleUpdateRequest{
+    Enabled: ptr(false),
+})
+
+// Delete a rule
+err = client.VNetRules.Delete(ctx, ruleID)
+
+// Enable/disable with automatic rule application
+err = client.VNetRules.Enable(ctx, ruleID, true, false)  // apply=true, force=false
+err = client.VNetRules.Disable(ctx, ruleID, true, false)
+```
+
+### Rule Aliases
+
+Rule aliases define reusable address lists for firewall rules.
+
+```go
+// List all aliases
+aliases, err := client.VNetRuleAliases.List(ctx)
+
+// Get an alias by name
+alias, err := client.VNetRuleAliases.GetByName(ctx, "trusted-networks")
+
+// Create an alias
+alias, err := client.VNetRuleAliases.Create(ctx, &vergeos.VNetRuleAliasCreateRequest{
+    Name:  "trusted-networks",
+    Value: "192.168.1.0/24,10.0.0.0/8",
+})
+
+// Update an alias
+alias, err := client.VNetRuleAliases.Update(ctx, aliasID, &vergeos.VNetRuleAliasUpdateRequest{
+    Value: ptr("192.168.1.0/24,10.0.0.0/8,172.16.0.0/12"),
+})
+
+// Delete an alias
+err = client.VNetRuleAliases.Delete(ctx, aliasID)
+```
+
+### Volumes
+
+Manage NAS volumes for storage. Note: Volumes use SHA1 hash strings as IDs.
+
+```go
+// List all volumes
+volumes, err := client.Volumes.List(ctx)
+
+// List volumes for a specific NAS service
+volumes, err := client.Volumes.ListByService(ctx, serviceID)
+
+// Get a volume by ID (SHA1 hash string)
+volume, err := client.Volumes.Get(ctx, "0d25c256a0c561c0b5bb9087f04fcb49f16a8048")
+
+// Get a volume by name within a service
+volume, err := client.Volumes.GetByName(ctx, serviceID, "data-vol")
+
+// Create a volume
+volume, err := client.Volumes.Create(ctx, &vergeos.VolumeCreateRequest{
+    Name:    "data-vol",
+    Service: serviceID,
+    MaxSize: ptr(int64(100 * 1024 * 1024 * 1024)), // 100GB
+})
+
+// Update a volume
+volume, err := client.Volumes.Update(ctx, volumeID, &vergeos.VolumeUpdateRequest{
+    Description: ptr("Production data volume"),
+})
+
+// Delete a volume
+err = client.Volumes.Delete(ctx, volumeID)
+
+// Enable/disable/reset a volume
+err = client.Volumes.Enable(ctx, volumeID)
+err = client.Volumes.Disable(ctx, volumeID)
+err = client.Volumes.Reset(ctx, volumeID)
+```
+
 ### Additional Resources
 
 The SDK also supports:
@@ -392,6 +496,7 @@ See the [examples](./examples) directory for complete working examples:
 - [Basic Usage](./examples/basic) - Simple client setup, list resources, and get system info
 - [VM Lifecycle](./examples/vm-lifecycle) - Create, configure, power, and delete VMs
 - [Network Management](./examples/network-management) - Create and manage virtual networks
+- [Firewall Rules](./examples/firewall-rules) - Manage network firewall rules and aliases
 - [Tags](./examples/tags) - List tags and manage tag assignments on resources
 - [Users](./examples/users) - User management, groups, and memberships
 - [Cloud-Init](./examples/cloudinit) - Cloud-init file management for VM provisioning
@@ -422,6 +527,9 @@ The SDK wraps the VergeOS API v4 (`/api/v4/`). Key endpoints include:
 | Resource Groups | `/api/v4/resource_groups` | Read |
 | Tags | `/api/v4/tags` | Read (v26+) |
 | Tag Members | `/api/v4/tag_members` | CRUD (v26+) |
+| Firewall Rules | `/api/v4/vnet_rules` | CRUD |
+| Rule Aliases | `/api/v4/vnet_rule_aliases` | CRUD |
+| Volumes | `/api/v4/volumes` | CRUD |
 | System Info | `/version.json` | Read (outside API v4) |
 
 ## Related Projects
