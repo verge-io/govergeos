@@ -265,30 +265,53 @@ type TenantStorageServiceInterface interface {
 	Delete(ctx context.Context, id int) error
 }
 
+// SnapshotProfileServiceInterface defines the interface for SnapshotProfile operations.
+type SnapshotProfileServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]SnapshotProfile, error)
+	Get(ctx context.Context, id int) (*SnapshotProfile, error)
+	GetByName(ctx context.Context, name string) (*SnapshotProfile, error)
+	Create(ctx context.Context, req *SnapshotProfileCreateRequest) (*SnapshotProfile, error)
+	Update(ctx context.Context, id int, req *SnapshotProfileUpdateRequest) (*SnapshotProfile, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// SnapshotProfilePeriodServiceInterface defines the interface for SnapshotProfilePeriod operations.
+type SnapshotProfilePeriodServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]SnapshotProfilePeriod, error)
+	ListByProfile(ctx context.Context, profileID int, opts ...ListOption) ([]SnapshotProfilePeriod, error)
+	Get(ctx context.Context, id int) (*SnapshotProfilePeriod, error)
+	GetByName(ctx context.Context, profileID int, name string) (*SnapshotProfilePeriod, error)
+	Create(ctx context.Context, req *SnapshotProfilePeriodCreateRequest) (*SnapshotProfilePeriod, error)
+	Update(ctx context.Context, id int, req *SnapshotProfilePeriodUpdateRequest) (*SnapshotProfilePeriod, error)
+	Delete(ctx context.Context, id int) error
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
-	_ VMServiceInterface            = (*VMService)(nil)
-	_ VMNICServiceInterface         = (*VMNICService)(nil)
-	_ VMDriveServiceInterface       = (*VMDriveService)(nil)
-	_ VMDeviceServiceInterface      = (*VMDeviceService)(nil)
-	_ NetworkServiceInterface       = (*NetworkService)(nil)
-	_ UserServiceInterface          = (*UserService)(nil)
-	_ MemberServiceInterface        = (*MemberService)(nil)
-	_ CloudInitServiceInterface     = (*CloudInitService)(nil)
-	_ NodeServiceInterface          = (*NodeService)(nil)
-	_ ClusterServiceInterface       = (*ClusterService)(nil)
-	_ GroupServiceInterface         = (*GroupService)(nil)
-	_ MediaSourceServiceInterface   = (*MediaSourceService)(nil)
-	_ ResourceGroupServiceInterface = (*ResourceGroupService)(nil)
-	_ SettingsServiceInterface      = (*SettingsService)(nil)
-	_ SystemServiceInterface        = (*SystemService)(nil)
-	_ SchemaServiceInterface        = (*SchemaService)(nil)
-	_ TagServiceInterface           = (*TagService)(nil)
-	_ TagMemberServiceInterface     = (*TagMemberService)(nil)
-	_ VolumeServiceInterface        = (*VolumeService)(nil)
-	_ VNetRuleServiceInterface      = (*VNetRuleService)(nil)
-	_ VNetRuleAliasServiceInterface = (*VNetRuleAliasService)(nil)
-	_ TenantServiceInterface        = (*TenantService)(nil)
-	_ TenantNodeServiceInterface    = (*TenantNodeService)(nil)
-	_ TenantStorageServiceInterface = (*TenantStorageService)(nil)
+	_ VMServiceInterface                    = (*VMService)(nil)
+	_ VMNICServiceInterface                 = (*VMNICService)(nil)
+	_ VMDriveServiceInterface               = (*VMDriveService)(nil)
+	_ VMDeviceServiceInterface              = (*VMDeviceService)(nil)
+	_ NetworkServiceInterface               = (*NetworkService)(nil)
+	_ UserServiceInterface                  = (*UserService)(nil)
+	_ MemberServiceInterface                = (*MemberService)(nil)
+	_ CloudInitServiceInterface             = (*CloudInitService)(nil)
+	_ NodeServiceInterface                  = (*NodeService)(nil)
+	_ ClusterServiceInterface               = (*ClusterService)(nil)
+	_ GroupServiceInterface                 = (*GroupService)(nil)
+	_ MediaSourceServiceInterface           = (*MediaSourceService)(nil)
+	_ ResourceGroupServiceInterface         = (*ResourceGroupService)(nil)
+	_ SettingsServiceInterface              = (*SettingsService)(nil)
+	_ SystemServiceInterface                = (*SystemService)(nil)
+	_ SchemaServiceInterface                = (*SchemaService)(nil)
+	_ TagServiceInterface                   = (*TagService)(nil)
+	_ TagMemberServiceInterface             = (*TagMemberService)(nil)
+	_ VolumeServiceInterface                = (*VolumeService)(nil)
+	_ VNetRuleServiceInterface              = (*VNetRuleService)(nil)
+	_ VNetRuleAliasServiceInterface         = (*VNetRuleAliasService)(nil)
+	_ TenantServiceInterface                = (*TenantService)(nil)
+	_ TenantNodeServiceInterface            = (*TenantNodeService)(nil)
+	_ TenantStorageServiceInterface         = (*TenantStorageService)(nil)
+	_ SnapshotProfileServiceInterface       = (*SnapshotProfileService)(nil)
+	_ SnapshotProfilePeriodServiceInterface = (*SnapshotProfilePeriodService)(nil)
 )

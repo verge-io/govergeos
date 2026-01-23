@@ -37,30 +37,32 @@ type Client struct {
 
 	// Services for interacting with different API resources.
 	// All services implement their corresponding interfaces for mock testing.
-	VMs             VMServiceInterface
-	VMNICs          VMNICServiceInterface
-	VMDrives        VMDriveServiceInterface
-	VMDevices       VMDeviceServiceInterface
-	Networks        NetworkServiceInterface
-	Users           UserServiceInterface
-	Members         MemberServiceInterface
-	CloudInitFiles  CloudInitServiceInterface
-	Clusters        ClusterServiceInterface
-	Nodes           NodeServiceInterface
-	Groups          GroupServiceInterface
-	MediaSources    MediaSourceServiceInterface
-	ResourceGroups  ResourceGroupServiceInterface
-	Settings        SettingsServiceInterface
-	System          SystemServiceInterface
-	Schema          SchemaServiceInterface
-	Tags            TagServiceInterface
-	TagMembers      TagMemberServiceInterface
-	Volumes         VolumeServiceInterface
-	VNetRules       VNetRuleServiceInterface
-	VNetRuleAliases VNetRuleAliasServiceInterface
-	Tenants         TenantServiceInterface
-	TenantNodes     TenantNodeServiceInterface
-	TenantStorage   TenantStorageServiceInterface
+	VMs                    VMServiceInterface
+	VMNICs                 VMNICServiceInterface
+	VMDrives               VMDriveServiceInterface
+	VMDevices              VMDeviceServiceInterface
+	Networks               NetworkServiceInterface
+	Users                  UserServiceInterface
+	Members                MemberServiceInterface
+	CloudInitFiles         CloudInitServiceInterface
+	Clusters               ClusterServiceInterface
+	Nodes                  NodeServiceInterface
+	Groups                 GroupServiceInterface
+	MediaSources           MediaSourceServiceInterface
+	ResourceGroups         ResourceGroupServiceInterface
+	Settings               SettingsServiceInterface
+	System                 SystemServiceInterface
+	Schema                 SchemaServiceInterface
+	Tags                   TagServiceInterface
+	TagMembers             TagMemberServiceInterface
+	Volumes                VolumeServiceInterface
+	VNetRules              VNetRuleServiceInterface
+	VNetRuleAliases        VNetRuleAliasServiceInterface
+	Tenants                TenantServiceInterface
+	TenantNodes            TenantNodeServiceInterface
+	TenantStorage          TenantStorageServiceInterface
+	SnapshotProfiles       SnapshotProfileServiceInterface
+	SnapshotProfilePeriods SnapshotProfilePeriodServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -182,6 +184,8 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Tenants = &TenantService{client: c}
 	c.TenantNodes = &TenantNodeService{client: c}
 	c.TenantStorage = &TenantStorageService{client: c}
+	c.SnapshotProfiles = &SnapshotProfileService{client: c}
+	c.SnapshotProfilePeriods = &SnapshotProfilePeriodService{client: c}
 
 	return c, nil
 }
