@@ -1,6 +1,9 @@
 package vergeos
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // This file defines interfaces for all services to enable mock testing and dependency injection.
 // See ADR-012 in DECISIONS.md for design rationale.
@@ -548,6 +551,42 @@ type CloudSnapshotTenantServiceInterface interface {
 	Get(ctx context.Context, id int) (*CloudSnapshotTenant, error)
 }
 
+// VolumeCIFSShareServiceInterface defines the interface for CIFS share operations.
+// Note: Like volumes, CIFS shares use SHA1 hash strings as IDs instead of integers.
+type VolumeCIFSShareServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VolumeCIFSShare, error)
+	ListByVolume(ctx context.Context, volumeID string, opts ...ListOption) ([]VolumeCIFSShare, error)
+	Get(ctx context.Context, id string) (*VolumeCIFSShare, error)
+	GetByName(ctx context.Context, volumeID, name string) (*VolumeCIFSShare, error)
+	Create(ctx context.Context, req *VolumeCIFSShareCreateRequest) (*VolumeCIFSShare, error)
+	Update(ctx context.Context, id string, req *VolumeCIFSShareUpdateRequest) (*VolumeCIFSShare, error)
+	Delete(ctx context.Context, id string) error
+}
+
+// VolumeNFSShareServiceInterface defines the interface for NFS share operations.
+// Note: Like volumes, NFS shares use SHA1 hash strings as IDs instead of integers.
+type VolumeNFSShareServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VolumeNFSShare, error)
+	ListByVolume(ctx context.Context, volumeID string, opts ...ListOption) ([]VolumeNFSShare, error)
+	Get(ctx context.Context, id string) (*VolumeNFSShare, error)
+	GetByName(ctx context.Context, volumeID, name string) (*VolumeNFSShare, error)
+	Create(ctx context.Context, req *VolumeNFSShareCreateRequest) (*VolumeNFSShare, error)
+	Update(ctx context.Context, id string, req *VolumeNFSShareUpdateRequest) (*VolumeNFSShare, error)
+	Delete(ctx context.Context, id string) error
+}
+
+// VolumeBrowserServiceInterface defines the interface for volume file browsing operations.
+// The volume browser API is asynchronous: create a job, then poll for results.
+type VolumeBrowserServiceInterface interface {
+	Browse(ctx context.Context, volumeID, dir string, limit int) ([]VolumeBrowserEntry, error)
+	BrowseWithOptions(ctx context.Context, volumeID, dir string, limit int, offset *int, extensions string) ([]VolumeBrowserEntry, error)
+	CreateJob(ctx context.Context, req *VolumeBrowserRequest) (*VolumeBrowserJob, error)
+	GetJob(ctx context.Context, id string) (*VolumeBrowserJob, error)
+	WaitForResult(ctx context.Context, jobID string, timeout time.Duration) ([]VolumeBrowserEntry, error)
+	List(ctx context.Context, opts ...ListOption) ([]VolumeBrowserJob, error)
+	ListByVolume(ctx context.Context, volumeID string, opts ...ListOption) ([]VolumeBrowserJob, error)
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface                      = (*VMService)(nil)
@@ -598,4 +637,7 @@ var (
 	_ CloudSnapshotServiceInterface           = (*CloudSnapshotService)(nil)
 	_ CloudSnapshotVMServiceInterface         = (*CloudSnapshotVMService)(nil)
 	_ CloudSnapshotTenantServiceInterface     = (*CloudSnapshotTenantService)(nil)
+	_ VolumeCIFSShareServiceInterface         = (*VolumeCIFSShareService)(nil)
+	_ VolumeNFSShareServiceInterface          = (*VolumeNFSShareService)(nil)
+	_ VolumeBrowserServiceInterface           = (*VolumeBrowserService)(nil)
 )

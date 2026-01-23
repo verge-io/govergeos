@@ -85,6 +85,9 @@ type Client struct {
 	CloudSnapshots          CloudSnapshotServiceInterface
 	CloudSnapshotVMs        CloudSnapshotVMServiceInterface
 	CloudSnapshotTenants    CloudSnapshotTenantServiceInterface
+	VolumeCIFSShares        VolumeCIFSShareServiceInterface
+	VolumeNFSShares         VolumeNFSShareServiceInterface
+	VolumeBrowser           VolumeBrowserServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -230,6 +233,9 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.CloudSnapshots = &CloudSnapshotService{client: c}
 	c.CloudSnapshotVMs = &CloudSnapshotVMService{client: c}
 	c.CloudSnapshotTenants = &CloudSnapshotTenantService{client: c}
+	c.VolumeCIFSShares = &VolumeCIFSShareService{client: c}
+	c.VolumeNFSShares = &VolumeNFSShareService{client: c}
+	c.VolumeBrowser = &VolumeBrowserService{client: c}
 
 	return c, nil
 }
