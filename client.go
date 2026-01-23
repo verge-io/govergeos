@@ -37,40 +37,48 @@ type Client struct {
 
 	// Services for interacting with different API resources.
 	// All services implement their corresponding interfaces for mock testing.
-	VMs                    VMServiceInterface
-	VMNICs                 VMNICServiceInterface
-	VMDrives               VMDriveServiceInterface
-	VMDevices              VMDeviceServiceInterface
-	Networks               NetworkServiceInterface
-	Users                  UserServiceInterface
-	Members                MemberServiceInterface
-	CloudInitFiles         CloudInitServiceInterface
-	Clusters               ClusterServiceInterface
-	Nodes                  NodeServiceInterface
-	Groups                 GroupServiceInterface
-	MediaSources           MediaSourceServiceInterface
-	ResourceGroups         ResourceGroupServiceInterface
-	Settings               SettingsServiceInterface
-	System                 SystemServiceInterface
-	Schema                 SchemaServiceInterface
-	Tags                   TagServiceInterface
-	TagMembers             TagMemberServiceInterface
-	Volumes                VolumeServiceInterface
-	VNetRules              VNetRuleServiceInterface
-	VNetRuleAliases        VNetRuleAliasServiceInterface
-	Tenants                TenantServiceInterface
-	TenantNodes            TenantNodeServiceInterface
-	TenantStorage          TenantStorageServiceInterface
-	SnapshotProfiles       SnapshotProfileServiceInterface
-	SnapshotProfilePeriods SnapshotProfilePeriodServiceInterface
-	Alarms                 AlarmServiceInterface
-	AlarmTypes             AlarmTypeServiceInterface
-	Tasks                  TaskServiceInterface
-	VNetAddresses          VNetAddressServiceInterface
-	VNetDNSViews           VNetDNSViewServiceInterface
-	VNetDNSZones           VNetDNSZoneServiceInterface
-	VNetDNSRecords         VNetDNSRecordServiceInterface
-	VNetHosts              VNetHostServiceInterface
+	VMs                     VMServiceInterface
+	VMNICs                  VMNICServiceInterface
+	VMDrives                VMDriveServiceInterface
+	VMDevices               VMDeviceServiceInterface
+	Networks                NetworkServiceInterface
+	Users                   UserServiceInterface
+	Members                 MemberServiceInterface
+	CloudInitFiles          CloudInitServiceInterface
+	Clusters                ClusterServiceInterface
+	Nodes                   NodeServiceInterface
+	Groups                  GroupServiceInterface
+	MediaSources            MediaSourceServiceInterface
+	ResourceGroups          ResourceGroupServiceInterface
+	Settings                SettingsServiceInterface
+	System                  SystemServiceInterface
+	Schema                  SchemaServiceInterface
+	Tags                    TagServiceInterface
+	TagMembers              TagMemberServiceInterface
+	Volumes                 VolumeServiceInterface
+	VNetRules               VNetRuleServiceInterface
+	VNetRuleAliases         VNetRuleAliasServiceInterface
+	Tenants                 TenantServiceInterface
+	TenantNodes             TenantNodeServiceInterface
+	TenantStorage           TenantStorageServiceInterface
+	SnapshotProfiles        SnapshotProfileServiceInterface
+	SnapshotProfilePeriods  SnapshotProfilePeriodServiceInterface
+	Alarms                  AlarmServiceInterface
+	AlarmTypes              AlarmTypeServiceInterface
+	Tasks                   TaskServiceInterface
+	VNetAddresses           VNetAddressServiceInterface
+	VNetDNSViews            VNetDNSViewServiceInterface
+	VNetDNSZones            VNetDNSZoneServiceInterface
+	VNetDNSRecords          VNetDNSRecordServiceInterface
+	VNetHosts               VNetHostServiceInterface
+	VNetWireGuards          VNetWireGuardServiceInterface
+	VNetWireGuardPeers      VNetWireGuardPeerServiceInterface
+	VNetWireGuardPeerStatus VNetWireGuardPeerStatusServiceInterface
+	Certificates            CertificateServiceInterface
+	VNetIPSecs              VNetIPSecServiceInterface
+	VNetIPSecPhase1s        VNetIPSecPhase1ServiceInterface
+	VNetIPSecPhase2s        VNetIPSecPhase2ServiceInterface
+	VNetIPSecConnections    VNetIPSecConnectionServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -202,6 +210,14 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.VNetDNSZones = &VNetDNSZoneService{client: c}
 	c.VNetDNSRecords = &VNetDNSRecordService{client: c}
 	c.VNetHosts = &VNetHostService{client: c}
+	c.VNetWireGuards = &VNetWireGuardService{client: c}
+	c.VNetWireGuardPeers = &VNetWireGuardPeerService{client: c}
+	c.VNetWireGuardPeerStatus = &VNetWireGuardPeerStatusService{client: c}
+	c.Certificates = &CertificateService{client: c}
+	c.VNetIPSecs = &VNetIPSecService{client: c}
+	c.VNetIPSecPhase1s = &VNetIPSecPhase1Service{client: c}
+	c.VNetIPSecPhase2s = &VNetIPSecPhase2Service{client: c}
+	c.VNetIPSecConnections = &VNetIPSecConnectionService{client: c}
 
 	return c, nil
 }

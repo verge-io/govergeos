@@ -385,40 +385,133 @@ type VNetHostServiceInterface interface {
 	Delete(ctx context.Context, id int) error
 }
 
+// VNetWireGuardServiceInterface defines the interface for WireGuard VPN interface operations.
+type VNetWireGuardServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetWireGuard, error)
+	ListByNetwork(ctx context.Context, vnetID int, opts ...ListOption) ([]VNetWireGuard, error)
+	Get(ctx context.Context, id int) (*VNetWireGuard, error)
+	GetByName(ctx context.Context, vnetID int, name string) (*VNetWireGuard, error)
+	Create(ctx context.Context, req *VNetWireGuardCreateRequest) (*VNetWireGuard, error)
+	Update(ctx context.Context, id int, req *VNetWireGuardUpdateRequest) (*VNetWireGuard, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// VNetWireGuardPeerServiceInterface defines the interface for WireGuard peer operations.
+type VNetWireGuardPeerServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetWireGuardPeer, error)
+	ListByWireGuard(ctx context.Context, wireguardID int, opts ...ListOption) ([]VNetWireGuardPeer, error)
+	Get(ctx context.Context, id int) (*VNetWireGuardPeer, error)
+	GetByName(ctx context.Context, wireguardID int, name string) (*VNetWireGuardPeer, error)
+	Create(ctx context.Context, req *VNetWireGuardPeerCreateRequest) (*VNetWireGuardPeer, error)
+	Update(ctx context.Context, id int, req *VNetWireGuardPeerUpdateRequest) (*VNetWireGuardPeer, error)
+	Delete(ctx context.Context, id int) error
+	GetConfig(ctx context.Context, id int) (string, error)
+}
+
+// VNetWireGuardPeerStatusServiceInterface defines the interface for WireGuard peer status operations (read-only).
+type VNetWireGuardPeerStatusServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetWireGuardPeerStatus, error)
+	Get(ctx context.Context, id int) (*VNetWireGuardPeerStatus, error)
+	GetByPeer(ctx context.Context, peerID int) (*VNetWireGuardPeerStatus, error)
+}
+
+// CertificateServiceInterface defines the interface for SSL/TLS certificate operations.
+type CertificateServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]Certificate, error)
+	Get(ctx context.Context, id int) (*Certificate, error)
+	GetByDomain(ctx context.Context, domain string) (*Certificate, error)
+	GetWithKeys(ctx context.Context, id int) (*Certificate, error)
+	Create(ctx context.Context, req *CertificateCreateRequest) (*Certificate, error)
+	Update(ctx context.Context, id int, req *CertificateUpdateRequest) (*Certificate, error)
+	Delete(ctx context.Context, id int) error
+	Renew(ctx context.Context, id int) (*Certificate, error)
+	ListExpiring(ctx context.Context, days int, opts ...ListOption) ([]Certificate, error)
+	ListValid(ctx context.Context, opts ...ListOption) ([]Certificate, error)
+	ListByType(ctx context.Context, certType string, opts ...ListOption) ([]Certificate, error)
+}
+
+// VNetIPSecServiceInterface defines the interface for IPSec VPN configuration operations.
+type VNetIPSecServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetIPSec, error)
+	Get(ctx context.Context, id int) (*VNetIPSec, error)
+	GetByNetwork(ctx context.Context, vnetID int) (*VNetIPSec, error)
+	Create(ctx context.Context, req *VNetIPSecCreateRequest) (*VNetIPSec, error)
+	Update(ctx context.Context, id int, req *VNetIPSecUpdateRequest) (*VNetIPSec, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// VNetIPSecPhase1ServiceInterface defines the interface for IPSec Phase 1 (IKE SA) operations.
+type VNetIPSecPhase1ServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetIPSecPhase1, error)
+	ListByIPSec(ctx context.Context, ipsecID int, opts ...ListOption) ([]VNetIPSecPhase1, error)
+	Get(ctx context.Context, id int) (*VNetIPSecPhase1, error)
+	GetByName(ctx context.Context, ipsecID int, name string) (*VNetIPSecPhase1, error)
+	Create(ctx context.Context, req *VNetIPSecPhase1CreateRequest) (*VNetIPSecPhase1, error)
+	Update(ctx context.Context, id int, req *VNetIPSecPhase1UpdateRequest) (*VNetIPSecPhase1, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// VNetIPSecPhase2ServiceInterface defines the interface for IPSec Phase 2 (IPsec SA) operations.
+type VNetIPSecPhase2ServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetIPSecPhase2, error)
+	ListByPhase1(ctx context.Context, phase1ID int, opts ...ListOption) ([]VNetIPSecPhase2, error)
+	Get(ctx context.Context, id int) (*VNetIPSecPhase2, error)
+	GetByName(ctx context.Context, phase1ID int, name string) (*VNetIPSecPhase2, error)
+	Create(ctx context.Context, req *VNetIPSecPhase2CreateRequest) (*VNetIPSecPhase2, error)
+	Update(ctx context.Context, id int, req *VNetIPSecPhase2UpdateRequest) (*VNetIPSecPhase2, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// VNetIPSecConnectionServiceInterface defines the interface for IPSec connection status operations (read-only).
+type VNetIPSecConnectionServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetIPSecConnection, error)
+	ListByNetwork(ctx context.Context, vnetID int, opts ...ListOption) ([]VNetIPSecConnection, error)
+	ListByPhase1(ctx context.Context, phase1ID int, opts ...ListOption) ([]VNetIPSecConnection, error)
+	Get(ctx context.Context, id int) (*VNetIPSecConnection, error)
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
-	_ VMServiceInterface                    = (*VMService)(nil)
-	_ VMNICServiceInterface                 = (*VMNICService)(nil)
-	_ VMDriveServiceInterface               = (*VMDriveService)(nil)
-	_ VMDeviceServiceInterface              = (*VMDeviceService)(nil)
-	_ NetworkServiceInterface               = (*NetworkService)(nil)
-	_ UserServiceInterface                  = (*UserService)(nil)
-	_ MemberServiceInterface                = (*MemberService)(nil)
-	_ CloudInitServiceInterface             = (*CloudInitService)(nil)
-	_ NodeServiceInterface                  = (*NodeService)(nil)
-	_ ClusterServiceInterface               = (*ClusterService)(nil)
-	_ GroupServiceInterface                 = (*GroupService)(nil)
-	_ MediaSourceServiceInterface           = (*MediaSourceService)(nil)
-	_ ResourceGroupServiceInterface         = (*ResourceGroupService)(nil)
-	_ SettingsServiceInterface              = (*SettingsService)(nil)
-	_ SystemServiceInterface                = (*SystemService)(nil)
-	_ SchemaServiceInterface                = (*SchemaService)(nil)
-	_ TagServiceInterface                   = (*TagService)(nil)
-	_ TagMemberServiceInterface             = (*TagMemberService)(nil)
-	_ VolumeServiceInterface                = (*VolumeService)(nil)
-	_ VNetRuleServiceInterface              = (*VNetRuleService)(nil)
-	_ VNetRuleAliasServiceInterface         = (*VNetRuleAliasService)(nil)
-	_ TenantServiceInterface                = (*TenantService)(nil)
-	_ TenantNodeServiceInterface            = (*TenantNodeService)(nil)
-	_ TenantStorageServiceInterface         = (*TenantStorageService)(nil)
-	_ SnapshotProfileServiceInterface       = (*SnapshotProfileService)(nil)
-	_ SnapshotProfilePeriodServiceInterface = (*SnapshotProfilePeriodService)(nil)
-	_ AlarmServiceInterface                 = (*AlarmService)(nil)
-	_ AlarmTypeServiceInterface             = (*AlarmTypeService)(nil)
-	_ TaskServiceInterface                  = (*TaskService)(nil)
-	_ VNetAddressServiceInterface           = (*VNetAddressService)(nil)
-	_ VNetDNSViewServiceInterface           = (*VNetDNSViewService)(nil)
-	_ VNetDNSZoneServiceInterface           = (*VNetDNSZoneService)(nil)
-	_ VNetDNSRecordServiceInterface         = (*VNetDNSRecordService)(nil)
-	_ VNetHostServiceInterface              = (*VNetHostService)(nil)
+	_ VMServiceInterface                      = (*VMService)(nil)
+	_ VMNICServiceInterface                   = (*VMNICService)(nil)
+	_ VMDriveServiceInterface                 = (*VMDriveService)(nil)
+	_ VMDeviceServiceInterface                = (*VMDeviceService)(nil)
+	_ NetworkServiceInterface                 = (*NetworkService)(nil)
+	_ UserServiceInterface                    = (*UserService)(nil)
+	_ MemberServiceInterface                  = (*MemberService)(nil)
+	_ CloudInitServiceInterface               = (*CloudInitService)(nil)
+	_ NodeServiceInterface                    = (*NodeService)(nil)
+	_ ClusterServiceInterface                 = (*ClusterService)(nil)
+	_ GroupServiceInterface                   = (*GroupService)(nil)
+	_ MediaSourceServiceInterface             = (*MediaSourceService)(nil)
+	_ ResourceGroupServiceInterface           = (*ResourceGroupService)(nil)
+	_ SettingsServiceInterface                = (*SettingsService)(nil)
+	_ SystemServiceInterface                  = (*SystemService)(nil)
+	_ SchemaServiceInterface                  = (*SchemaService)(nil)
+	_ TagServiceInterface                     = (*TagService)(nil)
+	_ TagMemberServiceInterface               = (*TagMemberService)(nil)
+	_ VolumeServiceInterface                  = (*VolumeService)(nil)
+	_ VNetRuleServiceInterface                = (*VNetRuleService)(nil)
+	_ VNetRuleAliasServiceInterface           = (*VNetRuleAliasService)(nil)
+	_ TenantServiceInterface                  = (*TenantService)(nil)
+	_ TenantNodeServiceInterface              = (*TenantNodeService)(nil)
+	_ TenantStorageServiceInterface           = (*TenantStorageService)(nil)
+	_ SnapshotProfileServiceInterface         = (*SnapshotProfileService)(nil)
+	_ SnapshotProfilePeriodServiceInterface   = (*SnapshotProfilePeriodService)(nil)
+	_ AlarmServiceInterface                   = (*AlarmService)(nil)
+	_ AlarmTypeServiceInterface               = (*AlarmTypeService)(nil)
+	_ TaskServiceInterface                    = (*TaskService)(nil)
+	_ VNetAddressServiceInterface             = (*VNetAddressService)(nil)
+	_ VNetDNSViewServiceInterface             = (*VNetDNSViewService)(nil)
+	_ VNetDNSZoneServiceInterface             = (*VNetDNSZoneService)(nil)
+	_ VNetDNSRecordServiceInterface           = (*VNetDNSRecordService)(nil)
+	_ VNetHostServiceInterface                = (*VNetHostService)(nil)
+	_ VNetWireGuardServiceInterface           = (*VNetWireGuardService)(nil)
+	_ VNetWireGuardPeerServiceInterface       = (*VNetWireGuardPeerService)(nil)
+	_ VNetWireGuardPeerStatusServiceInterface = (*VNetWireGuardPeerStatusService)(nil)
+	_ CertificateServiceInterface             = (*CertificateService)(nil)
+	_ VNetIPSecServiceInterface               = (*VNetIPSecService)(nil)
+	_ VNetIPSecPhase1ServiceInterface         = (*VNetIPSecPhase1Service)(nil)
+	_ VNetIPSecPhase2ServiceInterface         = (*VNetIPSecPhase2Service)(nil)
+	_ VNetIPSecConnectionServiceInterface     = (*VNetIPSecConnectionService)(nil)
 )
