@@ -556,6 +556,97 @@ period, err := client.SnapshotProfilePeriods.Update(ctx, periodID, &vergeos.Snap
 err = client.SnapshotProfilePeriods.Delete(ctx, periodID)
 ```
 
+### Alarms
+
+Monitor system health with alarms for VMs, nodes, networks, and other resources.
+
+```go
+// List all alarms
+alarms, err := client.Alarms.List(ctx)
+
+// List active (non-snoozed) alarms
+alarms, err := client.Alarms.ListActive(ctx)
+
+// List alarms for a specific resource
+alarms, err := client.Alarms.ListByOwner(ctx, "vms/123")
+
+// List alarms by severity level
+alarms, err := client.Alarms.ListByLevel(ctx, vergeos.AlarmLevelCritical)
+
+// Get an alarm by ID
+alarm, err := client.Alarms.Get(ctx, alarmID)
+
+// Snooze an alarm until a specific timestamp
+err = client.Alarms.Snooze(ctx, alarmID, time.Now().Add(24*time.Hour).Unix())
+
+// Unsnooze an alarm
+err = client.Alarms.Unsnooze(ctx, alarmID)
+
+// Resolve a resolvable alarm
+err = client.Alarms.Resolve(ctx, alarmID)
+
+// Delete an alarm
+err = client.Alarms.Delete(ctx, alarmID)
+```
+
+### Alarm Types
+
+Query alarm type definitions (read-only reference data).
+
+```go
+// List all alarm types
+alarmTypes, err := client.AlarmTypes.List(ctx)
+
+// Get an alarm type by key (string, not integer)
+alarmType, err := client.AlarmTypes.Get(ctx, "vm_cpu_high")
+
+// List alarm types by default severity level
+alarmTypes, err := client.AlarmTypes.ListByLevel(ctx, vergeos.AlarmLevelWarning)
+```
+
+### Tasks
+
+Manage scheduled and automated tasks.
+
+```go
+// List all tasks
+tasks, err := client.Tasks.List(ctx)
+
+// List running tasks
+tasks, err := client.Tasks.ListRunning(ctx)
+
+// List tasks for a specific resource
+tasks, err := client.Tasks.ListByOwner(ctx, "vms/123")
+
+// Get a task by ID
+task, err := client.Tasks.Get(ctx, taskID)
+
+// Get a task by its 40-character SHA1 ID
+task, err := client.Tasks.GetByID(ctx, "abc123...")
+
+// Create a task
+task, err := client.Tasks.Create(ctx, &vergeos.TaskCreateRequest{
+    Owner:  "vms/123",
+    Action: "snapshot",
+    Name:   "Daily Snapshot",
+})
+
+// Update a task
+task, err := client.Tasks.Update(ctx, taskID, &vergeos.TaskUpdateRequest{
+    Name: ptr("Updated Task Name"),
+})
+
+// Execute a task immediately
+err = client.Tasks.Execute(ctx, taskID, nil)
+
+// Enable/disable a task
+err = client.Tasks.Enable(ctx, taskID)
+err = client.Tasks.Disable(ctx, taskID)
+
+// Delete a task
+err = client.Tasks.Delete(ctx, taskID)
+```
+
 ### Additional Resources
 
 The SDK also supports:
@@ -659,6 +750,7 @@ See the [examples](./examples) directory for complete working examples:
 - [Cloud-Init](./examples/cloudinit) - Cloud-init file management for VM provisioning
 - [Media Sources](./examples/media-sources) - List available ISOs and boot media
 - [Snapshot Profiles](./examples/snapshot-profiles) - Create and manage snapshot schedules with periods
+- [Monitoring](./examples/monitoring) - System alarms, alarm types, and scheduled tasks
 
 ## API Endpoints Reference
 
@@ -693,6 +785,9 @@ The SDK wraps the VergeOS API v4 (`/api/v4/`). Key endpoints include:
 | Tenant Storage | `/api/v4/tenant_storage` | CRUD |
 | Snapshot Profiles | `/api/v4/snapshot_profiles` | CRUD |
 | Snapshot Profile Periods | `/api/v4/snapshot_profile_periods` | CRUD |
+| Alarms | `/api/v4/alarms` | Read + Snooze + Resolve + Delete |
+| Alarm Types | `/api/v4/alarm_types` | Read |
+| Tasks | `/api/v4/tasks` | CRUD + Execute |
 | System Info | `/version.json` | Read (outside API v4) |
 
 ## Related Projects

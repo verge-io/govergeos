@@ -63,6 +63,9 @@ type Client struct {
 	TenantStorage          TenantStorageServiceInterface
 	SnapshotProfiles       SnapshotProfileServiceInterface
 	SnapshotProfilePeriods SnapshotProfilePeriodServiceInterface
+	Alarms                 AlarmServiceInterface
+	AlarmTypes             AlarmTypeServiceInterface
+	Tasks                  TaskServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -186,6 +189,9 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.TenantStorage = &TenantStorageService{client: c}
 	c.SnapshotProfiles = &SnapshotProfileService{client: c}
 	c.SnapshotProfilePeriods = &SnapshotProfilePeriodService{client: c}
+	c.Alarms = &AlarmService{client: c}
+	c.AlarmTypes = &AlarmTypeService{client: c}
+	c.Tasks = &TaskService{client: c}
 
 	return c, nil
 }

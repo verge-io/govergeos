@@ -286,6 +286,46 @@ type SnapshotProfilePeriodServiceInterface interface {
 	Delete(ctx context.Context, id int) error
 }
 
+// AlarmServiceInterface defines the interface for Alarm operations.
+type AlarmServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]Alarm, error)
+	ListActive(ctx context.Context, opts ...ListOption) ([]Alarm, error)
+	ListByOwner(ctx context.Context, owner string, opts ...ListOption) ([]Alarm, error)
+	ListByLevel(ctx context.Context, level string, opts ...ListOption) ([]Alarm, error)
+	ListByAlarmType(ctx context.Context, alarmTypeKey string, opts ...ListOption) ([]Alarm, error)
+	Get(ctx context.Context, id int) (*Alarm, error)
+	Update(ctx context.Context, id int, req *AlarmUpdateRequest) (*Alarm, error)
+	Snooze(ctx context.Context, id int, until int64) error
+	Unsnooze(ctx context.Context, id int) error
+	Resolve(ctx context.Context, id int) error
+	Delete(ctx context.Context, id int) error
+}
+
+// AlarmTypeServiceInterface defines the interface for AlarmType operations.
+// Alarm types are read-only reference data. Note: Uses string keys, not integers.
+type AlarmTypeServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]AlarmType, error)
+	Get(ctx context.Context, key string) (*AlarmType, error)
+	ListByLevel(ctx context.Context, level string, opts ...ListOption) ([]AlarmType, error)
+}
+
+// TaskServiceInterface defines the interface for Task operations.
+type TaskServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]Task, error)
+	ListRunning(ctx context.Context, opts ...ListOption) ([]Task, error)
+	ListByOwner(ctx context.Context, owner string, opts ...ListOption) ([]Task, error)
+	ListEnabled(ctx context.Context, opts ...ListOption) ([]Task, error)
+	Get(ctx context.Context, id int) (*Task, error)
+	GetByID(ctx context.Context, taskID string) (*Task, error)
+	GetByName(ctx context.Context, owner, name string) (*Task, error)
+	Create(ctx context.Context, req *TaskCreateRequest) (*Task, error)
+	Update(ctx context.Context, id int, req *TaskUpdateRequest) (*Task, error)
+	Delete(ctx context.Context, id int) error
+	Execute(ctx context.Context, id int, opts *TaskExecuteOptions) error
+	Enable(ctx context.Context, id int) error
+	Disable(ctx context.Context, id int) error
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface                    = (*VMService)(nil)
@@ -314,4 +354,7 @@ var (
 	_ TenantStorageServiceInterface         = (*TenantStorageService)(nil)
 	_ SnapshotProfileServiceInterface       = (*SnapshotProfileService)(nil)
 	_ SnapshotProfilePeriodServiceInterface = (*SnapshotProfilePeriodService)(nil)
+	_ AlarmServiceInterface                 = (*AlarmService)(nil)
+	_ AlarmTypeServiceInterface             = (*AlarmTypeService)(nil)
+	_ TaskServiceInterface                  = (*TaskService)(nil)
 )
