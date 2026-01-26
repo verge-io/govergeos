@@ -220,6 +220,26 @@ user, err := client.Users.Create(ctx, &vergeos.UserCreateRequest{
 // List groups
 groups, err := client.Groups.List(ctx)
 
+// Get a group by ID
+group, err := client.Groups.Get(ctx, groupID)
+
+// Get a group by name
+group, err := client.Groups.GetByName(ctx, "developers")
+
+// Create a group
+group, err := client.Groups.Create(ctx, &vergeos.GroupCreateRequest{
+    Name:        "developers",
+    Description: "Development team",
+})
+
+// Update a group
+group, err := client.Groups.Update(ctx, groupID, &vergeos.GroupUpdateRequest{
+    Description: ptr("Updated description"),
+})
+
+// Delete a group
+err = client.Groups.Delete(ctx, groupID)
+
 // Manage group members
 err = client.Members.Add(ctx, groupID, userID)
 ```
@@ -1277,7 +1297,7 @@ The SDK wraps the VergeOS API v4 (`/api/v4/`). Key endpoints include:
 | NICs | `/api/v4/machine_nics` | CRUD |
 | Devices | `/api/v4/machine_devices` | CRUD |
 | Users | `/api/v4/users` | CRUD |
-| Groups | `/api/v4/groups` | Read |
+| Groups | `/api/v4/groups` | CRUD |
 | Members | `/api/v4/members` | CRUD |
 | Settings | `/api/v4/settings` | Read |
 | Media Sources | `/api/v4/files` | Read |
