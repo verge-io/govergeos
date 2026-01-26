@@ -1279,6 +1279,9 @@ See the [examples](./examples) directory for complete working examples:
 - [Snapshot Profiles](./examples/snapshot-profiles) - Create and manage snapshot schedules with periods
 - [Monitoring](./examples/monitoring) - System alarms, alarm types, and scheduled tasks
 - [Networking](./examples/networking) - IP addresses, DNS views/zones/records, and host overrides
+- [DR Sites](./examples/dr-sites) - Remote site management and site sync configurations
+- [Cloud Snapshots](./examples/cloud-snapshots) - System-wide backup and snapshot management
+- [Webhooks](./examples/webhooks) - Webhook URL configuration and delivery log management
 
 ## API Endpoints Reference
 
