@@ -1269,9 +1269,14 @@ The SDK client is safe for concurrent use. You can share a single client instanc
 See the [examples](./examples) directory for complete working examples:
 
 - [Basic Usage](./examples/basic) - Simple client setup, list resources, and get system info
+- [API Key Auth](./examples/apikey-auth) - Authenticate using API keys instead of username/password
 - [VM Lifecycle](./examples/vm-lifecycle) - Create, configure, power, and delete VMs
 - [Network Management](./examples/network-management) - Create and manage virtual networks
+- [Tenants](./examples/tenants) - Multi-tenant management for MSPs and enterprises
+- [Volumes](./examples/volumes) - NAS volume management and CIFS/NFS shares
 - [Firewall Rules](./examples/firewall-rules) - Manage network firewall rules and aliases
+- [VPN](./examples/vpn) - WireGuard and IPSec VPN management
+- [Certificates](./examples/certificates) - SSL/TLS certificate management (Let's Encrypt, self-signed, manual)
 - [Tags](./examples/tags) - List tags and manage tag assignments on resources
 - [Users](./examples/users) - User management, groups, and memberships
 - [Cloud-Init](./examples/cloudinit) - Cloud-init file management for VM provisioning
