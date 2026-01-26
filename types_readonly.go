@@ -269,6 +269,42 @@ type Group struct {
 	Enabled bool `json:"enabled"`
 	// Type is the group type.
 	Type string `json:"type,omitempty"`
+	// Email is the group email address.
+	Email string `json:"email,omitempty"`
+	// SystemGroup indicates whether this is a system-managed group.
+	SystemGroup bool `json:"system_group,omitempty"`
+	// AuthSource is the authentication source ID.
+	AuthSource int `json:"auth_source,omitempty"`
+	// Created is the creation timestamp (Unix epoch).
+	Created int64 `json:"created,omitempty"`
+	// Creator is the username that created this group.
+	Creator string `json:"creator,omitempty"`
+}
+
+// GroupCreateRequest is the request body for creating a group.
+type GroupCreateRequest struct {
+	// Name is the group name (required).
+	Name string `json:"name"`
+	// Description is the group description.
+	Description string `json:"description,omitempty"`
+	// Enabled indicates whether the group is enabled.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Email is the group email address.
+	Email string `json:"email,omitempty"`
+	// AuthSource is the authentication source ID.
+	AuthSource *int `json:"auth_source,omitempty"`
+}
+
+// GroupUpdateRequest is the request body for updating a group.
+type GroupUpdateRequest struct {
+	// Name is the group name.
+	Name *string `json:"name,omitempty"`
+	// Description is the group description.
+	Description *string `json:"description,omitempty"`
+	// Enabled indicates whether the group is enabled.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Email is the group email address.
+	Email *string `json:"email,omitempty"`
 }
 
 // MediaSource represents a media source (ISO, etc.) in VergeOS.
@@ -344,7 +380,7 @@ const (
 	clusterListFields       = "$key,id,system,name,description,enabled,created,storage,compute,kvm_nested,allow_nested_virt_migration,allow_vgpu_migration,enable_split_lock_detection,recommended_cpu_type,default_cpu,disable_cpu_security_mitigations,spec_store_bypass_disable,disable_smt,disable_sleep,enable_nvme_power_management,x86_energy_perf_policy,scaling_governor,ram_per_unit,cores_per_unit,cost_per_unit,price_per_unit,max_ram_per_vm,max_cores_per_vm,storage_cachesize,storage_buffersize,storage_hugepages,target_ram_pct,ram_overcommit_pct,swap_tier,swap_per_drive,log_filter,max_core_temp,max_core_temp_warn_perc,critical_core_temp"
 	clusterStatusFields     = "cluster,status,status_info,state,last_update,total_nodes,online_nodes,running_machines,total_ram,online_ram,used_ram,total_cores,online_cores,used_cores,phys_ram_used,phys_vram_used,phys_total_cpu"
 	nodeListFields          = "id,name,description,physical,cluster,machine,model,asset_tag,cpu,cpu_speed,cores,iommu,ram,overcommit,vm_ram,failover_ram,yb_version,os_version,kernel_version,appserver_version,vsan_version,qemu_version,vsan_nodeid,vsan_connected,maintenance,need_restart,restart_reason,ipmi_address,ipmi_user,ipmi_status,ipmi_status_info,max_core_temp,max_core_temp_warn_perc,critical_core_temp,pxe_vnet,capture_logs,lldp,note"
-	groupListFields         = "$key,name,description,enabled,type"
+	groupListFields         = "$key,name,description,enabled,type,email,system_group,auth_source,created,creator"
 	mediaSourceListFields   = "$key,name,description,type,size,path"
 	resourceGroupListFields = "$key,name,description,type,enabled"
 	settingListFields       = "key,value,default_value,description"

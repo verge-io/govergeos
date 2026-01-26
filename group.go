@@ -59,3 +59,31 @@ func (s *GroupService) GetByName(ctx context.Context, name string) (*Group, erro
 
 	return &groups[0], nil
 }
+
+// Create creates a new group and returns it.
+func (s *GroupService) Create(ctx context.Context, req *GroupCreateRequest) (*Group, error) {
+	var result struct {
+		Key FlexInt `json:"$key"`
+	}
+	if err := s.client.post(ctx, "/groups", req, &result); err != nil {
+		return nil, err
+	}
+
+	return s.Get(ctx, int(result.Key))
+}
+
+// Update updates an existing group and returns the updated group.
+func (s *GroupService) Update(ctx context.Context, id int, req *GroupUpdateRequest) (*Group, error) {
+	endpoint := fmt.Sprintf("/groups/%d", id)
+	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
+		return nil, err
+	}
+
+	return s.Get(ctx, id)
+}
+
+// Delete deletes a group by ID.
+func (s *GroupService) Delete(ctx context.Context, id int) error {
+	endpoint := fmt.Sprintf("/groups/%d", id)
+	return s.client.delete(ctx, endpoint)
+}

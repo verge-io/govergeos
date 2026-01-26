@@ -126,6 +126,9 @@ type GroupServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]Group, error)
 	Get(ctx context.Context, id int) (*Group, error)
 	GetByName(ctx context.Context, name string) (*Group, error)
+	Create(ctx context.Context, req *GroupCreateRequest) (*Group, error)
+	Update(ctx context.Context, id int, req *GroupUpdateRequest) (*Group, error)
+	Delete(ctx context.Context, id int) error
 }
 
 // MediaSourceServiceInterface defines the interface for MediaSource operations.
