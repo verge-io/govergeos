@@ -17,7 +17,7 @@ import (
 	"os"
 	"time"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 func main() {
@@ -126,7 +126,7 @@ func showWebhookURLs(ctx context.Context, client *vergeos.Client) {
 	// Example: Send a test message (commented out to avoid side effects)
 	// if len(webhooks) > 0 {
 	// 	webhookID := int(webhooks[0].Key)
-	// 	testMessage := `{"text": "Test message from VergeOS SDK"}`
+	// 	testMessage := `{"text": "Test message from goVergeOS"}`
 	// 	if err := client.WebhookURLs.Send(ctx, webhookID, testMessage); err != nil {
 	// 		log.Printf("Failed to send test message: %v", err)
 	// 	} else {

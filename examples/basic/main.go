@@ -1,4 +1,4 @@
-// Example: Basic SDK Usage
+// Example: Basic goVergeOS Usage
 //
 // This example demonstrates how to create a VergeOS client and perform
 // basic operations like listing VMs and getting system information.
@@ -17,7 +17,7 @@ import (
 	"log"
 	"os"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 func main() {

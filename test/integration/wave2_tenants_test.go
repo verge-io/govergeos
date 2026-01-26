@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 // TestWave2Tenants tests the Wave 2 multi-tenancy services (Tenants, TenantNodes, TenantStorage)
@@ -198,7 +198,7 @@ func TestWave2TenantsCRUD(t *testing.T) {
 	t.Log("Creating test tenant...")
 	tenant, err := client.Tenants.Create(ctx, &vergeos.TenantCreateRequest{
 		Name:        "sdk-test-tenant",
-		Description: "SDK integration test tenant - safe to delete",
+		Description: "goVergeOS integration test tenant - safe to delete",
 		Password:    "TestPassword123!",
 	})
 	if err != nil {
@@ -225,7 +225,7 @@ func TestWave2TenantsCRUD(t *testing.T) {
 	t.Logf("Read tenant: [%d] %s (VNet: %d)", tenantID, tenant.Name, int(tenant.VNet))
 
 	// Update
-	newDesc := "Updated SDK test tenant description"
+	newDesc := "Updated goVergeOS test tenant description"
 	tenant, err = client.Tenants.Update(ctx, tenantID, &vergeos.TenantUpdateRequest{
 		Description: &newDesc,
 	})

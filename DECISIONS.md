@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-This document captures key design decisions made during the development of the VergeOS Go SDK.
+This document captures key design decisions made during the development of goVergeOS.
 
 ---
 
@@ -220,32 +220,48 @@ This document captures key design decisions made during the development of the V
 
 ---
 
-## ADR-011: "VergeOS Go SDK" Naming Convention
+## ADR-011: "goVergeOS" Naming Convention
 
-**Date:** 2026-01-21
+**Date:** 2026-01-21 (Updated: 2026-01-26)
 
 **Status:** Accepted
 
-**Context:** The project needed a clear identity that reflects its scope and maturity. In the Go ecosystem:
-- "Library" typically implies a low-level wrapper around a single API
-- "SDK" (Software Development Kit) implies a comprehensive package including client, high-level helpers, authentication logic, and potentially additional tooling
+**Context:** Verge is standardizing library naming across all language-specific packages:
+- **PSVergeOS** - PowerShell module
+- **pyVergeOS** - Python package
+- **goVergeOS** - Go library (this project)
+
+The original name "VergeOS Go SDK" used the term "SDK" which implies more maturity and comprehensiveness than appropriate for what is essentially a Go API client library. The naming also didn't align with Verge's cross-language naming convention.
 
 This project serves as the foundation for the Terraform Provider, Prometheus Exporter, and the upcoming Cluster API (CAPI) provider.
 
-**Decision:** Refer to this project as the "VergeOS Go SDK" rather than "Verge OS Go library" or similar alternatives.
+**Alternatives Considered:**
+
+Go naming conventions (per https://go.dev/blog/package-names) recommend lowercase import paths. Common patterns in the Go ecosystem include:
+- `github.com/google/go-github` (package `github`)
+- `github.com/hashicorp/go-retryablehttp` (package `retryablehttp`)
+- `github.com/aws/aws-sdk-go` (package `aws`)
+
+A more Go-idiomatic name would be `go-vergeos` or `vergeos-go`, resulting in an import path like `github.com/verge-io/go-vergeos`. However, this would break the `{lang}VergeOS` naming pattern used across Verge's language-specific libraries.
+
+**Decision:** Rename from "VergeOS Go SDK" to "goVergeOS" to align with Verge's unified naming pattern, prioritizing brand consistency over Go-specific conventions. The Go package name (`vergeos`) remains unchanged and fully idiomatic—users still write `vergeos.NewClient()`.
 
 **Rationale:**
-- Signals operational readiness and enterprise worthiness to external consumers
-- Represents a significant milestone in VergeOS platform maturity
-- Consolidates API client logic into a single source of truth, drastically simplifying maintenance of downstream consumers (Terraform Provider, Prometheus Exporter)
+- Brand consistency across PSVergeOS, pyVergeOS, and goVergeOS outweighs Go-specific import path conventions
+- The Go package name `vergeos` is fully idiomatic (lowercase, clear, concise)
+- Only the repository/import path uses mixedCaps; the actual package name follows Go conventions
+- "Library" positioning is more accurate than "SDK" for the current scope
+- Consolidates API client logic into a single source of truth for downstream consumers (Terraform Provider, Prometheus Exporter)
 - Provides a solid foundation for the upcoming CAPI provider
-- Accurately reflects scope: this is a platform for developers to build on VergeOS, not just an endpoint wrapper
-- Aligns with industry conventions (AWS SDK, Google Cloud SDK, Azure SDK)
 
 **Consequences:**
+- Repository renamed from `vergeos-go-sdk` to `goVergeOS`
+- Module path changed from `github.com/verge-io/vergeos-go-sdk` to `github.com/verge-io/goVergeOS`
+- Import path uses mixedCaps (`goVergeOS`) which deviates from typical Go conventions, but package name (`vergeos`) is idiomatic
+- Consumers must update import paths (GitHub redirects handle legacy references)
+- User-Agent header changed from `vergeos-go-sdk/1.0` to `goVergeOS/1.0`
 - Consistent naming across documentation, package references, and marketing materials
-- Sets expectations for comprehensive functionality beyond basic API wrapping
-- Establishes branding pattern for potential future SDKs (Python, JavaScript)
+- Establishes branding pattern aligned with other Verge language libraries
 
 ---
 
@@ -327,7 +343,7 @@ The internal API team clarified that filesystem schema files are pre-translation
 - Must verify against live API when schema `$type` doesn't match expected Go type
 
 **References:**
-- GitHub Issue: https://github.com/verge-io/vergeos-go-sdk/issues/2
+- GitHub Issue: https://github.com/verge-io/goVergeOS/issues/2
 - Related: ADR-002 (FlexInt Type for ID Handling)
 - Documentation: `.claude/reference/API-Schema/ENDPOINTS.md`
 

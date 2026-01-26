@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 // TestWave7DRBackup tests the Wave 7 DR & Backup services (Sites, SiteSyncs, CloudSnapshots)
@@ -409,7 +409,7 @@ func TestWave7CloudSnapshotCRUD(t *testing.T) {
 	minSnaps := 1
 	snapshot, err := client.CloudSnapshots.Create(ctx, &vergeos.CloudSnapshotCreateRequest{
 		Name:         "sdk-wave7-test-snapshot",
-		Description:  "SDK integration test snapshot - safe to delete",
+		Description:  "goVergeOS integration test snapshot - safe to delete",
 		Retention:    &retention,
 		MinSnapshots: &minSnaps,
 	})
@@ -437,7 +437,7 @@ func TestWave7CloudSnapshotCRUD(t *testing.T) {
 	t.Logf("Read snapshot: [%d] %s Status=%q Expires=%d", snapshotID, snapshot.Name, snapshot.Status, snapshot.Expires)
 
 	// Update
-	newDesc := "Updated SDK test snapshot"
+	newDesc := "Updated goVergeOS test snapshot"
 	snapshot, err = client.CloudSnapshots.Update(ctx, snapshotID, &vergeos.CloudSnapshotUpdateRequest{
 		Description: &newDesc,
 	})

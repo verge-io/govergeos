@@ -1,12 +1,12 @@
-# VergeOS Go SDK
+# goVergeOS
 
 A Go client library for interacting with the VergeOS API.
 
 ## Overview
 
-The VergeOS Go SDK provides a convenient way to interact with VergeOS infrastructure from Go applications. It handles authentication, request building, and response parsing, allowing you to focus on building your application.
+goVergeOS provides a convenient way to interact with VergeOS infrastructure from Go applications. It handles authentication, request building, and response parsing, allowing you to focus on building your application.
 
-This SDK serves as the foundation for other VergeOS tooling including the [Terraform Provider](https://github.com/verge-io/terraform-provider-vergeio) and [Prometheus Exporter](https://github.com/verge-io/vergeos-exporter).
+This library serves as the foundation for other VergeOS tooling including the [Terraform Provider](https://github.com/verge-io/terraform-provider-vergeio) and [Prometheus Exporter](https://github.com/verge-io/vergeos-exporter).
 
 ## Features
 
@@ -22,7 +22,7 @@ This SDK serves as the foundation for other VergeOS tooling including the [Terra
 ## Installation
 
 ```bash
-go get github.com/verge-io/vergeos-go-sdk
+go get github.com/verge-io/goVergeOS
 ```
 
 ## Quick Start
@@ -35,7 +35,7 @@ import (
     "fmt"
     "log"
 
-    vergeos "github.com/verge-io/vergeos-go-sdk"
+    vergeos "github.com/verge-io/goVergeOS"
 )
 
 func main() {
@@ -75,7 +75,7 @@ func main() {
 
 ### Authentication
 
-The SDK uses HTTP Basic Authentication. You can use either a "Normal" user or an "API" user account.
+The library uses HTTP Basic Authentication. You can use either a "Normal" user or an "API" user account.
 
 **Requirements:**
 - User must have list and read permissions on the cloud
@@ -83,7 +83,7 @@ The SDK uses HTTP Basic Authentication. You can use either a "Normal" user or an
 
 ## API Resources
 
-The SDK provides access to the following VergeOS resources:
+The library provides access to the following VergeOS resources:
 
 ### Virtual Machines
 
@@ -1176,7 +1176,7 @@ err = client.UserAPIKeys.Delete(ctx, keyID)
 
 ### Additional Resources
 
-The SDK also supports:
+The library also supports:
 - **Media Sources** - ISO images and media files
 - **CloudInit Files** - Cloud-init configuration management
 - **Resource Groups** - Logical grouping of resources
@@ -1244,7 +1244,7 @@ vms, err := client.VMs.List(ctx,
 
 ## Error Handling
 
-The SDK returns typed errors for common scenarios:
+The library returns typed errors for common scenarios:
 
 ```go
 node, err := client.Nodes.Get(ctx, nodeID)
@@ -1262,7 +1262,7 @@ if err != nil {
 
 ## Thread Safety
 
-The SDK client is safe for concurrent use. You can share a single client instance across multiple goroutines.
+The client is safe for concurrent use. You can share a single client instance across multiple goroutines.
 
 ## Examples
 
@@ -1290,7 +1290,7 @@ See the [examples](./examples) directory for complete working examples:
 
 ## API Endpoints Reference
 
-The SDK wraps the VergeOS API v4 (`/api/v4/`). Key endpoints include:
+goVergeOS wraps the VergeOS API v4 (`/api/v4/`). Key endpoints include:
 
 | Resource | Endpoint | Operations |
 |----------|----------|------------|

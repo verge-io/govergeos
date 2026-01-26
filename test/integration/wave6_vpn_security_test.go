@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 // TestWave6VPNSecurity tests the Wave 6 VPN and Security services (WireGuard, IPSec, Certificates)
@@ -466,7 +466,7 @@ func TestWave6VPNCRUD(t *testing.T) {
 	t.Log("Creating test network for Wave 6 CRUD tests...")
 	testNetwork, err := client.Networks.Create(ctx, &vergeos.NetworkCreateRequest{
 		Name:        "sdk-wave6-test-network",
-		Description: "Temporary network for Wave 6 SDK integration testing - safe to delete",
+		Description: "Temporary network for Wave 6 goVergeOS integration testing - safe to delete",
 		Network:     "10.253.0.0/24",
 		IPAddress:   "10.253.0.1",
 		DHCPEnabled: ptr(false),
@@ -608,7 +608,7 @@ func TestCertificateCRUD(t *testing.T) {
 	cert, err := client.Certificates.Create(ctx, &vergeos.CertificateCreateRequest{
 		DomainName:  "sdk-test.local",
 		Type:        vergeos.CertificateTypeSelfSigned,
-		Description: "SDK integration test certificate - safe to delete",
+		Description: "goVergeOS integration test certificate - safe to delete",
 		KeyType:     vergeos.CertificateKeyTypeECDSA,
 	})
 	if err != nil {
@@ -634,7 +634,7 @@ func TestCertificateCRUD(t *testing.T) {
 	}
 
 	// Update
-	newDesc := "Updated SDK test certificate"
+	newDesc := "Updated goVergeOS test certificate"
 	cert, err = client.Certificates.Update(ctx, certID, &vergeos.CertificateUpdateRequest{
 		Description: &newDesc,
 	})

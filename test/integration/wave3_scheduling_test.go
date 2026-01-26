@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 // TestWave3Scheduling tests the Wave 3 scheduling services (SnapshotProfiles, SnapshotProfilePeriods)
@@ -144,7 +144,7 @@ func TestWave3SchedulingCRUD(t *testing.T) {
 	t.Log("Creating test snapshot profile...")
 	profile, err := client.SnapshotProfiles.Create(ctx, &vergeos.SnapshotProfileCreateRequest{
 		Name:        "sdk-test-profile",
-		Description: "SDK integration test profile - safe to delete",
+		Description: "goVergeOS integration test profile - safe to delete",
 	})
 	if err != nil {
 		t.Fatalf("SnapshotProfiles.Create failed: %v", err)
@@ -183,7 +183,7 @@ func testSnapshotProfilesCRUD(t *testing.T, ctx context.Context, client *vergeos
 	t.Logf("Read profile: [%d] %s (Description: %q)", profileID, profile.Name, profile.Description)
 
 	// Update
-	newDesc := "Updated SDK test profile description"
+	newDesc := "Updated goVergeOS test profile description"
 	profile, err = client.SnapshotProfiles.Update(ctx, profileID, &vergeos.SnapshotProfileUpdateRequest{
 		Description: &newDesc,
 	})

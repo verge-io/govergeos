@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 // TestWave5Networking tests the Wave 5 networking services (VNetAddresses, VNetDNSViews,
@@ -349,7 +349,7 @@ func TestWave5NetworkingCRUD(t *testing.T) {
 	t.Log("Creating test network for CRUD tests...")
 	testNetwork, err := client.Networks.Create(ctx, &vergeos.NetworkCreateRequest{
 		Name:        "sdk-wave5-test-network",
-		Description: "Temporary network for Wave 5 SDK integration testing - safe to delete",
+		Description: "Temporary network for Wave 5 goVergeOS integration testing - safe to delete",
 		Network:     "10.252.0.0/24",
 		IPAddress:   "10.252.0.1",
 		DHCPEnabled: ptr(false),
@@ -446,7 +446,7 @@ func testVNetAddressesCRUD(t *testing.T, ctx context.Context, client *vergeos.Cl
 		Type:        vergeos.AddressTypeStatic,
 		IP:          "10.252.0.200",
 		Hostname:    "test-static",
-		Description: "SDK integration test address",
+		Description: "goVergeOS integration test address",
 	})
 	if err != nil {
 		t.Fatalf("VNetAddresses.Create failed: %v", err)

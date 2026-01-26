@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/verge-io/vergeos-go-sdk"
+	"github.com/verge-io/goVergeOS"
 )
 
 // TestWave8NASServices tests the NAS services: CIFS shares, NFS shares, and volume browser.
@@ -129,7 +129,7 @@ func TestWave8CIFSShareCRUD(t *testing.T) {
 
 		// Update the share
 		t.Run("UpdateCIFSShare", func(t *testing.T) {
-			comment := "SDK test share"
+			comment := "goVergeOS test share"
 			updated, err := client.VolumeCIFSShares.Update(ctx, share.ID, &vergeos.VolumeCIFSShareUpdateRequest{
 				Comment: &comment,
 			})
@@ -239,7 +239,7 @@ func TestWave8NFSShareCRUD(t *testing.T) {
 
 		// Update the share
 		t.Run("UpdateNFSShare", func(t *testing.T) {
-			desc := "SDK test NFS share"
+			desc := "goVergeOS test NFS share"
 			insecure := true
 			updated, err := client.VolumeNFSShares.Update(ctx, share.ID, &vergeos.VolumeNFSShareUpdateRequest{
 				Description: &desc,

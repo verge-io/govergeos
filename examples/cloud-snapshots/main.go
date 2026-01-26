@@ -17,7 +17,7 @@ import (
 	"os"
 	"time"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 func main() {
@@ -170,7 +170,7 @@ func showCloudSnapshots(ctx context.Context, client *vergeos.Client) {
 	// Example: Create a snapshot (commented out to avoid side effects)
 	// snapshot, err := client.CloudSnapshots.Create(ctx, &vergeos.CloudSnapshotCreateRequest{
 	// 	Name:        "Manual-Backup-" + time.Now().Format("20060102-150405"),
-	// 	Description: "Manual backup created via SDK",
+	// 	Description: "Manual backup created via goVergeOS",
 	// 	Retention:   ptr(7 * 24 * 60 * 60), // 7 days
 	// })
 	// if err != nil {

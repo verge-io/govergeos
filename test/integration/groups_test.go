@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 // TestGroupsList tests listing groups.
@@ -45,7 +45,7 @@ func TestGroupCRUD(t *testing.T) {
 	enabled := true
 	created, err := client.Groups.Create(ctx, &vergeos.GroupCreateRequest{
 		Name:        testName,
-		Description: "SDK integration test group - safe to delete",
+		Description: "goVergeOS integration test group - safe to delete",
 		Enabled:     &enabled,
 	})
 	if err != nil {

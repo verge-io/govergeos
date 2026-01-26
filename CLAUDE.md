@@ -1,11 +1,11 @@
-# VergeOS Go SDK
+# goVergeOS
 
 A Go client library for the VergeOS API (v4), serving as the foundation for the VergeOS Terraform Provider and Prometheus Exporter.
 
 ## Tech Stack
 
 - **Language**: Go 1.21+
-- **Module**: `github.com/verge-io/vergeos-go-sdk`
+- **Module**: `github.com/verge-io/goVergeOS`
 - **Dependencies**: Standard library only (no external deps)
 - **Authentication**: HTTP Basic Auth
 - **Testing**: `go test` (tests not yet implemented)
@@ -13,7 +13,7 @@ A Go client library for the VergeOS API (v4), serving as the foundation for the 
 ## Project Structure
 
 ```
-vergeos-go-sdk/
+goVergeOS/
 ├── client.go             # Client struct, HTTP methods, service init
 ├── options.go            # ListOptions and functional options
 ├── errors.go             # Error types (APIError, NotFoundError, etc.)
@@ -48,7 +48,7 @@ vergeos-go-sdk/
 ├── types_readonly.go     # Read-only resource types
 │
 ├── examples/
-│   ├── basic/            # Basic SDK usage
+│   ├── basic/            # Basic usage
 │   ├── network-management/
 │   └── vm-lifecycle/
 │

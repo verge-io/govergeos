@@ -18,7 +18,7 @@ import (
 	"log"
 	"os"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 func main() {
@@ -63,7 +63,7 @@ func main() {
 
 	// Example cloud-init user-data content
 	cloudConfig := `#cloud-config
-# SDK Example Cloud-Init Configuration
+# goVergeOS Example Cloud-Init Configuration
 
 # Set hostname
 hostname: sdk-example-host

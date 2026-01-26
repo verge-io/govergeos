@@ -19,7 +19,7 @@ import (
 	"os"
 	"time"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 func main() {

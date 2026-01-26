@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 // TestWave1StorageFirewall tests the Wave 1 services (Volumes, VNet Rules, Rule Aliases)
@@ -209,7 +209,7 @@ func TestWave1FirewallCRUD(t *testing.T) {
 	t.Log("Creating test network for CRUD tests...")
 	testNetwork, err := client.Networks.Create(ctx, &vergeos.NetworkCreateRequest{
 		Name:        "sdk-wave1-test-network",
-		Description: "Temporary network for Wave 1 SDK integration testing - safe to delete",
+		Description: "Temporary network for Wave 1 goVergeOS integration testing - safe to delete",
 		Network:     "10.251.0.0/24",
 		IPAddress:   "10.251.0.1",
 		DHCPEnabled: ptr(false),
@@ -247,7 +247,7 @@ func testVNetRulesCRUD(t *testing.T, ctx context.Context, client *vergeos.Client
 	rule, err := client.VNetRules.Create(ctx, &vergeos.VNetRuleCreateRequest{
 		VNet:             networkID,
 		Name:             "sdk-test-rule",
-		Description:      "SDK integration test rule - safe to delete",
+		Description:      "goVergeOS integration test rule - safe to delete",
 		Protocol:         ptr("tcp"),
 		Direction:        ptr("incoming"),
 		DestinationPorts: ptr("8080"),
@@ -269,7 +269,7 @@ func testVNetRulesCRUD(t *testing.T, ctx context.Context, client *vergeos.Client
 	t.Logf("Read rule: [%d] %s (Enabled: %v)", ruleID, rule.Name, rule.Enabled)
 
 	// Update
-	newDesc := "Updated SDK test rule description"
+	newDesc := "Updated goVergeOS test rule description"
 	rule, err = client.VNetRules.Update(ctx, ruleID, &vergeos.VNetRuleUpdateRequest{
 		Description:      &newDesc,
 		DestinationPorts: ptr("8080,8443"),
@@ -342,7 +342,7 @@ func testVNetRuleAliasesCRUD(t *testing.T, ctx context.Context, client *vergeos.
 	// Create
 	alias, err := client.VNetRuleAliases.Create(ctx, &vergeos.VNetRuleAliasCreateRequest{
 		Name:        "sdk-test-alias",
-		Description: "SDK integration test alias - safe to delete",
+		Description: "goVergeOS integration test alias - safe to delete",
 		Value:       "192.168.100.0/24,10.100.0.0/16",
 	})
 	if err != nil {

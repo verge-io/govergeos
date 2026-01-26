@@ -17,7 +17,7 @@ import (
 	"log"
 	"os"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 // ptr returns a pointer to the given value
@@ -61,7 +61,7 @@ func main() {
 	fmt.Println("\n=== Creating Snapshot Profile ===")
 	profile, err := client.SnapshotProfiles.Create(ctx, &vergeos.SnapshotProfileCreateRequest{
 		Name:        "sdk-example-profile",
-		Description: "Example profile created by VergeOS Go SDK",
+		Description: "Example profile created by goVergeOS",
 	})
 	if err != nil {
 		log.Fatalf("Failed to create snapshot profile: %v", err)

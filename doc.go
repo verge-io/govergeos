@@ -1,6 +1,6 @@
 // Package vergeos provides a Go client library for the VergeOS API.
 //
-// The SDK provides a convenient way to interact with VergeOS infrastructure
+// goVergeOS provides a convenient way to interact with VergeOS infrastructure
 // from Go applications. It handles authentication, request building, and
 // response parsing.
 //
@@ -32,7 +32,7 @@
 //
 // # Authentication
 //
-// The SDK uses HTTP Basic Authentication. You can use either a "Normal" user
+// The library uses HTTP Basic Authentication. You can use either a "Normal" user
 // or an "API" user account. MFA must be disabled for the user account.
 //
 // # Query Options
@@ -47,7 +47,7 @@
 //
 // # Error Handling
 //
-// The SDK provides typed errors and helper functions:
+// The library provides typed errors and helper functions:
 //
 //	vm, err := client.VMs.Get(ctx, vmID)
 //	if vergeos.IsNotFoundError(err) {

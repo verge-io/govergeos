@@ -1,6 +1,6 @@
-// Integration test: List all SDK resources
+// Integration test: List all goVergeOS resources
 //
-// This tests the SDK's List methods against a live VergeOS instance.
+// This tests goVergeOS List methods against a live VergeOS instance.
 //
 // Usage:
 //
@@ -16,7 +16,7 @@ import (
 	"log"
 	"os"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 func main() {

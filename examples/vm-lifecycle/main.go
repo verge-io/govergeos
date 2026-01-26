@@ -17,7 +17,7 @@ import (
 	"log"
 	"os"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 func main() {
@@ -46,7 +46,7 @@ func main() {
 	fmt.Println("Creating VM...")
 	vm, err := client.VMs.Create(ctx, &vergeos.VMCreateRequest{
 		Name:        "sdk-example-vm",
-		Description: "Created by VergeOS Go SDK example",
+		Description: "Created by goVergeOS example",
 		CPUCores:    2,
 		RAM:         2048, // 2GB
 		OSFamily:    "linux",

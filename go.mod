@@ -1,3 +1,3 @@
-module github.com/verge-io/vergeos-go-sdk
+module github.com/verge-io/goVergeOS
 
 go 1.21

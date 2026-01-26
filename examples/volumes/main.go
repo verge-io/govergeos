@@ -20,7 +20,7 @@ import (
 	"log"
 	"os"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 func main() {
@@ -126,7 +126,7 @@ func main() {
 	showVolumeSharesExample(ctx, client)
 
 	fmt.Println("\n=== Volume Operations Reference ===")
-	fmt.Println("The SDK supports the following volume operations:")
+	fmt.Println("goVergeOS supports the following volume operations:")
 	fmt.Println("  - client.Volumes.List(ctx)                    - List all volumes")
 	fmt.Println("  - client.Volumes.ListByService(ctx, svcID)    - List volumes by NAS service")
 	fmt.Println("  - client.Volumes.Get(ctx, id)                 - Get volume by SHA1 ID")

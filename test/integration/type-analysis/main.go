@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"os"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 var (
@@ -71,7 +71,7 @@ func main() {
 		log.Fatal("Please set VERGEOS_HOST, VERGEOS_USERNAME, and VERGEOS_PASSWORD environment variables")
 	}
 
-	// Verify SDK still works
+	// Verify goVergeOS still works
 	_, err := vergeos.NewClient(
 		vergeos.WithBaseURL(apiHost),
 		vergeos.WithCredentials(apiUser, apiPassword),

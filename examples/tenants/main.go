@@ -19,7 +19,7 @@ import (
 	"os"
 	"time"
 
-	vergeos "github.com/verge-io/vergeos-go-sdk"
+	vergeos "github.com/verge-io/goVergeOS"
 )
 
 func main() {
@@ -64,7 +64,7 @@ func main() {
 	tenantName := fmt.Sprintf("sdk-example-tenant-%d", time.Now().Unix())
 	tenant, err := client.Tenants.Create(ctx, &vergeos.TenantCreateRequest{
 		Name:        tenantName,
-		Description: "Created by VergeOS Go SDK example",
+		Description: "Created by goVergeOS example",
 		Password:    "SecureP@ssw0rd!", // Admin password for the tenant
 	})
 	if err != nil {
@@ -149,7 +149,7 @@ func main() {
 	// Update tenant settings
 	// =========================================================================
 	fmt.Println("\n=== Updating Tenant Settings ===")
-	newDesc := "Updated by SDK example - multi-tenant demo"
+	newDesc := "Updated by goVergeOS example - multi-tenant demo"
 	allowBranding := true
 	tenant, err = client.Tenants.Update(ctx, int(tenant.Key), &vergeos.TenantUpdateRequest{
 		Description:   &newDesc,
