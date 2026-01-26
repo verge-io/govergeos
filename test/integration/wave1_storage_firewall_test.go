@@ -283,19 +283,39 @@ func testVNetRulesCRUD(t *testing.T, ctx context.Context, client *vergeos.Client
 		t.Logf("Updated rule: Description=%q, DestinationPorts=%q", rule.Description, rule.DestinationPorts)
 	}
 
-	// Test Enable/Disable (these use action endpoints that may not exist in all versions)
-	err = client.VNetRules.Disable(ctx, ruleID, false, false)
+	// Test Enable/Disable (these update the enabled field via PUT)
+	err = client.VNetRules.Disable(ctx, ruleID, false)
 	if err != nil {
-		t.Logf("VNetRules.Disable not available: %v (this is expected if vnet_rule_actions endpoint doesn't exist)", err)
+		t.Errorf("VNetRules.Disable failed: %v", err)
 	} else {
 		t.Log("Disabled rule successfully")
 	}
 
-	err = client.VNetRules.Enable(ctx, ruleID, false, false)
+	// Verify disabled
+	rule, err = client.VNetRules.Get(ctx, ruleID)
 	if err != nil {
-		t.Logf("VNetRules.Enable not available: %v (this is expected if vnet_rule_actions endpoint doesn't exist)", err)
+		t.Errorf("Failed to verify disabled state: %v", err)
+	} else if rule.Enabled {
+		t.Error("Rule should be disabled but Enabled=true")
+	} else {
+		t.Log("Verified rule is disabled")
+	}
+
+	err = client.VNetRules.Enable(ctx, ruleID, false)
+	if err != nil {
+		t.Errorf("VNetRules.Enable failed: %v", err)
 	} else {
 		t.Log("Enabled rule successfully")
+	}
+
+	// Verify enabled
+	rule, err = client.VNetRules.Get(ctx, ruleID)
+	if err != nil {
+		t.Errorf("Failed to verify enabled state: %v", err)
+	} else if !rule.Enabled {
+		t.Error("Rule should be enabled but Enabled=false")
+	} else {
+		t.Log("Verified rule is enabled")
 	}
 
 	// Delete

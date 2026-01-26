@@ -214,8 +214,8 @@ type VNetRuleServiceInterface interface {
 	Create(ctx context.Context, req *VNetRuleCreateRequest) (*VNetRule, error)
 	Update(ctx context.Context, id int, req *VNetRuleUpdateRequest) (*VNetRule, error)
 	Delete(ctx context.Context, id int) error
-	Enable(ctx context.Context, id int, apply bool, forceApply bool) error
-	Disable(ctx context.Context, id int, apply bool, forceApply bool) error
+	Enable(ctx context.Context, id int, apply bool) error
+	Disable(ctx context.Context, id int, apply bool) error
 }
 
 // VNetRuleAliasServiceInterface defines the interface for network rule alias operations.

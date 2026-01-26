@@ -131,55 +131,47 @@ func (s *VNetRuleService) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-// Enable enables a firewall rule.
+// Enable enables a firewall rule by setting its enabled field to true.
 // If apply is true, firewall rules are automatically applied to the network.
-// If forceApply is true, rules are applied even if there are other pending changes.
-func (s *VNetRuleService) Enable(ctx context.Context, id int, apply bool, forceApply bool) error {
-	action := vnetRuleAction{
-		Rule:   id,
-		Action: "enable",
-		Params: vnetRuleActionParams{
-			Apply:      apply,
-			ForceApply: forceApply,
-		},
-	}
-
-	if err := s.client.post(ctx, "/vnet_rule_actions", action, nil); err != nil {
-		return fmt.Errorf("vergeos: failed to enable rule %d: %w", id, err)
-	}
-	return nil
+//
+// Note: The VergeOS API does not expose a vnet_rule_actions endpoint, so this method
+// updates the enabled field directly via PUT and optionally applies rules via vnet_actions.
+// See ADR-015 for details.
+func (s *VNetRuleService) Enable(ctx context.Context, id int, apply bool) error {
+	return s.setEnabled(ctx, id, true, apply)
 }
 
-// Disable disables a firewall rule.
+// Disable disables a firewall rule by setting its enabled field to false.
 // If apply is true, firewall rules are automatically applied to the network.
-// If forceApply is true, rules are applied even if there are other pending changes.
-func (s *VNetRuleService) Disable(ctx context.Context, id int, apply bool, forceApply bool) error {
-	action := vnetRuleAction{
-		Rule:   id,
-		Action: "disable",
-		Params: vnetRuleActionParams{
-			Apply:      apply,
-			ForceApply: forceApply,
-		},
-	}
+//
+// Note: The VergeOS API does not expose a vnet_rule_actions endpoint, so this method
+// updates the enabled field directly via PUT and optionally applies rules via vnet_actions.
+// See ADR-015 for details.
+func (s *VNetRuleService) Disable(ctx context.Context, id int, apply bool) error {
+	return s.setEnabled(ctx, id, false, apply)
+}
 
-	if err := s.client.post(ctx, "/vnet_rule_actions", action, nil); err != nil {
+// setEnabled is a helper that sets the enabled state and optionally applies rules.
+func (s *VNetRuleService) setEnabled(ctx context.Context, id int, enabled bool, apply bool) error {
+	// Update the enabled field
+	rule, err := s.Update(ctx, id, &VNetRuleUpdateRequest{Enabled: &enabled})
+	if err != nil {
+		if enabled {
+			return fmt.Errorf("vergeos: failed to enable rule %d: %w", id, err)
+		}
 		return fmt.Errorf("vergeos: failed to disable rule %d: %w", id, err)
 	}
+
+	// Optionally apply firewall rules to the network
+	if apply && rule.VNet > 0 {
+		// Use the network service to apply rules
+		// Note: We access the client's Networks service directly
+		if err := s.client.Networks.ApplyRules(ctx, int(rule.VNet)); err != nil {
+			return fmt.Errorf("vergeos: rule %d updated but failed to apply rules to network %d: %w", id, int(rule.VNet), err)
+		}
+	}
+
 	return nil
-}
-
-// vnetRuleAction represents a rule action request.
-type vnetRuleAction struct {
-	Rule   int                  `json:"vnet_rule"`
-	Action string               `json:"action"`
-	Params vnetRuleActionParams `json:"params"`
-}
-
-// vnetRuleActionParams are the parameters for rule actions.
-type vnetRuleActionParams struct {
-	Apply      bool `json:"apply"`
-	ForceApply bool `json:"force_apply"`
 }
 
 // VNetRuleAliasService handles network rule alias operations.

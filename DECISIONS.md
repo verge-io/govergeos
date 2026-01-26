@@ -375,3 +375,57 @@ func (s *VolumeService) Delete(ctx context.Context, id string) error
 **Related:**
 - ADR-002 (FlexInt Type for ID Handling) - contrast with integer key handling
 - ADR-013 (API Schema Source) - verifying types against live API
+
+---
+
+## ADR-015: VNet Rule Enable/Disable Uses PUT Instead of Action Endpoint
+
+**Date:** 2026-01-26
+
+**Status:** Accepted
+
+**Context:** The VNet Rules service initially implemented `Enable()` and `Disable()` methods that attempted to POST to a `/vnet_rule_actions` endpoint, following the pattern used by VMs (`/vm_actions`) and Networks (`/vnet_actions`). However, integration testing revealed this endpoint does not exist.
+
+Analysis of the API schema showed:
+1. The `vnet_rules.json` schema defines `enable` and `disable` actions within the table schema (lines 358-412)
+2. No `vnet_rule_actions.json` endpoint file exists in the schema (45 other `*_actions.json` files exist)
+3. The main `v4.json` schema has no `vnet_rule_actions` entry
+4. The `enabled` field is a standard writable boolean field on the rule
+
+This is an exception to the typical VergeOS API pattern where resources have dedicated `*_actions` endpoints for state-changing operations.
+
+**Decision:** Implement `Enable()` and `Disable()` methods using PUT to update the `enabled` field directly, then optionally call `Networks.ApplyRules()` to apply the changes.
+
+```go
+func (s *VNetRuleService) Enable(ctx context.Context, id int, apply bool) error {
+    return s.setEnabled(ctx, id, true, apply)
+}
+
+func (s *VNetRuleService) setEnabled(ctx context.Context, id int, enabled bool, apply bool) error {
+    rule, err := s.Update(ctx, id, &VNetRuleUpdateRequest{Enabled: &enabled})
+    if err != nil {
+        return err
+    }
+    if apply && rule.VNet > 0 {
+        return s.client.Networks.ApplyRules(ctx, int(rule.VNet))
+    }
+    return nil
+}
+```
+
+**Rationale:**
+- The `/vnet_rule_actions` endpoint does not exist in the VergeOS API
+- Updating the `enabled` field via PUT is the standard RESTful approach
+- The `Networks.ApplyRules()` method already exists and correctly calls `/vnet_actions` with action "apply"
+- This approach composes existing, working functionality rather than inventing new endpoints
+- Removed the `forceApply` parameter since the underlying `ApplyRules()` doesn't support it
+
+**Consequences:**
+- Breaking change: `Enable()` and `Disable()` signatures changed from `(id, apply, forceApply)` to `(id, apply)`
+- Method now requires two API calls when `apply=true` (PUT + POST to vnet_actions)
+- Follows RESTful conventions more closely than action-based approach
+- Documents an API exception that future maintainers should be aware of
+
+**Related:**
+- ADR-013 (API Schema Source) - importance of verifying against live API
+- `.claude/reference/API-Schema/ENDPOINTS.md` - documents this exception
