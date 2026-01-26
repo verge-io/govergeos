@@ -30,6 +30,8 @@ type Client struct {
 	username string
 	// password is the API password.
 	password string
+	// apiKey is the API key for Bearer token authentication (alternative to username/password).
+	apiKey string
 	// httpClient is the HTTP client used for requests.
 	httpClient *http.Client
 	// userAgent is the User-Agent header sent with requests.
@@ -106,10 +108,20 @@ func WithBaseURL(baseURL string) ClientOption {
 }
 
 // WithCredentials sets the username and password for API authentication.
+// This uses HTTP Basic Authentication.
 func WithCredentials(username, password string) ClientOption {
 	return func(c *Client) error {
 		c.username = username
 		c.password = password
+		return nil
+	}
+}
+
+// WithAPIKey sets the API key for Bearer token authentication.
+// This is an alternative to WithCredentials - use one or the other.
+func WithAPIKey(apiKey string) ClientOption {
+	return func(c *Client) error {
+		c.apiKey = apiKey
 		return nil
 	}
 }
@@ -183,8 +195,10 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	if c.baseURL == "" {
 		return nil, fmt.Errorf("vergeos: base URL is required (use WithBaseURL)")
 	}
-	if c.username == "" || c.password == "" {
-		return nil, fmt.Errorf("vergeos: credentials are required (use WithCredentials)")
+	hasCredentials := c.username != "" && c.password != ""
+	hasAPIKey := c.apiKey != ""
+	if !hasCredentials && !hasAPIKey {
+		return nil, fmt.Errorf("vergeos: authentication required (use WithCredentials or WithAPIKey)")
 	}
 
 	// Initialize services
@@ -277,8 +291,12 @@ func (c *Client) request(ctx context.Context, method, endpoint string, body inte
 		return nil, fmt.Errorf("vergeos: failed to create request: %w", err)
 	}
 
-	// Set headers
-	req.SetBasicAuth(c.username, c.password)
+	// Set authentication header
+	if c.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	} else {
+		req.SetBasicAuth(c.username, c.password)
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
