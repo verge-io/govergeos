@@ -125,7 +125,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 
 | Service | Description |
 |---------|-------------|
-| `Networks` | Virtual network CRUD and power control |
+| `Networks` | Virtual network CRUD, power control, diagnostics, and statistics |
 | `VNetRules` | Firewall rule management |
 | `VNetRuleAliases` | IP/port alias groups for rules |
 | `VNetAddresses` | IP address management (static, DHCP, aliases) |
@@ -183,7 +183,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 
 | Service | Description |
 |---------|-------------|
-| `Clusters` | Cluster information and status |
+| `Clusters` | Cluster CRUD operations, status monitoring, and configuration |
 | `Nodes` | Node information |
 | `Settings` | System settings (read-only) |
 | `Schema` | API schema introspection |

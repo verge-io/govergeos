@@ -457,3 +457,109 @@ func (n *Network) GetDNSServers() []string {
 	}
 	return servers
 }
+
+// NetworkQuery represents a network diagnostic query (vnet_queries).
+// This is an async job system for running diagnostic commands on networks.
+type NetworkQuery struct {
+	// ID is the unique identifier for the query (40-char SHA1 hash).
+	ID string `json:"id,omitempty"`
+	// VNet is the network ID the query is running against.
+	VNet FlexInt `json:"vnet,omitempty"`
+	// Query is the type of diagnostic query.
+	// Valid values: logs, top, top_if, tcpdump, ping, dns, traceroute, ip, ipsec,
+	// whatsmyip, arp, arp-scan, frr, trace, dhcp_release_renew, wireguard, firewall, nmap, tcp_connect
+	Query string `json:"query,omitempty"`
+	// Params contains query-specific parameters (JSON object).
+	Params map[string]interface{} `json:"params,omitempty"`
+	// Status is the query status (running, error, complete).
+	Status string `json:"status,omitempty"`
+	// Result is the query output.
+	Result string `json:"result,omitempty"`
+	// Command is the command used to execute the query.
+	Command string `json:"command,omitempty"`
+	// Created is the creation timestamp (microseconds).
+	Created int64 `json:"created,omitempty"`
+	// Modified is the last modified timestamp.
+	Modified int64 `json:"modified,omitempty"`
+	// Expires is the expiration timestamp.
+	Expires int64 `json:"expires,omitempty"`
+}
+
+// NetworkQueryRequest is the request body for creating a diagnostic query.
+type NetworkQueryRequest struct {
+	// VNet is the network ID to run the query against (required).
+	VNet int `json:"vnet"`
+	// Query is the type of diagnostic query (required).
+	// Valid values: logs, top, top_if, tcpdump, ping, dns, traceroute, ip, ipsec,
+	// whatsmyip, arp, arp-scan, frr, trace, dhcp_release_renew, wireguard, firewall, nmap, tcp_connect
+	Query string `json:"query"`
+	// Params contains query-specific parameters.
+	Params map[string]interface{} `json:"params,omitempty"`
+}
+
+// NetworkMonitorStats represents network monitoring statistics.
+// These are collected when gateway monitoring is enabled on a network.
+type NetworkMonitorStats struct {
+	// Key is the unique identifier for the stats record.
+	Key FlexInt `json:"$key,omitempty"`
+	// VNet is the network ID.
+	VNet FlexInt `json:"vnet,omitempty"`
+	// Sent is the number of monitoring packets sent.
+	Sent int `json:"sent,omitempty"`
+	// Quality is the network quality percentage (100 - dropped_pct).
+	Quality int `json:"quality,omitempty"`
+	// DroppedPct is the percentage of dropped packets.
+	DroppedPct int `json:"dropped_pct,omitempty"`
+	// LatencyUSAvg is the average latency in microseconds.
+	LatencyUSAvg int `json:"latency_usec_avg,omitempty"`
+	// LatencyUSPeak is the peak latency in microseconds.
+	LatencyUSPeak int `json:"latency_usec_peak,omitempty"`
+	// Duplicates is the number of duplicate packets.
+	Duplicates int `json:"duplicates,omitempty"`
+	// Truncated is the number of truncated packets.
+	Truncated int `json:"truncated,omitempty"`
+	// Dropped is the number of dropped packets.
+	Dropped int `json:"dropped,omitempty"`
+	// BadChecksums is the number of packets with bad checksums.
+	BadChecksums int `json:"bad_checksums,omitempty"`
+	// BadData is the number of packets with bad data.
+	BadData int `json:"bad_data,omitempty"`
+	// Timestamp is the stats timestamp.
+	Timestamp int64 `json:"timestamp,omitempty"`
+}
+
+// Query type constants for network diagnostics.
+const (
+	NetworkQueryLogs             = "logs"
+	NetworkQueryTopCPU           = "top"
+	NetworkQueryTopNetwork       = "top_if"
+	NetworkQueryTCPDump          = "tcpdump"
+	NetworkQueryPing             = "ping"
+	NetworkQueryDNS              = "dns"
+	NetworkQueryTraceroute       = "traceroute"
+	NetworkQueryIP               = "ip"
+	NetworkQueryIPSec            = "ipsec"
+	NetworkQueryWhatsMyIP        = "whatsmyip"
+	NetworkQueryARP              = "arp"
+	NetworkQueryARPScan          = "arp-scan"
+	NetworkQueryFRR              = "frr"
+	NetworkQueryTrace            = "trace"
+	NetworkQueryDHCPReleaseRenew = "dhcp_release_renew"
+	NetworkQueryWireGuard        = "wireguard"
+	NetworkQueryFirewall         = "firewall"
+	NetworkQueryNmap             = "nmap"
+	NetworkQueryTCPConnect       = "tcp_connect"
+)
+
+// Query status constants.
+const (
+	NetworkQueryStatusRunning  = "running"
+	NetworkQueryStatusError    = "error"
+	NetworkQueryStatusComplete = "complete"
+)
+
+// networkQueryFields are the fields to request when listing network queries.
+const networkQueryFields = "id,vnet,query,params,status,result,command,created,modified,expires"
+
+// networkMonitorStatsFields are the fields to request when listing network monitor stats.
+const networkMonitorStatsFields = "$key,vnet,sent,quality,dropped_pct,latency_usec_avg,latency_usec_peak,duplicates,truncated,dropped,bad_checksums,bad_data,timestamp"

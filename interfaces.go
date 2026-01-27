@@ -82,6 +82,17 @@ type NetworkServiceInterface interface {
 	Reset(ctx context.Context, id int, applyFirewall bool) error
 	ApplyRules(ctx context.Context, id int) error
 	ApplyDNS(ctx context.Context, id int) error
+	// Diagnostics
+	RunQuery(ctx context.Context, req *NetworkQueryRequest) (*NetworkQuery, error)
+	GetQuery(ctx context.Context, id string) (*NetworkQuery, error)
+	RunQueryWait(ctx context.Context, req *NetworkQueryRequest) (*NetworkQuery, error)
+	Ping(ctx context.Context, networkID int, target string, count int) (*NetworkQuery, error)
+	Traceroute(ctx context.Context, networkID int, target string) (*NetworkQuery, error)
+	DNSLookup(ctx context.Context, networkID int, hostname string) (*NetworkQuery, error)
+	GetDiagnostics(ctx context.Context, id int) (*NetworkQuery, error)
+	// Statistics
+	GetStatistics(ctx context.Context, id int) ([]NetworkMonitorStats, error)
+	GetLatestStatistics(ctx context.Context, id int) (*NetworkMonitorStats, error)
 }
 
 // UserServiceInterface defines the interface for User operations.
@@ -137,6 +148,9 @@ type ClusterServiceInterface interface {
 	Get(ctx context.Context, id int) (*Cluster, error)
 	GetByName(ctx context.Context, name string) (*Cluster, error)
 	GetStatus(ctx context.Context, id int) (*ClusterStatus, error)
+	Create(ctx context.Context, req *ClusterCreateRequest) (*Cluster, error)
+	Update(ctx context.Context, id int, req *ClusterUpdateRequest) (*Cluster, error)
+	Delete(ctx context.Context, id int) error
 }
 
 // GroupServiceInterface defines the interface for Group operations.

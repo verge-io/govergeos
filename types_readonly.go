@@ -414,6 +414,146 @@ type TableField struct {
 	Required bool `json:"required,omitempty"`
 }
 
+// ClusterCreateRequest is the request body for creating a cluster.
+type ClusterCreateRequest struct {
+	// Name is the cluster name (required).
+	Name string `json:"name"`
+	// Description is the cluster description.
+	Description string `json:"description,omitempty"`
+	// Enabled indicates whether the cluster is enabled (default: true).
+	Enabled *bool `json:"enabled,omitempty"`
+	// Compute indicates whether this is a compute cluster.
+	Compute *bool `json:"compute,omitempty"`
+	// KVMNested enables nested virtualization.
+	KVMNested *bool `json:"kvm_nested,omitempty"`
+	// AllowNestedVirtMigration allows live migration of nested virtualization VMs.
+	AllowNestedVirtMigration *bool `json:"allow_nested_virt_migration,omitempty"`
+	// AllowVGPUMigration allows live migration of vGPU VMs (experimental).
+	AllowVGPUMigration *bool `json:"allow_vgpu_migration,omitempty"`
+	// EnableSplitLockDetection enables split lock detection.
+	EnableSplitLockDetection *bool `json:"enable_split_lock_detection,omitempty"`
+	// DefaultCPU is the default CPU type for VMs.
+	DefaultCPU *string `json:"default_cpu,omitempty"`
+	// DisableCPUSecurityMitigations disables CPU security mitigations.
+	DisableCPUSecurityMitigations *bool `json:"disable_cpu_security_mitigations,omitempty"`
+	// SpecStoreBypassDisable disables speculative store bypass.
+	SpecStoreBypassDisable *bool `json:"spec_store_bypass_disable,omitempty"`
+	// DisableSMT disables hyper-threading.
+	DisableSMT *bool `json:"disable_smt,omitempty"`
+	// DisableSleep disables CPU sleep states.
+	DisableSleep *bool `json:"disable_sleep,omitempty"`
+	// EnableNVMEPowerManagement enables NVMe power management.
+	EnableNVMEPowerManagement *bool `json:"enable_nvme_power_management,omitempty"`
+	// X86EnergyPerfPolicy is the energy-performance policy.
+	X86EnergyPerfPolicy *string `json:"x86_energy_perf_policy,omitempty"`
+	// ScalingGovernor is the CPU scaling governor.
+	ScalingGovernor *string `json:"scaling_governor,omitempty"`
+	// RAMPerUnit is the RAM per billing unit in MB.
+	RAMPerUnit *int `json:"ram_per_unit,omitempty"`
+	// CoresPerUnit is the cores per billing unit.
+	CoresPerUnit *int `json:"cores_per_unit,omitempty"`
+	// CostPerUnit is the cost per unit.
+	CostPerUnit *float64 `json:"cost_per_unit,omitempty"`
+	// PricePerUnit is the price per unit.
+	PricePerUnit *float64 `json:"price_per_unit,omitempty"`
+	// MaxRAMPerVM is the maximum RAM per VM in MB.
+	MaxRAMPerVM *int `json:"max_ram_per_vm,omitempty"`
+	// MaxCoresPerVM is the maximum cores per VM.
+	MaxCoresPerVM *int `json:"max_cores_per_vm,omitempty"`
+	// StorageCacheSize is the storage cache per node in MB.
+	StorageCacheSize *int `json:"storage_cachesize,omitempty"`
+	// StorageBufferSize is the storage buffer per node in MB.
+	StorageBufferSize *int `json:"storage_buffersize,omitempty"`
+	// StorageHugepages indicates whether to allocate hugepages for storage.
+	StorageHugepages *bool `json:"storage_hugepages,omitempty"`
+	// TargetRAMPct is the target maximum RAM percentage (0-100).
+	TargetRAMPct *float64 `json:"target_ram_pct,omitempty"`
+	// RAMOvercommitPct is the percentage of reserve RAM to use for machines (0-100).
+	RAMOvercommitPct *float64 `json:"ram_overcommit_pct,omitempty"`
+	// SwapTier is the tier used for swap (-1 to 5, -1 = disabled).
+	SwapTier *int `json:"swap_tier,omitempty"`
+	// SwapPerDrive is the swap space per drive in MB.
+	SwapPerDrive *int `json:"swap_per_drive,omitempty"`
+	// LogFilter is the system log filter expression.
+	LogFilter *string `json:"log_filter,omitempty"`
+	// MaxCoreTemp is the maximum core temperature in Celsius (0 = disabled).
+	MaxCoreTemp *int `json:"max_core_temp,omitempty"`
+	// MaxCoreTempWarnPerc is the warning threshold percentage of max core temp.
+	MaxCoreTempWarnPerc *int `json:"max_core_temp_warn_perc,omitempty"`
+	// CriticalCoreTemp is the critical core temperature in Celsius (0 = disabled).
+	CriticalCoreTemp *int `json:"critical_core_temp,omitempty"`
+}
+
+// ClusterUpdateRequest is the request body for updating a cluster.
+type ClusterUpdateRequest struct {
+	// Name is the cluster name.
+	Name *string `json:"name,omitempty"`
+	// Description is the cluster description.
+	Description *string `json:"description,omitempty"`
+	// Enabled indicates whether the cluster is enabled.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Compute indicates whether this is a compute cluster.
+	Compute *bool `json:"compute,omitempty"`
+	// KVMNested enables nested virtualization.
+	KVMNested *bool `json:"kvm_nested,omitempty"`
+	// AllowNestedVirtMigration allows live migration of nested virtualization VMs.
+	AllowNestedVirtMigration *bool `json:"allow_nested_virt_migration,omitempty"`
+	// AllowVGPUMigration allows live migration of vGPU VMs (experimental).
+	AllowVGPUMigration *bool `json:"allow_vgpu_migration,omitempty"`
+	// EnableSplitLockDetection enables split lock detection.
+	EnableSplitLockDetection *bool `json:"enable_split_lock_detection,omitempty"`
+	// DefaultCPU is the default CPU type for VMs.
+	DefaultCPU *string `json:"default_cpu,omitempty"`
+	// DisableCPUSecurityMitigations disables CPU security mitigations.
+	DisableCPUSecurityMitigations *bool `json:"disable_cpu_security_mitigations,omitempty"`
+	// SpecStoreBypassDisable disables speculative store bypass.
+	SpecStoreBypassDisable *bool `json:"spec_store_bypass_disable,omitempty"`
+	// DisableSMT disables hyper-threading.
+	DisableSMT *bool `json:"disable_smt,omitempty"`
+	// DisableSleep disables CPU sleep states.
+	DisableSleep *bool `json:"disable_sleep,omitempty"`
+	// EnableNVMEPowerManagement enables NVMe power management.
+	EnableNVMEPowerManagement *bool `json:"enable_nvme_power_management,omitempty"`
+	// X86EnergyPerfPolicy is the energy-performance policy.
+	X86EnergyPerfPolicy *string `json:"x86_energy_perf_policy,omitempty"`
+	// ScalingGovernor is the CPU scaling governor.
+	ScalingGovernor *string `json:"scaling_governor,omitempty"`
+	// RAMPerUnit is the RAM per billing unit in MB.
+	RAMPerUnit *int `json:"ram_per_unit,omitempty"`
+	// CoresPerUnit is the cores per billing unit.
+	CoresPerUnit *int `json:"cores_per_unit,omitempty"`
+	// CostPerUnit is the cost per unit.
+	CostPerUnit *float64 `json:"cost_per_unit,omitempty"`
+	// PricePerUnit is the price per unit.
+	PricePerUnit *float64 `json:"price_per_unit,omitempty"`
+	// MaxRAMPerVM is the maximum RAM per VM in MB.
+	MaxRAMPerVM *int `json:"max_ram_per_vm,omitempty"`
+	// MaxCoresPerVM is the maximum cores per VM.
+	MaxCoresPerVM *int `json:"max_cores_per_vm,omitempty"`
+	// StorageCacheSize is the storage cache per node in MB.
+	StorageCacheSize *int `json:"storage_cachesize,omitempty"`
+	// StorageBufferSize is the storage buffer per node in MB.
+	StorageBufferSize *int `json:"storage_buffersize,omitempty"`
+	// StorageHugepages indicates whether to allocate hugepages for storage.
+	StorageHugepages *bool `json:"storage_hugepages,omitempty"`
+	// TargetRAMPct is the target maximum RAM percentage (0-100).
+	TargetRAMPct *float64 `json:"target_ram_pct,omitempty"`
+	// RAMOvercommitPct is the percentage of reserve RAM to use for machines (0-100).
+	RAMOvercommitPct *float64 `json:"ram_overcommit_pct,omitempty"`
+	// SwapTier is the tier used for swap (-1 to 5, -1 = disabled).
+	SwapTier *int `json:"swap_tier,omitempty"`
+	// SwapPerDrive is the swap space per drive in MB.
+	SwapPerDrive *int `json:"swap_per_drive,omitempty"`
+	// LogFilter is the system log filter expression.
+	LogFilter *string `json:"log_filter,omitempty"`
+	// MaxCoreTemp is the maximum core temperature in Celsius (0 = disabled).
+	MaxCoreTemp *int `json:"max_core_temp,omitempty"`
+	// MaxCoreTempWarnPerc is the warning threshold percentage of max core temp.
+	MaxCoreTempWarnPerc *int `json:"max_core_temp_warn_perc,omitempty"`
+	// CriticalCoreTemp is the critical core temperature in Celsius (0 = disabled).
+	CriticalCoreTemp *int `json:"critical_core_temp,omitempty"`
+}
+
 // Field list constants for read-only resources
 const (
 	clusterListFields       = "$key,id,system,name,description,enabled,created,storage,compute,kvm_nested,allow_nested_virt_migration,allow_vgpu_migration,enable_split_lock_detection,recommended_cpu_type,default_cpu,disable_cpu_security_mitigations,spec_store_bypass_disable,disable_smt,disable_sleep,enable_nvme_power_management,x86_energy_perf_policy,scaling_governor,ram_per_unit,cores_per_unit,cost_per_unit,price_per_unit,max_ram_per_vm,max_cores_per_vm,storage_cachesize,storage_buffersize,storage_hugepages,target_ram_pct,ram_overcommit_pct,swap_tier,swap_per_drive,log_filter,max_core_temp,max_core_temp_warn_perc,critical_core_temp"

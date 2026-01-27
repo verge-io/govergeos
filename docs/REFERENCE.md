@@ -221,6 +221,45 @@ network, err := client.Networks.Update(ctx, networkID, &vergeos.NetworkUpdateReq
     DHCPStart: &dhcpStart,
     DHCPStop:  &dhcpStop,
 })
+
+// Network Diagnostics - run diagnostic queries on a running network
+// Run a ping test
+result, err := client.Networks.Ping(ctx, networkID, "8.8.8.8", 4) // 4 pings
+fmt.Println(result.Result)
+
+// Run a traceroute
+result, err := client.Networks.Traceroute(ctx, networkID, "google.com")
+fmt.Println(result.Result)
+
+// Run a DNS lookup
+result, err := client.Networks.DNSLookup(ctx, networkID, "example.com")
+fmt.Println(result.Result)
+
+// Run a custom diagnostic query
+query, err := client.Networks.RunQueryWait(ctx, &vergeos.NetworkQueryRequest{
+    VNet:  networkID,
+    Query: vergeos.NetworkQueryFirewall,  // Show firewall rules
+})
+fmt.Printf("Query status: %s\nResult:\n%s\n", query.Status, query.Result)
+
+// Available query types:
+// NetworkQueryPing, NetworkQueryTraceroute, NetworkQueryDNS
+// NetworkQueryTCPDump, NetworkQueryFirewall, NetworkQueryARP
+// NetworkQueryWhatsMyIP, NetworkQueryNmap, NetworkQueryTCPConnect
+// NetworkQueryWireGuard, NetworkQueryIPSec, and more
+
+// Network Statistics - get monitoring stats (requires monitor_gateway=true)
+stats, err := client.Networks.GetStatistics(ctx, networkID)
+for _, s := range stats {
+    fmt.Printf("Quality: %d%%, Latency: %dms, Dropped: %d\n",
+        s.Quality, s.LatencyUSAvg/1000, s.Dropped)
+}
+
+// Get just the latest statistics
+latest, err := client.Networks.GetLatestStatistics(ctx, networkID)
+if latest != nil {
+    fmt.Printf("Current quality: %d%%\n", latest.Quality)
+}
 ```
 
 ---
@@ -1311,6 +1350,8 @@ nodes, err := client.Nodes.List(ctx,
 
 ## Clusters
 
+Manage VergeOS clusters for compute and storage resources.
+
 ```go
 // List all clusters
 clusters, err := client.Clusters.List(ctx)
@@ -1318,8 +1359,36 @@ clusters, err := client.Clusters.List(ctx)
 // Get cluster details
 cluster, err := client.Clusters.Get(ctx, clusterID)
 
-// Get cluster status
+// Get a cluster by name
+cluster, err := client.Clusters.GetByName(ctx, "vergeos")
+
+// Get cluster status (nodes, RAM, cores, running machines)
 status, err := client.Clusters.GetStatus(ctx, clusterID)
+fmt.Printf("Status: %s, Nodes: %d/%d, Used RAM: %dMB/%dMB\n",
+    status.Status, status.OnlineNodes, status.TotalNodes,
+    status.UsedRAM, status.OnlineRAM)
+
+// Create a cluster
+cluster, err := client.Clusters.Create(ctx, &vergeos.ClusterCreateRequest{
+    Name:        "new-cluster",
+    Description: "Production compute cluster",
+    Compute:     ptr(true),    // Compute cluster
+    KVMNested:   ptr(false),   // Nested virtualization
+    DefaultCPU:  ptr("qemu64"),
+    RAMPerUnit:  ptr(4096),
+    MaxRAMPerVM: ptr(65536),
+})
+
+// Update a cluster
+newDesc := "Updated cluster description"
+cluster, err := client.Clusters.Update(ctx, clusterID, &vergeos.ClusterUpdateRequest{
+    Description:   &newDesc,
+    MaxCoresPerVM: ptr(32),
+    TargetRAMPct:  ptr(float64(85)),  // Target 85% RAM utilization
+})
+
+// Delete a cluster (requires no nodes/machines referencing it)
+err = client.Clusters.Delete(ctx, clusterID)
 ```
 
 ---
