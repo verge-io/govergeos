@@ -22,6 +22,23 @@ type VMServiceInterface interface {
 	GuestShutdown(ctx context.Context, id int) error
 	Clone(ctx context.Context, id int, opts *VMCloneOptions) error
 	Snapshot(ctx context.Context, id int, opts *VMSnapshotOptions) error
+	Migrate(ctx context.Context, id int, opts *VMMigrateOptions) error
+	GetConsoleURL(ctx context.Context, id int) (string, error)
+}
+
+// VMSnapshotServiceInterface defines the interface for VM Snapshot operations.
+type VMSnapshotServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VMSnapshot, error)
+	ListByVM(ctx context.Context, vmID int, opts ...ListOption) ([]VMSnapshot, error)
+	ListExpiring(ctx context.Context, days int, opts ...ListOption) ([]VMSnapshot, error)
+	Get(ctx context.Context, id int) (*VMSnapshot, error)
+	GetByName(ctx context.Context, vmID int, name string) (*VMSnapshot, error)
+	Create(ctx context.Context, req *VMSnapshotCreateRequest) (*VMSnapshot, error)
+	Update(ctx context.Context, id int, req *VMSnapshotUpdateRequest) (*VMSnapshot, error)
+	Delete(ctx context.Context, id int) error
+	Restore(ctx context.Context, id int, opts *VMSnapshotRestoreOptions) error
+	SetNeverExpires(ctx context.Context, id int) (*VMSnapshot, error)
+	SetExpires(ctx context.Context, id int, expires int64) (*VMSnapshot, error)
 }
 
 // VMNICServiceInterface defines the interface for VM NIC operations.
@@ -175,6 +192,19 @@ type TagServiceInterface interface {
 	Get(ctx context.Context, id int) (*Tag, error)
 	GetByName(ctx context.Context, name string) (*Tag, error)
 	ListByCategory(ctx context.Context, categoryID int) ([]Tag, error)
+	Create(ctx context.Context, req *TagCreateRequest) (*Tag, error)
+	Update(ctx context.Context, id int, req *TagUpdateRequest) (*Tag, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// TagCategoryServiceInterface defines the interface for TagCategory operations.
+type TagCategoryServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TagCategory, error)
+	Get(ctx context.Context, id int) (*TagCategory, error)
+	GetByName(ctx context.Context, name string) (*TagCategory, error)
+	Create(ctx context.Context, req *TagCategoryCreateRequest) (*TagCategory, error)
+	Update(ctx context.Context, id int, req *TagCategoryUpdateRequest) (*TagCategory, error)
+	Delete(ctx context.Context, id int) error
 }
 
 // TagMemberServiceInterface defines the interface for TagMember operations.
@@ -627,6 +657,7 @@ type UserAPIKeyServiceInterface interface {
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface                      = (*VMService)(nil)
+	_ VMSnapshotServiceInterface              = (*VMSnapshotService)(nil)
 	_ VMNICServiceInterface                   = (*VMNICService)(nil)
 	_ VMDriveServiceInterface                 = (*VMDriveService)(nil)
 	_ VMDeviceServiceInterface                = (*VMDeviceService)(nil)
@@ -643,6 +674,7 @@ var (
 	_ SystemServiceInterface                  = (*SystemService)(nil)
 	_ SchemaServiceInterface                  = (*SchemaService)(nil)
 	_ TagServiceInterface                     = (*TagService)(nil)
+	_ TagCategoryServiceInterface             = (*TagCategoryService)(nil)
 	_ TagMemberServiceInterface               = (*TagMemberService)(nil)
 	_ VolumeServiceInterface                  = (*VolumeService)(nil)
 	_ VNetRuleServiceInterface                = (*VNetRuleService)(nil)

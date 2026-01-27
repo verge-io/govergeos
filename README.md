@@ -115,7 +115,8 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 
 | Service | Description |
 |---------|-------------|
-| `VMs` | VM CRUD operations and power control (PowerOn, PowerOff, Reset, Clone, Snapshot) |
+| `VMs` | VM CRUD, power control, clone, snapshot, migrate, console |
+| `VMSnapshots` | VM snapshot CRUD, restore, expiration management |
 | `VMDrives` | VM disk management (attach, resize, detach) |
 | `VMNICs` | VM network interface management |
 | `VMDevices` | VM device management (USB, TPM, vGPU) |
@@ -216,7 +217,8 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 
 | Service | Description |
 |---------|-------------|
-| `Tags` | Tag listing and lookup (read-only, v26+) |
+| `Tags` | Tag CRUD operations (v26+) |
+| `TagCategories` | Tag category CRUD (define taggable resource types) |
 | `TagMembers` | Tag assignment management |
 | `ResourceGroups` | Resource group listing (read-only) |
 
@@ -227,6 +229,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | [basic](./examples/basic/) | Client setup, list resources, system info |
 | [apikey-auth](./examples/apikey-auth/) | API key authentication |
 | [vm-lifecycle](./examples/vm-lifecycle/) | VM create, configure, power, delete |
+| [vm-snapshots](./examples/vm-snapshots/) | VM snapshots, tags, and migration |
 | [network-management](./examples/network-management/) | Create and manage virtual networks |
 | [tenants](./examples/tenants/) | Multi-tenant management for MSPs |
 | [volumes](./examples/volumes/) | NAS volume management and shares |

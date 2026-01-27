@@ -65,3 +65,61 @@ func (s *TagService) GetByName(ctx context.Context, name string) (*Tag, error) {
 func (s *TagService) ListByCategory(ctx context.Context, categoryID int) ([]Tag, error) {
 	return s.List(ctx, WithFilter(fmt.Sprintf("category eq %d", categoryID)))
 }
+
+// Create creates a new tag and returns the created tag.
+func (s *TagService) Create(ctx context.Context, req *TagCreateRequest) (*Tag, error) {
+	if req == nil {
+		return nil, &ValidationError{Message: "create request is required"}
+	}
+	if req.Category <= 0 {
+		return nil, &ValidationError{Field: "category", Message: "category is required"}
+	}
+	if req.Name == "" {
+		return nil, &ValidationError{Field: "name", Message: "name is required"}
+	}
+
+	var resp apiResponse
+	if err := s.client.post(ctx, "/tags", req, &resp); err != nil {
+		return nil, err
+	}
+
+	// Extract the created tag's ID
+	id, err := getKey(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read back the created tag
+	return s.Get(ctx, id)
+}
+
+// Update updates a tag and returns the updated tag.
+func (s *TagService) Update(ctx context.Context, id int, req *TagUpdateRequest) (*Tag, error) {
+	if req == nil {
+		return nil, &ValidationError{Message: "update request is required"}
+	}
+
+	endpoint := fmt.Sprintf("/tags/%d", id)
+	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
+		if IsNotFoundError(err) {
+			return nil, &NotFoundError{Resource: "Tag", ID: id}
+		}
+		return nil, err
+	}
+
+	// Read back the updated tag
+	return s.Get(ctx, id)
+}
+
+// Delete deletes a tag.
+// Note: Deleting a tag also removes all tag member associations.
+func (s *TagService) Delete(ctx context.Context, id int) error {
+	endpoint := fmt.Sprintf("/tags/%d", id)
+	if err := s.client.delete(ctx, endpoint); err != nil {
+		if IsNotFoundError(err) {
+			return &NotFoundError{Resource: "Tag", ID: id}
+		}
+		return err
+	}
+	return nil
+}

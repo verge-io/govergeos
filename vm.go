@@ -321,3 +321,64 @@ func (s *VMService) Snapshot(ctx context.Context, id int, opts *VMSnapshotOption
 	}
 	return nil
 }
+
+// VMMigrateOptions contains options for migrating a VM to another node.
+type VMMigrateOptions struct {
+	// TargetNode is the destination node ID (required).
+	TargetNode int
+	// Live indicates whether to perform a live migration (default: true).
+	Live *bool
+}
+
+// Migrate migrates a VM to another node.
+// Live migration moves the VM without downtime if Live is true (default).
+func (s *VMService) Migrate(ctx context.Context, id int, opts *VMMigrateOptions) error {
+	if opts == nil {
+		return &ValidationError{Message: "migrate options are required"}
+	}
+	if opts.TargetNode <= 0 {
+		return &ValidationError{Field: "target_node", Message: "target_node is required"}
+	}
+
+	params := map[string]interface{}{
+		"node": opts.TargetNode,
+	}
+
+	// Default to live migration
+	if opts.Live == nil || *opts.Live {
+		params["method"] = "live"
+	} else {
+		params["method"] = "auto"
+	}
+
+	action := struct {
+		VM     int                    `json:"vm"`
+		Action string                 `json:"action"`
+		Params map[string]interface{} `json:"params"`
+	}{
+		VM:     id,
+		Action: "migrate",
+		Params: params,
+	}
+
+	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to migrate VM %d: %w", id, err)
+	}
+	return nil
+}
+
+// GetConsoleURL returns the console URL for a VM.
+func (s *VMService) GetConsoleURL(ctx context.Context, id int) (string, error) {
+	vm, err := s.Get(ctx, id)
+	if err != nil {
+		return "", err
+	}
+
+	if !vm.PowerState {
+		return "", fmt.Errorf("vergeos: VM %d is not running", id)
+	}
+
+	// Console URL format depends on the console type
+	consoleURL := fmt.Sprintf("%s/ui/#/main/vms/%d/console", s.client.baseURL, id)
+	return consoleURL, nil
+}

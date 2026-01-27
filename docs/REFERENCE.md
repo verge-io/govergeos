@@ -5,6 +5,7 @@ This document contains detailed API examples for all goVergeOS services. For a q
 ## Table of Contents
 
 - [Virtual Machines](#virtual-machines)
+- [VM Snapshots](#vm-snapshots)
 - [VM Drives](#vm-drives)
 - [VM NICs](#vm-nics)
 - [Networks](#networks)
@@ -33,6 +34,7 @@ This document contains detailed API examples for all goVergeOS services. For a q
 - [Settings](#settings)
 - [System](#system)
 - [Tags](#tags)
+- [Tag Categories](#tag-categories)
 - [Tag Members](#tag-members)
 - [Snapshot Profiles](#snapshot-profiles)
 - [Snapshot Profile Periods](#snapshot-profile-periods)
@@ -74,6 +76,79 @@ err = client.VMs.Delete(ctx, vmID)
 // Power operations
 err = client.VMs.PowerOn(ctx, vmID)
 err = client.VMs.PowerOff(ctx, vmID)
+
+// Clone a VM
+err = client.VMs.Clone(ctx, vmID, &vergeos.VMCloneOptions{
+    Name:         "my-vm-clone",
+    PreserveMACs: false,
+})
+
+// Take a snapshot
+err = client.VMs.Snapshot(ctx, vmID, &vergeos.VMSnapshotOptions{
+    Retention: 86400, // 24 hours
+    Quiesce:   true,
+})
+
+// Migrate a VM to another node
+err = client.VMs.Migrate(ctx, vmID, &vergeos.VMMigrateOptions{
+    TargetNode: targetNodeID,
+    Live:       ptr(true), // Live migration
+})
+
+// Get console URL
+consoleURL, err := client.VMs.GetConsoleURL(ctx, vmID)
+```
+
+---
+
+## VM Snapshots
+
+Manage point-in-time snapshots of virtual machines.
+
+```go
+// List all VM snapshots
+snapshots, err := client.VMSnapshots.List(ctx)
+
+// List snapshots for a specific VM
+snapshots, err := client.VMSnapshots.ListByVM(ctx, vmID)
+
+// List snapshots expiring within 7 days
+expiring, err := client.VMSnapshots.ListExpiring(ctx, 7)
+
+// Get a snapshot by ID
+snapshot, err := client.VMSnapshots.Get(ctx, snapshotID)
+
+// Get a snapshot by name within a VM
+snapshot, err := client.VMSnapshots.GetByName(ctx, vmID, "pre-upgrade")
+
+// Create a snapshot
+snapshot, err := client.VMSnapshots.Create(ctx, &vergeos.VMSnapshotCreateRequest{
+    Machine:     vmID,
+    Name:        "pre-upgrade",
+    Description: "Snapshot before upgrade",
+    ExpiresType: "date", // or "never"
+})
+
+// Update a snapshot
+newDesc := "Updated description"
+snapshot, err := client.VMSnapshots.Update(ctx, snapshotID, &vergeos.VMSnapshotUpdateRequest{
+    Description: &newDesc,
+})
+
+// Set snapshot to never expire
+snapshot, err := client.VMSnapshots.SetNeverExpires(ctx, snapshotID)
+
+// Set snapshot expiration (Unix timestamp)
+expires := time.Now().Add(7 * 24 * time.Hour).Unix()
+snapshot, err := client.VMSnapshots.SetExpires(ctx, snapshotID, expires)
+
+// Restore a VM from snapshot
+err = client.VMSnapshots.Restore(ctx, snapshotID, &vergeos.VMSnapshotRestoreOptions{
+    PowerOn: true, // Power on VM after restore
+})
+
+// Delete a snapshot
+err = client.VMSnapshots.Delete(ctx, snapshotID)
 ```
 
 ---
@@ -917,6 +992,59 @@ tag, err := client.Tags.GetByName(ctx, "production")
 
 // List tags in a specific category
 tags, err := client.Tags.ListByCategory(ctx, categoryID)
+
+// Create a tag
+tag, err := client.Tags.Create(ctx, &vergeos.TagCreateRequest{
+    Category:    categoryID,
+    Name:        "production",
+    Description: "Production environment",
+})
+
+// Update a tag
+newDesc := "Production servers"
+tag, err := client.Tags.Update(ctx, tagID, &vergeos.TagUpdateRequest{
+    Description: &newDesc,
+})
+
+// Delete a tag
+err = client.Tags.Delete(ctx, tagID)
+```
+
+---
+
+## Tag Categories
+
+Tag categories organize tags and define which resource types can be tagged.
+
+```go
+// List all tag categories
+categories, err := client.TagCategories.List(ctx)
+
+// Get a category by ID
+category, err := client.TagCategories.Get(ctx, categoryID)
+
+// Get a category by name
+category, err := client.TagCategories.GetByName(ctx, "Environment")
+
+// Create a tag category
+trueVal := true
+category, err := client.TagCategories.Create(ctx, &vergeos.TagCategoryCreateRequest{
+    Name:               "Environment",
+    Description:        "Environment classification",
+    SingleTagSelection: &trueVal,  // Only one tag from this category per resource
+    TaggableVMs:        &trueVal,
+    TaggableVNets:      &trueVal,
+    TaggableVolumes:    &trueVal,
+})
+
+// Update a category
+newDesc := "Updated description"
+category, err := client.TagCategories.Update(ctx, categoryID, &vergeos.TagCategoryUpdateRequest{
+    Description: &newDesc,
+})
+
+// Delete a category (also deletes all tags in it)
+err = client.TagCategories.Delete(ctx, categoryID)
 ```
 
 ---

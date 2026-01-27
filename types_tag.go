@@ -11,10 +11,30 @@ type Tag struct {
 	Description string `json:"description,omitempty"`
 	// Category is the tag category ID.
 	Category FlexInt `json:"category,omitempty"`
+	// CategoryDisplay is the display name of the category (from join).
+	CategoryDisplay string `json:"category_display,omitempty"`
 	// Created is the creation timestamp (Unix epoch).
 	Created int64 `json:"created,omitempty"`
 	// Modified is the last modification timestamp (Unix epoch).
 	Modified int64 `json:"modified,omitempty"`
+}
+
+// TagCreateRequest is the request body for creating a tag.
+type TagCreateRequest struct {
+	// Category is the tag category ID (required).
+	Category int `json:"category"`
+	// Name is the tag name (required).
+	Name string `json:"name"`
+	// Description is an optional description.
+	Description string `json:"description,omitempty"`
+}
+
+// TagUpdateRequest is the request body for updating a tag.
+type TagUpdateRequest struct {
+	// Name is the tag name.
+	Name *string `json:"name,omitempty"`
+	// Description is the tag description.
+	Description *string `json:"description,omitempty"`
 }
 
 // TagMember represents a tag assignment to a resource in VergeOS.
@@ -49,6 +69,6 @@ type TagMemberUpdateRequest struct {
 
 // Field list constants for tag resources.
 const (
-	tagListFields       = "$key,name,description,category,created,modified"
+	tagListFields       = "$key,name,description,category,category#$display as category_display,created,modified"
 	tagMemberListFields = "$key,tag,member"
 )

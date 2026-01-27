@@ -40,6 +40,7 @@ type Client struct {
 	// Services for interacting with different API resources.
 	// All services implement their corresponding interfaces for mock testing.
 	VMs                     VMServiceInterface
+	VMSnapshots             VMSnapshotServiceInterface
 	VMNICs                  VMNICServiceInterface
 	VMDrives                VMDriveServiceInterface
 	VMDevices               VMDeviceServiceInterface
@@ -56,6 +57,7 @@ type Client struct {
 	System                  SystemServiceInterface
 	Schema                  SchemaServiceInterface
 	Tags                    TagServiceInterface
+	TagCategories           TagCategoryServiceInterface
 	TagMembers              TagMemberServiceInterface
 	Volumes                 VolumeServiceInterface
 	VNetRules               VNetRuleServiceInterface
@@ -203,6 +205,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 
 	// Initialize services
 	c.VMs = &VMService{client: c}
+	c.VMSnapshots = &VMSnapshotService{client: c}
 	c.VMNICs = &VMNICService{client: c}
 	c.VMDrives = &VMDriveService{client: c}
 	c.VMDevices = &VMDeviceService{client: c}
@@ -219,6 +222,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.System = &SystemService{client: c}
 	c.Schema = &SchemaService{client: c}
 	c.Tags = &TagService{client: c}
+	c.TagCategories = &TagCategoryService{client: c}
 	c.TagMembers = &TagMemberService{client: c}
 	c.Volumes = &VolumeService{client: c}
 	c.VNetRules = &VNetRuleService{client: c}
