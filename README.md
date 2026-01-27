@@ -207,7 +207,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | Service | Description |
 |---------|-------------|
 | `CloudInitFiles` | Cloud-init file management |
-| `MediaSources` | ISO and media file listing (read-only) |
+| `Files` | File listing (ISOs, images, etc.) (read-only) |
 | `WebhookURLs` | Webhook endpoint configuration |
 | `Webhooks` | Webhook delivery log (read-only) |
 | `Certificates` | SSL/TLS certificate management |
@@ -236,7 +236,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | [tags](./examples/tags/) | Tag management and assignments |
 | [users](./examples/users/) | User, group, and membership management |
 | [cloudinit](./examples/cloudinit/) | Cloud-init file management |
-| [media-sources](./examples/media-sources/) | List available ISOs and boot media |
+| [files](./examples/files/) | List available files (ISOs, images) |
 | [snapshot-profiles](./examples/snapshot-profiles/) | Snapshot scheduling |
 | [monitoring](./examples/monitoring/) | Alarms and tasks |
 | [networking](./examples/networking/) | DNS, IP addresses, host overrides |

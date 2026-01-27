@@ -112,15 +112,15 @@ func main() {
 		}
 	}
 
-	// Test MediaSources
-	fmt.Println("\n=== Media Sources ===")
-	mediaSources, err := client.MediaSources.List(ctx)
+	// Test Files
+	fmt.Println("\n=== Files ===")
+	files, err := client.Files.List(ctx)
 	if err != nil {
-		log.Printf("MediaSources.List failed: %v", err)
+		log.Printf("Files.List failed: %v", err)
 	} else {
-		fmt.Printf("Found %d media sources\n", len(mediaSources))
-		for _, ms := range mediaSources {
-			fmt.Printf("  - %s (Type: %s)\n", ms.Name, ms.Type)
+		fmt.Printf("Found %d files\n", len(files))
+		for _, f := range files {
+			fmt.Printf("  - %s (Type: %s)\n", f.Name, f.Type)
 		}
 	}
 

@@ -22,8 +22,8 @@ type VMDrive struct {
 	Interface string `json:"interface,omitempty"`
 	// Media is the media type (disk, cdrom, efidisk, import, 9p, dir, clone, nonpersistent, etc.).
 	Media string `json:"media,omitempty"`
-	// MediaSource is the media source ID (for cdrom/import).
-	MediaSource FlexInt `json:"media_source,omitempty"`
+	// File is the file ID (for cdrom/import).
+	File FlexInt `json:"media_source,omitempty"`
 	// SizeGB is the disk size in GB.
 	SizeGB int64 `json:"-"`
 	// SizeBytes is the disk size in bytes.
@@ -70,8 +70,8 @@ type VMDriveCreateRequest struct {
 	Interface string `json:"interface,omitempty"`
 	// Media is the media type (disk, cdrom, efidisk, import, etc.).
 	Media string `json:"media,omitempty"`
-	// MediaSource is the media source ID (for cdrom/import).
-	MediaSource int `json:"media_source,omitempty"`
+	// File is the file ID (for cdrom/import).
+	File int `json:"media_source,omitempty"`
 	// SizeGB is the disk size in GB.
 	SizeGB int64 `json:"-"`
 	// SizeBytes is the disk size in bytes (set from SizeGB).

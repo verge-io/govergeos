@@ -307,9 +307,9 @@ type GroupUpdateRequest struct {
 	Email *string `json:"email,omitempty"`
 }
 
-// MediaSource represents a media source (ISO, etc.) in VergeOS.
-type MediaSource struct {
-	// ID is the unique identifier for the media source.
+// File represents a file (ISO, image, etc.) in VergeOS.
+type File struct {
+	// ID is the unique identifier for the file.
 	ID FlexInt `json:"$key,omitempty"`
 	// Name is the file name.
 	Name string `json:"name"`
@@ -381,7 +381,7 @@ const (
 	clusterStatusFields     = "cluster,status,status_info,state,last_update,total_nodes,online_nodes,running_machines,total_ram,online_ram,used_ram,total_cores,online_cores,used_cores,phys_ram_used,phys_vram_used,phys_total_cpu"
 	nodeListFields          = "id,name,description,physical,cluster,machine,model,asset_tag,cpu,cpu_speed,cores,iommu,ram,overcommit,vm_ram,failover_ram,yb_version,os_version,kernel_version,appserver_version,vsan_version,qemu_version,vsan_nodeid,vsan_connected,maintenance,need_restart,restart_reason,ipmi_address,ipmi_user,ipmi_status,ipmi_status_info,max_core_temp,max_core_temp_warn_perc,critical_core_temp,pxe_vnet,capture_logs,lldp,note"
 	groupListFields         = "$key,name,description,enabled,type,email,system_group,auth_source,created,creator"
-	mediaSourceListFields   = "$key,name,description,type,size,path"
+	fileListFields          = "$key,name,description,type,size,path"
 	resourceGroupListFields = "$key,name,description,type,enabled"
 	settingListFields       = "key,value,default_value,description"
 )

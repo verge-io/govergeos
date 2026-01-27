@@ -50,7 +50,7 @@ type Client struct {
 	Clusters                ClusterServiceInterface
 	Nodes                   NodeServiceInterface
 	Groups                  GroupServiceInterface
-	MediaSources            MediaSourceServiceInterface
+	Files                   FileServiceInterface
 	ResourceGroups          ResourceGroupServiceInterface
 	Settings                SettingsServiceInterface
 	System                  SystemServiceInterface
@@ -213,7 +213,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Clusters = &ClusterService{client: c}
 	c.Nodes = &NodeService{client: c}
 	c.Groups = &GroupService{client: c}
-	c.MediaSources = &MediaSourceService{client: c}
+	c.Files = &FileService{client: c}
 	c.ResourceGroups = &ResourceGroupService{client: c}
 	c.Settings = &SettingsService{client: c}
 	c.System = &SystemService{client: c}

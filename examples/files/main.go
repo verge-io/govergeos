@@ -1,7 +1,7 @@
-// Example: Media Sources
+// Example: Files
 //
-// This example demonstrates how to list and work with media sources
-// (ISOs, images, and other files) in VergeOS. Media sources are used
+// This example demonstrates how to list and work with files
+// (ISOs, images, and other files) in VergeOS. Files are used
 // for VM installation and boot media.
 //
 // Usage:
@@ -43,28 +43,28 @@ func main() {
 
 	ctx := context.Background()
 
-	// List all media sources
-	fmt.Println("=== All Media Sources ===")
-	media, err := client.MediaSources.List(ctx)
+	// List all files
+	fmt.Println("=== All Files ===")
+	files, err := client.Files.List(ctx)
 	if err != nil {
-		log.Fatalf("Failed to list media sources: %v", err)
+		log.Fatalf("Failed to list files: %v", err)
 	}
 
-	if len(media) == 0 {
-		fmt.Println("No media sources found.")
+	if len(files) == 0 {
+		fmt.Println("No files found.")
 		fmt.Println("Upload ISOs via the VergeOS UI under Media Images.")
 		return
 	}
 
 	// Group by type
-	isoFiles := []vergeos.MediaSource{}
-	otherFiles := []vergeos.MediaSource{}
+	isoFiles := []vergeos.File{}
+	otherFiles := []vergeos.File{}
 
-	for _, m := range media {
-		if m.Type == "iso" {
-			isoFiles = append(isoFiles, m)
+	for _, f := range files {
+		if f.Type == "iso" {
+			isoFiles = append(isoFiles, f)
 		} else {
-			otherFiles = append(otherFiles, m)
+			otherFiles = append(otherFiles, f)
 		}
 	}
 
@@ -83,7 +83,7 @@ func main() {
 
 	// Display other files
 	if len(otherFiles) > 0 {
-		fmt.Println("\n=== Other Media Files ===")
+		fmt.Println("\n=== Other Files ===")
 		for _, f := range otherFiles {
 			sizeMB := f.Size / (1024 * 1024)
 			fmt.Printf("- %s (Type: %s, Size: %d MB)\n", f.Name, f.Type, sizeMB)
@@ -92,27 +92,27 @@ func main() {
 
 	// Filter ISO files only
 	fmt.Println("\n=== Filtering: ISO Files Only ===")
-	isos, err := client.MediaSources.List(ctx,
+	isos, err := client.Files.List(ctx,
 		vergeos.WithFilter("type eq 'iso'"),
 	)
 	if err != nil {
-		log.Fatalf("Failed to filter media sources: %v", err)
+		log.Fatalf("Failed to filter files: %v", err)
 	}
 	fmt.Printf("Found %d ISO file(s)\n", len(isos))
 
-	// Get details of first media source
-	if len(media) > 0 {
-		fmt.Println("\n=== Media Source Details ===")
-		m, err := client.MediaSources.Get(ctx, media[0].ID.Int())
+	// Get details of first file
+	if len(files) > 0 {
+		fmt.Println("\n=== File Details ===")
+		f, err := client.Files.Get(ctx, files[0].ID.Int())
 		if err != nil {
-			log.Fatalf("Failed to get media source: %v", err)
+			log.Fatalf("Failed to get file: %v", err)
 		}
-		fmt.Printf("Name: %s\n", m.Name)
-		fmt.Printf("ID: %d\n", m.ID)
-		fmt.Printf("Type: %s\n", m.Type)
-		fmt.Printf("Size: %d bytes (%.2f GB)\n", m.Size, float64(m.Size)/(1024*1024*1024))
-		if m.Path != "" {
-			fmt.Printf("Path: %s\n", m.Path)
+		fmt.Printf("Name: %s\n", f.Name)
+		fmt.Printf("ID: %d\n", f.ID)
+		fmt.Printf("Type: %s\n", f.Type)
+		fmt.Printf("Size: %d bytes (%.2f GB)\n", f.Size, float64(f.Size)/(1024*1024*1024))
+		if f.Path != "" {
+			fmt.Printf("Path: %s\n", f.Path)
 		}
 	}
 
@@ -123,7 +123,7 @@ func main() {
 	fmt.Println("      Name:      \"cdrom\",")
 	fmt.Println("      Interface: \"ide\",")
 	fmt.Println("      Media:     \"cdrom\",")
-	fmt.Println("      MediaFile:  mediaSourceID,  // ID of the ISO")
+	fmt.Println("      File:      fileID,  // ID of the ISO")
 	fmt.Println("  })")
 
 	fmt.Println("\nDone!")

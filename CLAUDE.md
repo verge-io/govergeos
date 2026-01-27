@@ -31,7 +31,7 @@ goVergeOS/
 ├── cluster.go            # Cluster service
 ├── node.go               # Node service
 ├── group.go              # Group service
-├── mediasource.go        # MediaSource service
+├── file.go               # File service
 ├── resourcegroup.go      # ResourceGroup service
 ├── settings.go           # Settings service
 ├── system.go             # System service
@@ -107,7 +107,7 @@ client.Networks.Get(ctx, id)
 client.Networks.Update(ctx, id, req)
 ```
 
-**Services**: VMs, VMNICs, VMDrives, VMDevices, Networks, Users, Members, CloudInitFiles, Clusters, Nodes, Groups, MediaSources, ResourceGroups, Settings, System, Schema
+**Services**: VMs, VMNICs, VMDrives, VMDevices, Networks, Users, Members, CloudInitFiles, Clusters, Nodes, Groups, Files, ResourceGroups, Settings, System, Schema
 
 ### Key Files
 - `client.go` - Client struct, HTTP methods (`get`, `post`, `put`, `delete`), service initialization

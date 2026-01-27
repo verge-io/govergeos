@@ -131,12 +131,12 @@ type GroupServiceInterface interface {
 	Delete(ctx context.Context, id int) error
 }
 
-// MediaSourceServiceInterface defines the interface for MediaSource operations.
-type MediaSourceServiceInterface interface {
-	List(ctx context.Context, opts ...ListOption) ([]MediaSource, error)
-	Get(ctx context.Context, id int) (*MediaSource, error)
-	GetByName(ctx context.Context, name string) (*MediaSource, error)
-	ListISOs(ctx context.Context, opts ...ListOption) ([]MediaSource, error)
+// FileServiceInterface defines the interface for File operations.
+type FileServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]File, error)
+	Get(ctx context.Context, id int) (*File, error)
+	GetByName(ctx context.Context, name string) (*File, error)
+	ListISOs(ctx context.Context, opts ...ListOption) ([]File, error)
 }
 
 // ResourceGroupServiceInterface defines the interface for ResourceGroup operations.
@@ -637,7 +637,7 @@ var (
 	_ NodeServiceInterface                    = (*NodeService)(nil)
 	_ ClusterServiceInterface                 = (*ClusterService)(nil)
 	_ GroupServiceInterface                   = (*GroupService)(nil)
-	_ MediaSourceServiceInterface             = (*MediaSourceService)(nil)
+	_ FileServiceInterface                    = (*FileService)(nil)
 	_ ResourceGroupServiceInterface           = (*ResourceGroupService)(nil)
 	_ SettingsServiceInterface                = (*SettingsService)(nil)
 	_ SystemServiceInterface                  = (*SystemService)(nil)

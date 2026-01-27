@@ -1214,7 +1214,7 @@ err = client.WebhookURLs.Delete(ctx, webhookID)
 
 The library also supports:
 
-- **Media Sources** (`client.MediaSources`) - ISO images and media files
+- **Files** (`client.Files`) - ISO images and media files
 - **CloudInit Files** (`client.CloudInitFiles`) - Cloud-init configuration management
 - **Resource Groups** (`client.ResourceGroups`) - Logical grouping of resources
 - **VM Devices** (`client.VMDevices`) - VM devices (USB, TPM, vGPU)
