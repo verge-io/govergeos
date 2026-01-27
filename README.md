@@ -166,6 +166,8 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | `Tenants` | Tenant CRUD, power operations, cloning, isolation |
 | `TenantNodes` | Tenant virtual node management |
 | `TenantStorage` | Tenant storage allocation |
+| `TenantSnapshots` | Tenant snapshot management |
+| `TenantLayer2Networks` | Layer 2 network assignments to tenants |
 
 ### Users & Groups
 
@@ -186,6 +188,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | `Settings` | System settings (read-only) |
 | `Schema` | API schema introspection |
 | `System` | System version and info |
+| `Logs` | System logs (audit, errors, warnings) |
 
 ### Monitoring & Tasks
 
@@ -207,6 +210,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | `Sites` | Remote site connections |
 | `SiteSyncsIncoming` | Incoming sync configurations |
 | `SiteSyncsOutgoing` | Outgoing sync configurations |
+| `SiteSyncProfilePeriods` | Site sync schedule periods |
 
 ### Automation & Files
 
@@ -247,6 +251,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | [files](./examples/files/) | List available files (ISOs, images) |
 | [snapshot-profiles](./examples/snapshot-profiles/) | Snapshot scheduling |
 | [monitoring](./examples/monitoring/) | Alarms and tasks |
+| [logs](./examples/logs/) | System logs and audit trails |
 | [networking](./examples/networking/) | DNS, IP addresses, host overrides |
 | [dr-sites](./examples/dr-sites/) | Remote sites and sync configuration |
 | [cloud-snapshots](./examples/cloud-snapshots/) | Cloud snapshot management |

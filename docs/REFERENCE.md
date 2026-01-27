@@ -30,6 +30,8 @@ This document contains detailed API examples for all goVergeOS services. For a q
 - [Tenants](#tenants)
 - [Tenant Nodes](#tenant-nodes)
 - [Tenant Storage](#tenant-storage)
+- [Tenant Snapshots](#tenant-snapshots)
+- [Tenant Layer2 Networks](#tenant-layer2-networks)
 - [Users](#users)
 - [Groups](#groups)
 - [User API Keys](#user-api-keys)
@@ -47,7 +49,9 @@ This document contains detailed API examples for all goVergeOS services. For a q
 - [Alarm Types](#alarm-types)
 - [Tasks](#tasks)
 - [Sites & DR](#sites--dr)
+- [Site Sync Profile Periods](#site-sync-profile-periods)
 - [Cloud Snapshots](#cloud-snapshots)
+- [Logs](#logs)
 - [Webhooks](#webhooks)
 - [Files](#files)
 
@@ -1038,6 +1042,96 @@ storage, err := client.TenantStorage.Update(ctx, storageID, &vergeos.TenantStora
 
 ---
 
+## Tenant Snapshots
+
+Manage point-in-time snapshots of tenants.
+
+```go
+// List all tenant snapshots
+snapshots, err := client.TenantSnapshots.List(ctx)
+
+// List snapshots for a specific tenant
+snapshots, err := client.TenantSnapshots.ListByTenant(ctx, tenantID)
+
+// List snapshots expiring within 7 days
+expiring, err := client.TenantSnapshots.ListExpiring(ctx, 7)
+
+// Get a snapshot by ID
+snapshot, err := client.TenantSnapshots.Get(ctx, snapshotID)
+
+// Get a snapshot by name within a tenant
+snapshot, err := client.TenantSnapshots.GetByName(ctx, tenantID, "pre-upgrade")
+
+// Update a snapshot
+newDesc := "Updated description"
+snapshot, err := client.TenantSnapshots.Update(ctx, snapshotID, &vergeos.TenantSnapshotUpdateRequest{
+    Description: &newDesc,
+})
+
+// Set snapshot to never expire
+snapshot, err := client.TenantSnapshots.SetNeverExpires(ctx, snapshotID)
+
+// Set snapshot expiration (Unix timestamp)
+expires := time.Now().Add(7 * 24 * time.Hour).Unix()
+snapshot, err := client.TenantSnapshots.SetExpires(ctx, snapshotID, expires)
+
+// Refresh tenant snapshots from snapshot profile
+err = client.TenantSnapshots.Refresh(ctx, tenantID)
+
+// Delete a snapshot
+err = client.TenantSnapshots.Delete(ctx, snapshotID)
+```
+
+---
+
+## Tenant Layer2 Networks
+
+Manage Layer 2 network assignments to tenants for direct network connectivity.
+
+```go
+// List all tenant layer2 network assignments
+networks, err := client.TenantLayer2Networks.List(ctx)
+
+// List assignments for a specific tenant
+networks, err := client.TenantLayer2Networks.ListByTenant(ctx, tenantID)
+
+// List tenants assigned to a specific network
+networks, err := client.TenantLayer2Networks.ListByNetwork(ctx, networkID)
+
+// Get an assignment by ID
+assignment, err := client.TenantLayer2Networks.Get(ctx, assignmentID)
+
+// Get assignment by tenant and network
+assignment, err := client.TenantLayer2Networks.GetByTenantAndNetwork(ctx, tenantID, networkID)
+
+// Create an assignment (assign network to tenant)
+assignment, err := client.TenantLayer2Networks.Create(ctx, &vergeos.TenantLayer2NetworkCreateRequest{
+    Tenant:  tenantID,
+    VNet:    networkID,
+    Enabled: ptr(true),
+})
+
+// Update an assignment
+assignment, err := client.TenantLayer2Networks.Update(ctx, assignmentID, &vergeos.TenantLayer2NetworkUpdateRequest{
+    Enabled: ptr(false),
+})
+
+// Enable/disable an assignment
+assignment, err := client.TenantLayer2Networks.Enable(ctx, assignmentID)
+assignment, err := client.TenantLayer2Networks.Disable(ctx, assignmentID)
+
+// Convenience method: Assign a network to a tenant (creates if not exists)
+assignment, err := client.TenantLayer2Networks.Assign(ctx, tenantID, networkID)
+
+// Convenience method: Unassign a network from a tenant
+err = client.TenantLayer2Networks.Unassign(ctx, tenantID, networkID)
+
+// Delete an assignment
+err = client.TenantLayer2Networks.Delete(ctx, assignmentID)
+```
+
+---
+
 ## Users
 
 ```go
@@ -1555,6 +1649,42 @@ err = client.Sites.RunUpdates(ctx, siteID)
 
 ---
 
+## Site Sync Profile Periods
+
+Configure schedule periods for outgoing site syncs based on snapshot profile periods.
+
+```go
+// List all site sync profile periods
+periods, err := client.SiteSyncProfilePeriods.List(ctx)
+
+// List periods for a specific outgoing sync
+periods, err := client.SiteSyncProfilePeriods.ListByOutgoingSync(ctx, outgoingSyncID)
+
+// Get a period by ID
+period, err := client.SiteSyncProfilePeriods.Get(ctx, periodID)
+
+// Create a site sync profile period
+period, err := client.SiteSyncProfilePeriods.Create(ctx, &vergeos.SiteSyncProfilePeriodCreateRequest{
+    SiteSyncsOutgoing: outgoingSyncID,
+    ProfilePeriod:     profilePeriodID, // FK to snapshot_profile_periods
+    Retention:         7 * 24 * 60 * 60, // 7 days in seconds
+    Priority:          ptr(10),          // Lower = higher priority
+    DoNotExpire:       ptr(true),        // Don't expire source until sent
+    DestinationPrefix: ptr("backup-"),   // Prefix on destination snapshots
+})
+
+// Update a period
+period, err := client.SiteSyncProfilePeriods.Update(ctx, periodID, &vergeos.SiteSyncProfilePeriodUpdateRequest{
+    Retention: ptr(14 * 24 * 60 * 60), // Extend to 14 days
+    Priority:  ptr(5),
+})
+
+// Delete a period
+err = client.SiteSyncProfilePeriods.Delete(ctx, periodID)
+```
+
+---
+
 ## Cloud Snapshots
 
 Manage cloud-level snapshots for backup and recovery.
@@ -1698,6 +1828,63 @@ err = client.Files.Delete(ctx, fileID)
 
 ---
 
+## Logs
+
+Query system logs for audit, operational, and error information (read-only).
+
+```go
+// List recent logs (newest first by default)
+logs, err := client.Logs.List(ctx)
+
+// Get the most recent 50 logs
+logs, err := client.Logs.GetRecent(ctx, 50)
+
+// List logs by level
+audits, err := client.Logs.ListAudit(ctx)
+warnings, err := client.Logs.ListWarnings(ctx)
+errors, err := client.Logs.ListErrors(ctx)  // error + critical
+
+// Get recent errors
+recentErrors, err := client.Logs.GetRecentErrors(ctx, 20)
+
+// List logs by object type
+vmLogs, err := client.Logs.ListByObjectType(ctx, vergeos.LogObjectTypeVM)
+tenantLogs, err := client.Logs.ListByObjectType(ctx, vergeos.LogObjectTypeTenant)
+
+// List logs by username
+userLogs, err := client.Logs.ListByUser(ctx, "admin")
+
+// List logs since a timestamp (microseconds since epoch)
+since := time.Now().Add(-24 * time.Hour).UnixMicro()
+logs, err := client.Logs.ListSince(ctx, since)
+
+// Search logs by text pattern
+logs, err := client.Logs.Search(ctx, "failed to connect")
+
+// Get a specific log entry
+log, err := client.Logs.Get(ctx, logID)
+```
+
+Log level constants:
+- `vergeos.LogLevelAudit` - User actions and authentication
+- `vergeos.LogLevelMessage` - Informational messages
+- `vergeos.LogLevelWarning` - Warning conditions
+- `vergeos.LogLevelError` - Error conditions
+- `vergeos.LogLevelCritical` - Critical errors
+- `vergeos.LogLevelSummary` - Summary information
+- `vergeos.LogLevelDebug` - Debug information
+
+Common object types:
+- `vergeos.LogObjectTypeVM` - Virtual machine logs
+- `vergeos.LogObjectTypeTenant` - Tenant logs
+- `vergeos.LogObjectTypeVNet` - Network logs
+- `vergeos.LogObjectTypeUser` - User account logs
+- `vergeos.LogObjectTypeSystem` - System logs
+- `vergeos.LogObjectTypeCluster` - Cluster logs
+- `vergeos.LogObjectTypeSite` - DR site logs
+
+---
+
 ## Additional Resources
 
 The library also supports:
@@ -1710,3 +1897,7 @@ The library also supports:
 - **Volume Snapshots** (`client.VolumeSnapshots`) - NAS volume snapshot management
 - **Volume Syncs** (`client.VolumeSyncs`) - Volume replication/sync jobs
 - **Permissions** (`client.Permissions`) - Resource-level access control
+- **Tenant Snapshots** (`client.TenantSnapshots`) - Tenant snapshot management
+- **Tenant Layer2 Networks** (`client.TenantLayer2Networks`) - Layer 2 network assignments
+- **Site Sync Profile Periods** (`client.SiteSyncProfilePeriods`) - Site sync scheduling
+- **Logs** (`client.Logs`) - System log queries

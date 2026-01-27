@@ -561,6 +561,16 @@ type SiteSyncOutgoingServiceInterface interface {
 	RefreshSnapshots(ctx context.Context, id int) error
 }
 
+// SiteSyncProfilePeriodServiceInterface defines the interface for site sync profile period operations.
+type SiteSyncProfilePeriodServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]SiteSyncProfilePeriod, error)
+	ListByOutgoingSync(ctx context.Context, outgoingSyncID int, opts ...ListOption) ([]SiteSyncProfilePeriod, error)
+	Get(ctx context.Context, id int) (*SiteSyncProfilePeriod, error)
+	Create(ctx context.Context, req *SiteSyncProfilePeriodCreateRequest) (*SiteSyncProfilePeriod, error)
+	Update(ctx context.Context, id int, req *SiteSyncProfilePeriodUpdateRequest) (*SiteSyncProfilePeriod, error)
+	Delete(ctx context.Context, id int) error
+}
+
 // CloudSnapshotServiceInterface defines the interface for cloud snapshot (system snapshot) operations.
 type CloudSnapshotServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]CloudSnapshot, error)
@@ -739,6 +749,52 @@ type PermissionServiceInterface interface {
 	Revoke(ctx context.Context, identityID int, table string, rowID int64) error
 }
 
+// TenantSnapshotServiceInterface defines the interface for tenant snapshot operations.
+type TenantSnapshotServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantSnapshot, error)
+	ListByTenant(ctx context.Context, tenantID int, opts ...ListOption) ([]TenantSnapshot, error)
+	ListExpiring(ctx context.Context, days int, opts ...ListOption) ([]TenantSnapshot, error)
+	Get(ctx context.Context, id int) (*TenantSnapshot, error)
+	GetByName(ctx context.Context, tenantID int, name string) (*TenantSnapshot, error)
+	Update(ctx context.Context, id int, req *TenantSnapshotUpdateRequest) (*TenantSnapshot, error)
+	Delete(ctx context.Context, id int) error
+	Refresh(ctx context.Context, tenantID int) error
+	SetNeverExpires(ctx context.Context, id int) (*TenantSnapshot, error)
+	SetExpires(ctx context.Context, id int, expires int64) (*TenantSnapshot, error)
+}
+
+// LogServiceInterface defines the interface for system log operations (read-only).
+type LogServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]Log, error)
+	ListByLevel(ctx context.Context, level string, opts ...ListOption) ([]Log, error)
+	ListByObjectType(ctx context.Context, objectType string, opts ...ListOption) ([]Log, error)
+	ListErrors(ctx context.Context, opts ...ListOption) ([]Log, error)
+	ListAudit(ctx context.Context, opts ...ListOption) ([]Log, error)
+	ListWarnings(ctx context.Context, opts ...ListOption) ([]Log, error)
+	ListByUser(ctx context.Context, username string, opts ...ListOption) ([]Log, error)
+	ListSince(ctx context.Context, timestampMicros int64, opts ...ListOption) ([]Log, error)
+	Get(ctx context.Context, id int) (*Log, error)
+	GetRecent(ctx context.Context, count int) ([]Log, error)
+	GetRecentErrors(ctx context.Context, count int) ([]Log, error)
+	Search(ctx context.Context, pattern string, opts ...ListOption) ([]Log, error)
+}
+
+// TenantLayer2NetworkServiceInterface defines the interface for tenant layer2 network operations.
+type TenantLayer2NetworkServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantLayer2Network, error)
+	ListByTenant(ctx context.Context, tenantID int, opts ...ListOption) ([]TenantLayer2Network, error)
+	ListByNetwork(ctx context.Context, vnetID int, opts ...ListOption) ([]TenantLayer2Network, error)
+	Get(ctx context.Context, id int) (*TenantLayer2Network, error)
+	GetByTenantAndNetwork(ctx context.Context, tenantID, vnetID int) (*TenantLayer2Network, error)
+	Create(ctx context.Context, req *TenantLayer2NetworkCreateRequest) (*TenantLayer2Network, error)
+	Update(ctx context.Context, id int, req *TenantLayer2NetworkUpdateRequest) (*TenantLayer2Network, error)
+	Delete(ctx context.Context, id int) error
+	Enable(ctx context.Context, id int) (*TenantLayer2Network, error)
+	Disable(ctx context.Context, id int) (*TenantLayer2Network, error)
+	Assign(ctx context.Context, tenantID, vnetID int) (*TenantLayer2Network, error)
+	Unassign(ctx context.Context, tenantID, vnetID int) error
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface                      = (*VMService)(nil)
@@ -788,6 +844,7 @@ var (
 	_ SiteServiceInterface                    = (*SiteService)(nil)
 	_ SiteSyncIncomingServiceInterface        = (*SiteSyncIncomingService)(nil)
 	_ SiteSyncOutgoingServiceInterface        = (*SiteSyncOutgoingService)(nil)
+	_ SiteSyncProfilePeriodServiceInterface   = (*SiteSyncProfilePeriodService)(nil)
 	_ CloudSnapshotServiceInterface           = (*CloudSnapshotService)(nil)
 	_ CloudSnapshotVMServiceInterface         = (*CloudSnapshotVMService)(nil)
 	_ CloudSnapshotTenantServiceInterface     = (*CloudSnapshotTenantService)(nil)
@@ -802,4 +859,7 @@ var (
 	_ VolumeSyncServiceInterface              = (*VolumeSyncService)(nil)
 	_ VolumeSnapshotServiceInterface          = (*VolumeSnapshotService)(nil)
 	_ PermissionServiceInterface              = (*PermissionService)(nil)
+	_ TenantSnapshotServiceInterface          = (*TenantSnapshotService)(nil)
+	_ LogServiceInterface                     = (*LogService)(nil)
+	_ TenantLayer2NetworkServiceInterface     = (*TenantLayer2NetworkService)(nil)
 )

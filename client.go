@@ -65,6 +65,8 @@ type Client struct {
 	Tenants                 TenantServiceInterface
 	TenantNodes             TenantNodeServiceInterface
 	TenantStorage           TenantStorageServiceInterface
+	TenantSnapshots         TenantSnapshotServiceInterface
+	TenantLayer2Networks    TenantLayer2NetworkServiceInterface
 	SnapshotProfiles        SnapshotProfileServiceInterface
 	SnapshotProfilePeriods  SnapshotProfilePeriodServiceInterface
 	Alarms                  AlarmServiceInterface
@@ -86,6 +88,7 @@ type Client struct {
 	Sites                   SiteServiceInterface
 	SiteSyncsIncoming       SiteSyncIncomingServiceInterface
 	SiteSyncsOutgoing       SiteSyncOutgoingServiceInterface
+	SiteSyncProfilePeriods  SiteSyncProfilePeriodServiceInterface
 	CloudSnapshots          CloudSnapshotServiceInterface
 	CloudSnapshotVMs        CloudSnapshotVMServiceInterface
 	CloudSnapshotTenants    CloudSnapshotTenantServiceInterface
@@ -100,6 +103,7 @@ type Client struct {
 	VolumeSyncs             VolumeSyncServiceInterface
 	VolumeSnapshots         VolumeSnapshotServiceInterface
 	Permissions             PermissionServiceInterface
+	Logs                    LogServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -235,6 +239,8 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Tenants = &TenantService{client: c}
 	c.TenantNodes = &TenantNodeService{client: c}
 	c.TenantStorage = &TenantStorageService{client: c}
+	c.TenantSnapshots = &TenantSnapshotService{client: c}
+	c.TenantLayer2Networks = &TenantLayer2NetworkService{client: c}
 	c.SnapshotProfiles = &SnapshotProfileService{client: c}
 	c.SnapshotProfilePeriods = &SnapshotProfilePeriodService{client: c}
 	c.Alarms = &AlarmService{client: c}
@@ -256,6 +262,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Sites = &SiteService{client: c}
 	c.SiteSyncsIncoming = &SiteSyncIncomingService{client: c}
 	c.SiteSyncsOutgoing = &SiteSyncOutgoingService{client: c}
+	c.SiteSyncProfilePeriods = &SiteSyncProfilePeriodService{client: c}
 	c.CloudSnapshots = &CloudSnapshotService{client: c}
 	c.CloudSnapshotVMs = &CloudSnapshotVMService{client: c}
 	c.CloudSnapshotTenants = &CloudSnapshotTenantService{client: c}
@@ -270,6 +277,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.VolumeSyncs = &VolumeSyncService{client: c}
 	c.VolumeSnapshots = &VolumeSnapshotService{client: c}
 	c.Permissions = &PermissionService{client: c}
+	c.Logs = &LogService{client: c}
 
 	return c, nil
 }

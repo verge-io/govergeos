@@ -520,3 +520,107 @@ func (s *SiteSyncOutgoingService) RefreshSnapshots(ctx context.Context, id int) 
 	}
 	return nil
 }
+
+// SiteSyncProfilePeriodService handles site sync profile period operations.
+// Profile periods configure when snapshots are synced to remote sites based on snapshot profile periods.
+type SiteSyncProfilePeriodService struct {
+	client *Client
+}
+
+// List returns all site sync profile periods, with optional filtering and pagination.
+func (s *SiteSyncProfilePeriodService) List(ctx context.Context, opts ...ListOption) ([]SiteSyncProfilePeriod, error) {
+	options := applyListOptions(opts)
+
+	if options.Fields == "most" {
+		options.Fields = siteSyncProfilePeriodListFields
+	}
+
+	params := options.toQueryParams()
+
+	var periods []SiteSyncProfilePeriod
+	if err := s.client.get(ctx, "/site_syncs_outgoing_profile_periods", params, &periods); err != nil {
+		return nil, err
+	}
+
+	return periods, nil
+}
+
+// ListByOutgoingSync returns all profile periods for a specific outgoing sync.
+func (s *SiteSyncProfilePeriodService) ListByOutgoingSync(ctx context.Context, outgoingSyncID int, opts ...ListOption) ([]SiteSyncProfilePeriod, error) {
+	opts = append(opts, WithFilter(fmt.Sprintf("site_syncs_outgoing eq %d", outgoingSyncID)))
+	return s.List(ctx, opts...)
+}
+
+// Get returns a single site sync profile period by ID.
+func (s *SiteSyncProfilePeriodService) Get(ctx context.Context, id int) (*SiteSyncProfilePeriod, error) {
+	params := url.Values{}
+	params.Set("fields", siteSyncProfilePeriodGetFields)
+
+	var period SiteSyncProfilePeriod
+	endpoint := fmt.Sprintf("/site_syncs_outgoing_profile_periods/%d", id)
+	if err := s.client.get(ctx, endpoint, params, &period); err != nil {
+		if IsNotFoundError(err) {
+			return nil, &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: fmt.Sprintf("%d", id)}
+		}
+		return nil, err
+	}
+
+	return &period, nil
+}
+
+// Create creates a new site sync profile period and returns it.
+func (s *SiteSyncProfilePeriodService) Create(ctx context.Context, req *SiteSyncProfilePeriodCreateRequest) (*SiteSyncProfilePeriod, error) {
+	if req == nil {
+		return nil, &ValidationError{Message: "create request is required"}
+	}
+	if req.SiteSyncsOutgoing == 0 {
+		return nil, &ValidationError{Field: "site_syncs_outgoing", Message: "site_syncs_outgoing is required"}
+	}
+	if req.ProfilePeriod == 0 {
+		return nil, &ValidationError{Field: "profile_period", Message: "profile_period is required"}
+	}
+	if req.Retention == 0 {
+		return nil, &ValidationError{Field: "retention", Message: "retention is required"}
+	}
+
+	var resp apiResponse
+	if err := s.client.post(ctx, "/site_syncs_outgoing_profile_periods", req, &resp); err != nil {
+		return nil, err
+	}
+
+	id, err := getKey(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.Get(ctx, id)
+}
+
+// Update updates a site sync profile period and returns the updated period.
+func (s *SiteSyncProfilePeriodService) Update(ctx context.Context, id int, req *SiteSyncProfilePeriodUpdateRequest) (*SiteSyncProfilePeriod, error) {
+	if req == nil {
+		return nil, &ValidationError{Message: "update request is required"}
+	}
+
+	endpoint := fmt.Sprintf("/site_syncs_outgoing_profile_periods/%d", id)
+	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
+		if IsNotFoundError(err) {
+			return nil, &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: fmt.Sprintf("%d", id)}
+		}
+		return nil, err
+	}
+
+	return s.Get(ctx, id)
+}
+
+// Delete deletes a site sync profile period.
+func (s *SiteSyncProfilePeriodService) Delete(ctx context.Context, id int) error {
+	endpoint := fmt.Sprintf("/site_syncs_outgoing_profile_periods/%d", id)
+	if err := s.client.delete(ctx, endpoint); err != nil {
+		if IsNotFoundError(err) {
+			return &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: fmt.Sprintf("%d", id)}
+		}
+		return err
+	}
+	return nil
+}

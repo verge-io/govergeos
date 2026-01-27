@@ -317,3 +317,60 @@ const (
 	SiteSyncTier4           string = "4"
 	SiteSyncTier5           string = "5"
 )
+
+// SiteSyncProfilePeriod represents a schedule period for outgoing site syncs.
+// This configures when snapshots are synced to remote sites based on snapshot profile periods.
+type SiteSyncProfilePeriod struct {
+	// Key is the unique identifier for this profile period.
+	Key FlexInt `json:"$key,omitempty"`
+	// SiteSyncsOutgoing is the parent outgoing sync ID.
+	SiteSyncsOutgoing FlexInt `json:"site_syncs_outgoing,omitempty"`
+	// ProfilePeriod is the snapshot profile period ID (FK to snapshot_profile_periods).
+	ProfilePeriod FlexInt `json:"profile_period,omitempty"`
+	// ScheduleTask is the associated schedule task ID.
+	ScheduleTask FlexInt `json:"schedule_task,omitempty"`
+	// Task is the associated task ID.
+	Task FlexInt `json:"task,omitempty"`
+	// Retention is the remote retention in seconds.
+	Retention int `json:"retention,omitempty"`
+	// Priority is the sync priority (lower = higher priority).
+	Priority int `json:"priority,omitempty"`
+	// DoNotExpire prevents the source snapshot from expiring until sent.
+	DoNotExpire bool `json:"do_not_expire,omitempty"`
+	// DestinationPrefix is prefixed to the snapshot name on the destination.
+	DestinationPrefix string `json:"destination_prefix,omitempty"`
+}
+
+// SiteSyncProfilePeriodCreateRequest represents the request body for creating a site sync profile period.
+type SiteSyncProfilePeriodCreateRequest struct {
+	// SiteSyncsOutgoing is the parent outgoing sync ID (required).
+	SiteSyncsOutgoing int `json:"site_syncs_outgoing"`
+	// ProfilePeriod is the snapshot profile period ID (required).
+	ProfilePeriod int `json:"profile_period"`
+	// Retention is the remote retention in seconds (required).
+	Retention int `json:"retention"`
+	// Priority is the sync priority.
+	Priority *int `json:"priority,omitempty"`
+	// DoNotExpire prevents the source snapshot from expiring until sent.
+	DoNotExpire *bool `json:"do_not_expire,omitempty"`
+	// DestinationPrefix is prefixed to the snapshot name on the destination.
+	DestinationPrefix *string `json:"destination_prefix,omitempty"`
+}
+
+// SiteSyncProfilePeriodUpdateRequest represents the request body for updating a site sync profile period.
+type SiteSyncProfilePeriodUpdateRequest struct {
+	// Retention is the remote retention in seconds.
+	Retention *int `json:"retention,omitempty"`
+	// Priority is the sync priority.
+	Priority *int `json:"priority,omitempty"`
+	// DoNotExpire prevents the source snapshot from expiring until sent.
+	DoNotExpire *bool `json:"do_not_expire,omitempty"`
+	// DestinationPrefix is prefixed to the snapshot name on the destination.
+	DestinationPrefix *string `json:"destination_prefix,omitempty"`
+}
+
+// siteSyncProfilePeriodListFields defines the default fields for listing site sync profile periods.
+const siteSyncProfilePeriodListFields = "$key,site_syncs_outgoing,profile_period,schedule_task,task,retention,priority,do_not_expire,destination_prefix"
+
+// siteSyncProfilePeriodGetFields defines the default fields for getting a single site sync profile period.
+const siteSyncProfilePeriodGetFields = siteSyncProfilePeriodListFields
