@@ -1,8 +1,8 @@
 // Example: Files
 //
-// This example demonstrates how to list and work with files
-// (ISOs, images, and other files) in VergeOS. Files are used
-// for VM installation and boot media.
+// This example demonstrates how to list, upload, download, and delete files
+// (ISOs, images, and other files) in VergeOS. Files are used for VM installation
+// and boot media.
 //
 // Usage:
 //
@@ -72,7 +72,7 @@ func main() {
 	if len(isoFiles) > 0 {
 		fmt.Println("\n=== ISO Images ===")
 		for _, iso := range isoFiles {
-			sizeMB := iso.Size / (1024 * 1024)
+			sizeMB := iso.Filesize / (1024 * 1024)
 			fmt.Printf("- %s\n", iso.Name)
 			fmt.Printf("    ID: %d, Size: %d MB\n", iso.ID, sizeMB)
 			if iso.Description != "" {
@@ -85,7 +85,7 @@ func main() {
 	if len(otherFiles) > 0 {
 		fmt.Println("\n=== Other Files ===")
 		for _, f := range otherFiles {
-			sizeMB := f.Size / (1024 * 1024)
+			sizeMB := f.Filesize / (1024 * 1024)
 			fmt.Printf("- %s (Type: %s, Size: %d MB)\n", f.Name, f.Type, sizeMB)
 		}
 	}
@@ -110,9 +110,14 @@ func main() {
 		fmt.Printf("Name: %s\n", f.Name)
 		fmt.Printf("ID: %d\n", f.ID)
 		fmt.Printf("Type: %s\n", f.Type)
-		fmt.Printf("Size: %d bytes (%.2f GB)\n", f.Size, float64(f.Size)/(1024*1024*1024))
-		if f.Path != "" {
-			fmt.Printf("Path: %s\n", f.Path)
+		fmt.Printf("Filesize: %d bytes (%.2f GB)\n", f.Filesize, float64(f.Filesize)/(1024*1024*1024))
+		fmt.Printf("Allocated: %d bytes\n", f.AllocatedBytes)
+		fmt.Printf("Used: %d bytes\n", f.UsedBytes)
+		if f.PreferredTier != "" {
+			fmt.Printf("Preferred Tier: %s\n", f.PreferredTier)
+		}
+		if f.Creator != "" {
+			fmt.Printf("Creator: %s\n", f.Creator)
 		}
 	}
 
@@ -125,6 +130,31 @@ func main() {
 	fmt.Println("      Media:     \"cdrom\",")
 	fmt.Println("      File:      fileID,  // ID of the ISO")
 	fmt.Println("  })")
+
+	// Upload example (commented out - uncomment to test)
+	fmt.Println("\n=== Upload Example (Code) ===")
+	fmt.Println("// Upload a local file:")
+	fmt.Println("// file, err := client.Files.UploadFromFile(ctx, \"/path/to/local.iso\", &vergeos.FileCreateRequest{")
+	fmt.Println("//     Name:        \"my-uploaded.iso\",")
+	fmt.Println("//     Description: \"Uploaded via SDK\",")
+	fmt.Println("// })")
+	fmt.Println("//")
+	fmt.Println("// Or create entry first, then upload:")
+	fmt.Println("// entry, _ := client.Files.Create(ctx, &vergeos.FileCreateRequest{")
+	fmt.Println("//     Name:           \"my-file.iso\",")
+	fmt.Println("//     AllocatedBytes: \"1073741824\", // 1GB")
+	fmt.Println("// })")
+	fmt.Println("// file, _ := client.Files.Upload(ctx, entry.ID.Int(), reader, size)")
+
+	// Download example (commented out - uncomment to test)
+	fmt.Println("\n=== Download Example (Code) ===")
+	fmt.Println("// Download to file:")
+	fmt.Println("// path, err := client.Files.DownloadToFile(ctx, fileID, \"/local/path/\")")
+	fmt.Println("//")
+	fmt.Println("// Or get reader for streaming:")
+	fmt.Println("// reader, file, err := client.Files.Download(ctx, fileID)")
+	fmt.Println("// defer reader.Close()")
+	fmt.Println("// io.Copy(destination, reader)")
 
 	fmt.Println("\nDone!")
 }

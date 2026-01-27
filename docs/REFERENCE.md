@@ -20,7 +20,11 @@ This document contains detailed API examples for all goVergeOS services. For a q
 - [WireGuard Peers](#wireguard-peers)
 - [IPSec VPNs](#ipsec-vpns)
 - [Certificates](#certificates)
+- [NAS Services](#nas-services)
+- [NAS Service Users](#nas-service-users)
 - [Volumes](#volumes)
+- [Volume Snapshots](#volume-snapshots)
+- [Volume Syncs](#volume-syncs)
 - [Volume Shares](#volume-shares)
 - [Volume Browser](#volume-browser)
 - [Tenants](#tenants)
@@ -29,6 +33,7 @@ This document contains detailed API examples for all goVergeOS services. For a q
 - [Users](#users)
 - [Groups](#groups)
 - [User API Keys](#user-api-keys)
+- [Permissions](#permissions)
 - [Nodes](#nodes)
 - [Clusters](#clusters)
 - [Settings](#settings)
@@ -44,6 +49,7 @@ This document contains detailed API examples for all goVergeOS services. For a q
 - [Sites & DR](#sites--dr)
 - [Cloud Snapshots](#cloud-snapshots)
 - [Webhooks](#webhooks)
+- [Files](#files)
 
 ---
 
@@ -636,6 +642,88 @@ err = client.Certificates.Delete(ctx, certID)
 
 ---
 
+## NAS Services
+
+NAS services are specialized VMs that provide NAS functionality including volumes, shares, and sync operations.
+
+```go
+// List all NAS services
+services, err := client.NASServices.List(ctx)
+
+// Get a NAS service by ID
+service, err := client.NASServices.Get(ctx, serviceID)
+
+// Get a NAS service by VM ID
+service, err := client.NASServices.GetByVM(ctx, vmID)
+
+// Get a NAS service by name
+service, err := client.NASServices.GetByName(ctx, "nas-service-1")
+
+// Create a NAS service (typically created automatically with NAS VM)
+service, err := client.NASServices.Create(ctx, &vergeos.NASServiceCreateRequest{
+    VM:         vmID,
+    MaxImports: ptr(8),    // Concurrent imports (1-200)
+    MaxSyncs:   ptr(4),    // Concurrent syncs (0-200, 0=disabled)
+})
+
+// Update NAS service settings
+service, err := client.NASServices.Update(ctx, serviceID, &vergeos.NASServiceUpdateRequest{
+    MaxImports:         ptr(16),
+    MaxSyncs:           ptr(8),
+    DisableSwap:        ptr(true),
+    ReadAheadKBDefault: ptr("1024"), // 0, 64, 128, 256, 512, 1024, 2048, 4096 KB
+})
+
+// Delete a NAS service
+err = client.NASServices.Delete(ctx, serviceID)
+```
+
+---
+
+## NAS Service Users
+
+Manage user accounts for NAS services to access CIFS shares. Note: Uses SHA1 hash strings as IDs.
+
+```go
+// List all NAS service users
+users, err := client.NASServiceUsers.List(ctx)
+
+// List users for a specific NAS service
+users, err := client.NASServiceUsers.ListByService(ctx, serviceID)
+
+// Get a user by ID (SHA1 hash string)
+user, err := client.NASServiceUsers.Get(ctx, "abc123...")
+
+// Get a user by name within a service
+user, err := client.NASServiceUsers.GetByName(ctx, serviceID, "jsmith")
+
+// Create a NAS service user
+user, err := client.NASServiceUsers.Create(ctx, &vergeos.NASServiceUserCreateRequest{
+    Service:     serviceID,
+    Name:        "jsmith",
+    Password:    "secure-password",
+    DisplayName: "John Smith",
+    Description: "Marketing department",
+    HomeShare:   ptr(shareID),      // Optional CIFS share for home directory
+    HomeDrive:   ptr("H"),          // Windows drive letter (A-Z)
+})
+
+// Update a user
+user, err := client.NASServiceUsers.Update(ctx, userID, &vergeos.NASServiceUserUpdateRequest{
+    Password:    ptr("new-password"),
+    DisplayName: ptr("John Q. Smith"),
+})
+
+// Enable/disable a user
+err = client.NASServiceUsers.Enable(ctx, userID)
+err = client.NASServiceUsers.Disable(ctx, userID)
+
+// Delete a user
+err = client.NASServiceUsers.Delete(ctx, userID)
+```
+
+---
+
 ## Volumes
 
 Manage NAS volumes for storage. Note: Volumes use SHA1 hash strings as IDs.
@@ -672,6 +760,130 @@ err = client.Volumes.Delete(ctx, volumeID)
 err = client.Volumes.Enable(ctx, volumeID)
 err = client.Volumes.Disable(ctx, volumeID)
 err = client.Volumes.Reset(ctx, volumeID)
+```
+
+---
+
+## Volume Snapshots
+
+Manage point-in-time snapshots of NAS volumes.
+
+```go
+// List all volume snapshots
+snapshots, err := client.VolumeSnapshots.List(ctx)
+
+// List snapshots for a specific volume
+snapshots, err := client.VolumeSnapshots.ListByVolume(ctx, volumeID)
+
+// List snapshots expiring within 7 days
+expiring, err := client.VolumeSnapshots.ListExpiring(ctx, 7)
+
+// List manually created snapshots (not scheduled)
+manual, err := client.VolumeSnapshots.ListManual(ctx)
+
+// Get a snapshot by ID
+snapshot, err := client.VolumeSnapshots.Get(ctx, snapshotID)
+
+// Get a snapshot by name within a volume
+snapshot, err := client.VolumeSnapshots.GetByName(ctx, volumeID, "pre-migration")
+
+// Create a volume snapshot
+snapshot, err := client.VolumeSnapshots.Create(ctx, &vergeos.VolumeSnapshotCreateRequest{
+    Volume:      volumeID,
+    Name:        "pre-migration",
+    Description: "Snapshot before data migration",
+    ExpiresType: ptr("date"),    // "date" or "never"
+    Expires:     ptr(time.Now().Add(7 * 24 * time.Hour).Unix()),
+    Quiesce:     ptr(true),      // Freeze I/O during snapshot
+})
+
+// Update a snapshot
+snapshot, err := client.VolumeSnapshots.Update(ctx, snapshotID, &vergeos.VolumeSnapshotUpdateRequest{
+    Description: ptr("Updated description"),
+})
+
+// Set snapshot to never expire
+snapshot, err := client.VolumeSnapshots.SetNeverExpires(ctx, snapshotID)
+
+// Set snapshot expiration (Unix timestamp)
+expires := time.Now().Add(30 * 24 * time.Hour).Unix()
+snapshot, err := client.VolumeSnapshots.SetExpires(ctx, snapshotID, expires)
+
+// Enable/disable a snapshot
+err = client.VolumeSnapshots.Enable(ctx, snapshotID)
+err = client.VolumeSnapshots.Disable(ctx, snapshotID)
+
+// Delete a snapshot
+err = client.VolumeSnapshots.Delete(ctx, snapshotID)
+```
+
+---
+
+## Volume Syncs
+
+Manage volume replication/sync jobs between volumes. Note: Uses SHA1 hash strings as IDs.
+
+```go
+// List all volume syncs
+syncs, err := client.VolumeSyncs.List(ctx)
+
+// List syncs for a specific NAS service
+syncs, err := client.VolumeSyncs.ListByService(ctx, serviceID)
+
+// List enabled syncs
+syncs, err := client.VolumeSyncs.ListEnabled(ctx)
+
+// Get a sync by ID (SHA1 hash string)
+sync, err := client.VolumeSyncs.Get(ctx, "abc123...")
+
+// Get a sync by name within a service
+sync, err := client.VolumeSyncs.GetByName(ctx, serviceID, "nightly-backup")
+
+// Create a volume sync job
+sync, err := client.VolumeSyncs.Create(ctx, &vergeos.VolumeSyncCreateRequest{
+    Service:           serviceID,
+    Name:              "nightly-backup",
+    Description:       "Nightly backup to secondary volume",
+    SourceVolume:      sourceVolumeID,
+    SourcePath:        ptr("/data"),
+    DestinationVolume: destVolumeID,
+    DestinationPath:   ptr("/backup"),
+
+    // Sync behavior
+    PreserveACLs:        ptr(true),
+    PreservePermissions: ptr(true),
+    PreserveOwner:       ptr(true),
+    CopySymlinks:        ptr(true),
+
+    // Delete behavior: never, delete, delete-before, delete-during, delete-delay, delete-after
+    DestinationDelete: ptr("delete-after"),
+
+    // Performance tuning
+    Workers:   ptr(8),      // 1-128 workers
+    ErrorsMax: ptr(int64(1000)),
+
+    // Scheduling (use snapshot profile for automated runs)
+    StartTimeProfile: ptr(profileID),
+})
+
+// Update a sync job
+sync, err := client.VolumeSyncs.Update(ctx, syncID, &vergeos.VolumeSyncUpdateRequest{
+    Workers:     ptr(16),
+    Description: ptr("Updated description"),
+})
+
+// Enable/disable a sync job
+err = client.VolumeSyncs.Enable(ctx, syncID)
+err = client.VolumeSyncs.Disable(ctx, syncID)
+
+// Start a sync job immediately
+err = client.VolumeSyncs.Start(ctx, syncID)
+
+// Stop a running sync job
+err = client.VolumeSyncs.Stop(ctx, syncID)
+
+// Delete a sync job
+err = client.VolumeSyncs.Delete(ctx, syncID)
 ```
 
 ---
@@ -911,6 +1123,77 @@ key, err := client.UserAPIKeys.Update(ctx, keyID, &vergeos.UserAPIKeyUpdateReque
 // Delete an API key
 err = client.UserAPIKeys.Delete(ctx, keyID)
 ```
+
+---
+
+## Permissions
+
+Manage resource-level access control. Permissions grant identities (users/groups) access to specific resources.
+
+```go
+// List all permissions
+permissions, err := client.Permissions.List(ctx)
+
+// List permissions for a specific identity (user or group)
+permissions, err := client.Permissions.ListByIdentity(ctx, identityID)
+
+// List permissions for a specific resource type
+vmPerms, err := client.Permissions.ListByTable(ctx, vergeos.PermissionTableVMs)
+
+// List permissions for a specific resource instance
+perms, err := client.Permissions.ListByResource(ctx, "vms", vmID)
+
+// Get a permission by ID
+perm, err := client.Permissions.Get(ctx, permID)
+
+// Get a specific permission by identity and resource
+perm, err := client.Permissions.GetByIdentityAndResource(ctx, identityID, "vms", vmID)
+
+// Create a permission
+perm, err := client.Permissions.Create(ctx, &vergeos.PermissionCreateRequest{
+    Identity: userID,
+    Table:    "vms",
+    Row:      vmID,
+    List:     ptr(true),
+    Read:     ptr(true),
+    Modify:   ptr(true),
+    Delete:   ptr(false),
+})
+
+// Update a permission
+perm, err := client.Permissions.Update(ctx, permID, &vergeos.PermissionUpdateRequest{
+    Delete: ptr(true), // Add delete permission
+})
+
+// Delete a permission
+err = client.Permissions.Delete(ctx, permID)
+
+// Convenience methods for common permission patterns
+
+// Grant read-only access
+perm, err := client.Permissions.GrantReadOnly(ctx, userID, "vms", vmID)
+
+// Grant full access (list, read, create, modify, delete)
+perm, err := client.Permissions.GrantFullAccess(ctx, userID, "vms", vmID)
+
+// Grant custom access
+perm, err := client.Permissions.Grant(ctx, userID, "vms", vmID,
+    true,  // read
+    true,  // modify
+    false, // delete
+)
+
+// Revoke all access (deletes the permission if it exists)
+err = client.Permissions.Revoke(ctx, userID, "vms", vmID)
+```
+
+Common table names for permissions:
+- `vergeos.PermissionTableVMs` ("vms")
+- `vergeos.PermissionTableNetworks` ("vnets")
+- `vergeos.PermissionTableVolumes` ("volumes")
+- `vergeos.PermissionTableTenants` ("tenants")
+- `vergeos.PermissionTableUsers` ("users")
+- `vergeos.PermissionTableGroups` ("groups")
 
 ---
 
@@ -1338,11 +1621,92 @@ err = client.WebhookURLs.Delete(ctx, webhookID)
 
 ---
 
+## Files
+
+Files are ISO images, disk images (QCOW2, VMDK, etc.), and other media files stored in VergeOS.
+
+```go
+// List all files
+files, err := client.Files.List(ctx)
+
+// List ISO files only
+isos, err := client.Files.ListISOs(ctx)
+
+// Get a specific file
+file, err := client.Files.Get(ctx, fileID)
+
+// Get a file by name
+file, err := client.Files.GetByName(ctx, "ubuntu-24.04.iso")
+
+// Create a file entry (for upload or URL import)
+file, err := client.Files.Create(ctx, &vergeos.FileCreateRequest{
+    Name:           "my-image.iso",
+    Description:    "Ubuntu Server ISO",
+    AllocatedBytes: "1073741824", // 1GB - must match actual file size
+    PreferredTier:  "1",
+})
+
+// Upload a local file (creates entry and uploads content)
+file, err := client.Files.UploadFromFile(ctx, "/path/to/local.iso", &vergeos.FileCreateRequest{
+    Name:        "uploaded.iso",
+    Description: "Uploaded via SDK",
+})
+
+// Upload to existing file entry with custom chunk size
+file, err := client.Files.UploadWithChunkSize(ctx, fileID, reader, fileSize, 524288) // 512KB chunks
+
+// Download a file (returns io.ReadCloser)
+reader, file, err := client.Files.Download(ctx, fileID)
+if err != nil {
+    return err
+}
+defer reader.Close()
+// Use io.Copy to write to destination
+io.Copy(destination, reader)
+
+// Download to a local file path
+localPath, err := client.Files.DownloadToFile(ctx, fileID, "/local/download/dir/")
+
+// Update file metadata
+newDesc := "Updated description"
+file, err := client.Files.Update(ctx, fileID, &vergeos.FileUpdateRequest{
+    Description: &newDesc,
+})
+
+// Delete a file
+err = client.Files.Delete(ctx, fileID)
+```
+
+### File Upload Notes
+
+- Files are uploaded in 256KB chunks by default (matching verge-cli and PSVergeOS)
+- The `AllocatedBytes` in `FileCreateRequest` must match the actual file size
+- Use `UploadFromFile` for the simplest upload experience - it handles entry creation and chunked upload
+- Use `Upload` or `UploadWithChunkSize` when you need fine-grained control over the upload process
+
+### Supported File Types
+
+| Type | Description |
+|------|-------------|
+| `iso` | ISO images for VM boot |
+| `img` | Raw disk images |
+| `qcow2` | QEMU/KVM disk format |
+| `vmdk` | VMware disk format |
+| `vhd`/`vhdx` | Hyper-V disk formats |
+| `ova`/`ovf` | VMware/VirtualBox exports |
+| `raw` | Raw binary disk images |
+
+---
+
 ## Additional Resources
 
 The library also supports:
 
-- **Files** (`client.Files`) - ISO images and media files
 - **CloudInit Files** (`client.CloudInitFiles`) - Cloud-init configuration management
 - **Resource Groups** (`client.ResourceGroups`) - Logical grouping of resources
 - **VM Devices** (`client.VMDevices`) - VM devices (USB, TPM, vGPU)
+- **NAS Services** (`client.NASServices`) - NAS service VM management
+- **NAS Service Users** (`client.NASServiceUsers`) - NAS user account management
+- **Volume Snapshots** (`client.VolumeSnapshots`) - NAS volume snapshot management
+- **Volume Syncs** (`client.VolumeSyncs`) - Volume replication/sync jobs
+- **Permissions** (`client.Permissions`) - Resource-level access control

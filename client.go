@@ -95,6 +95,11 @@ type Client struct {
 	WebhookURLs             WebhookURLServiceInterface
 	Webhooks                WebhookServiceInterface
 	UserAPIKeys             UserAPIKeyServiceInterface
+	NASServices             NASServiceServiceInterface
+	NASServiceUsers         NASServiceUserServiceInterface
+	VolumeSyncs             VolumeSyncServiceInterface
+	VolumeSnapshots         VolumeSnapshotServiceInterface
+	Permissions             PermissionServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -260,6 +265,11 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.WebhookURLs = &WebhookURLService{client: c}
 	c.Webhooks = &WebhookService{client: c}
 	c.UserAPIKeys = &UserAPIKeyService{client: c}
+	c.NASServices = &NASServiceService{client: c}
+	c.NASServiceUsers = &NASServiceUserService{client: c}
+	c.VolumeSyncs = &VolumeSyncService{client: c}
+	c.VolumeSnapshots = &VolumeSnapshotService{client: c}
+	c.Permissions = &PermissionService{client: c}
 
 	return c, nil
 }

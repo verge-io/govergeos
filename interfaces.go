@@ -2,6 +2,7 @@ package vergeos
 
 import (
 	"context"
+	"io"
 	"time"
 )
 
@@ -154,6 +155,14 @@ type FileServiceInterface interface {
 	Get(ctx context.Context, id int) (*File, error)
 	GetByName(ctx context.Context, name string) (*File, error)
 	ListISOs(ctx context.Context, opts ...ListOption) ([]File, error)
+	Create(ctx context.Context, req *FileCreateRequest) (*File, error)
+	Update(ctx context.Context, id int, req *FileUpdateRequest) (*File, error)
+	Delete(ctx context.Context, id int) error
+	Download(ctx context.Context, id int) (io.ReadCloser, *File, error)
+	DownloadToFile(ctx context.Context, id int, destPath string) (string, error)
+	Upload(ctx context.Context, id int, reader io.Reader, size int64) (*File, error)
+	UploadWithChunkSize(ctx context.Context, id int, reader io.Reader, size int64, chunkSize int) (*File, error)
+	UploadFromFile(ctx context.Context, localPath string, req *FileCreateRequest) (*File, error)
 }
 
 // ResourceGroupServiceInterface defines the interface for ResourceGroup operations.
@@ -654,6 +663,82 @@ type UserAPIKeyServiceInterface interface {
 	ListExpired(ctx context.Context, opts ...ListOption) ([]UserAPIKey, error)
 }
 
+// NASServiceServiceInterface defines the interface for NAS service operations.
+type NASServiceServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]NASService, error)
+	Get(ctx context.Context, id int) (*NASService, error)
+	GetByVM(ctx context.Context, vmID int) (*NASService, error)
+	GetByName(ctx context.Context, name string) (*NASService, error)
+	Create(ctx context.Context, req *NASServiceCreateRequest) (*NASService, error)
+	Update(ctx context.Context, id int, req *NASServiceUpdateRequest) (*NASService, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// NASServiceUserServiceInterface defines the interface for NAS service user operations.
+// Note: Like volumes, NAS service users use SHA1 hash strings as IDs instead of integers.
+type NASServiceUserServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]NASServiceUser, error)
+	ListByService(ctx context.Context, serviceID int) ([]NASServiceUser, error)
+	Get(ctx context.Context, id string) (*NASServiceUser, error)
+	GetByName(ctx context.Context, serviceID int, name string) (*NASServiceUser, error)
+	Create(ctx context.Context, req *NASServiceUserCreateRequest) (*NASServiceUser, error)
+	Update(ctx context.Context, id string, req *NASServiceUserUpdateRequest) (*NASServiceUser, error)
+	Delete(ctx context.Context, id string) error
+	Enable(ctx context.Context, id string) error
+	Disable(ctx context.Context, id string) error
+}
+
+// VolumeSyncServiceInterface defines the interface for volume sync operations.
+// Note: Like volumes, volume syncs use SHA1 hash strings as IDs instead of integers.
+type VolumeSyncServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VolumeSync, error)
+	ListByService(ctx context.Context, serviceID int) ([]VolumeSync, error)
+	ListEnabled(ctx context.Context, opts ...ListOption) ([]VolumeSync, error)
+	Get(ctx context.Context, id string) (*VolumeSync, error)
+	GetByName(ctx context.Context, serviceID int, name string) (*VolumeSync, error)
+	Create(ctx context.Context, req *VolumeSyncCreateRequest) (*VolumeSync, error)
+	Update(ctx context.Context, id string, req *VolumeSyncUpdateRequest) (*VolumeSync, error)
+	Delete(ctx context.Context, id string) error
+	Enable(ctx context.Context, id string) error
+	Disable(ctx context.Context, id string) error
+	Start(ctx context.Context, id string) error
+	Stop(ctx context.Context, id string) error
+}
+
+// VolumeSnapshotServiceInterface defines the interface for volume snapshot operations.
+type VolumeSnapshotServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VolumeSnapshot, error)
+	ListByVolume(ctx context.Context, volumeID int, opts ...ListOption) ([]VolumeSnapshot, error)
+	ListExpiring(ctx context.Context, days int, opts ...ListOption) ([]VolumeSnapshot, error)
+	ListManual(ctx context.Context, opts ...ListOption) ([]VolumeSnapshot, error)
+	Get(ctx context.Context, id int) (*VolumeSnapshot, error)
+	GetByName(ctx context.Context, volumeID int, name string) (*VolumeSnapshot, error)
+	Create(ctx context.Context, req *VolumeSnapshotCreateRequest) (*VolumeSnapshot, error)
+	Update(ctx context.Context, id int, req *VolumeSnapshotUpdateRequest) (*VolumeSnapshot, error)
+	Delete(ctx context.Context, id int) error
+	Enable(ctx context.Context, id int) error
+	Disable(ctx context.Context, id int) error
+	SetNeverExpires(ctx context.Context, id int) (*VolumeSnapshot, error)
+	SetExpires(ctx context.Context, id int, expires int64) (*VolumeSnapshot, error)
+}
+
+// PermissionServiceInterface defines the interface for permission operations.
+type PermissionServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]Permission, error)
+	ListByIdentity(ctx context.Context, identityID int, opts ...ListOption) ([]Permission, error)
+	ListByTable(ctx context.Context, table string, opts ...ListOption) ([]Permission, error)
+	ListByResource(ctx context.Context, table string, rowID int64, opts ...ListOption) ([]Permission, error)
+	Get(ctx context.Context, id int) (*Permission, error)
+	GetByIdentityAndResource(ctx context.Context, identityID int, table string, rowID int64) (*Permission, error)
+	Create(ctx context.Context, req *PermissionCreateRequest) (*Permission, error)
+	Update(ctx context.Context, id int, req *PermissionUpdateRequest) (*Permission, error)
+	Delete(ctx context.Context, id int) error
+	Grant(ctx context.Context, identityID int, table string, rowID int64, read, modify, delete bool) (*Permission, error)
+	GrantReadOnly(ctx context.Context, identityID int, table string, rowID int64) (*Permission, error)
+	GrantFullAccess(ctx context.Context, identityID int, table string, rowID int64) (*Permission, error)
+	Revoke(ctx context.Context, identityID int, table string, rowID int64) error
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface                      = (*VMService)(nil)
@@ -712,4 +797,9 @@ var (
 	_ WebhookURLServiceInterface              = (*WebhookURLService)(nil)
 	_ WebhookServiceInterface                 = (*WebhookService)(nil)
 	_ UserAPIKeyServiceInterface              = (*UserAPIKeyService)(nil)
+	_ NASServiceServiceInterface              = (*NASServiceService)(nil)
+	_ NASServiceUserServiceInterface          = (*NASServiceUserService)(nil)
+	_ VolumeSyncServiceInterface              = (*VolumeSyncService)(nil)
+	_ VolumeSnapshotServiceInterface          = (*VolumeSnapshotService)(nil)
+	_ PermissionServiceInterface              = (*PermissionService)(nil)
 )

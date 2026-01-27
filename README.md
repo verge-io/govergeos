@@ -150,7 +150,11 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 
 | Service | Description |
 |---------|-------------|
+| `NASServices` | NAS service VM management and configuration |
+| `NASServiceUsers` | NAS service user accounts (uses SHA1 string IDs) |
 | `Volumes` | NAS volume management (uses SHA1 string IDs) |
+| `VolumeSnapshots` | NAS volume snapshot management |
+| `VolumeSyncs` | Volume replication/sync jobs (uses SHA1 string IDs) |
 | `VolumeCIFSShares` | CIFS/SMB share management |
 | `VolumeNFSShares` | NFS share management |
 | `VolumeBrowser` | Async volume file browsing |
@@ -171,6 +175,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | `Groups` | Group management |
 | `Members` | Group membership management |
 | `UserAPIKeys` | API key management |
+| `Permissions` | Resource-level access control (Grant/Revoke) |
 
 ### System Administration
 
@@ -208,7 +213,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | Service | Description |
 |---------|-------------|
 | `CloudInitFiles` | Cloud-init file management |
-| `Files` | File listing (ISOs, images, etc.) (read-only) |
+| `Files` | File CRUD, upload, and download (ISOs, images, etc.) |
 | `WebhookURLs` | Webhook endpoint configuration |
 | `Webhooks` | Webhook delivery log (read-only) |
 | `Certificates` | SSL/TLS certificate management |

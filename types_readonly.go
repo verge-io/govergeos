@@ -315,12 +315,51 @@ type File struct {
 	Name string `json:"name"`
 	// Description is the description.
 	Description string `json:"description,omitempty"`
-	// Type is the file type.
+	// Type is the file type (iso, img, qcow, qcow2, raw, vdi, vhd, vhdx, vmdk, ova, etc.).
 	Type string `json:"type,omitempty"`
-	// Size is the file size in bytes.
-	Size int64 `json:"size,omitempty"`
-	// Path is the file path.
-	Path string `json:"path,omitempty"`
+	// Owner is the owning machine drive ID.
+	Owner FlexInt `json:"owner,omitempty"`
+	// AllocatedBytes is the allocated size in bytes.
+	AllocatedBytes int64 `json:"allocated_bytes,omitempty"`
+	// UsedBytes is the actual size on disk in bytes.
+	UsedBytes int64 `json:"used_bytes,omitempty"`
+	// Filesize is the logical file size in bytes.
+	Filesize int64 `json:"filesize,omitempty"`
+	// Modified is the last modified timestamp (Unix epoch).
+	Modified int64 `json:"modified,omitempty"`
+	// PreferredTier is the preferred storage tier (1-5).
+	PreferredTier string `json:"preferred_tier,omitempty"`
+	// URL is the source URL if the file was imported from a URL.
+	URL string `json:"url,omitempty"`
+	// Creator is the username that created this file.
+	Creator string `json:"creator,omitempty"`
+}
+
+// FileCreateRequest is the request body for creating a file entry.
+// After creating the entry, use Upload() to upload the file content.
+type FileCreateRequest struct {
+	// Name is the file name (required).
+	Name string `json:"name"`
+	// Description is an optional description.
+	Description string `json:"description,omitempty"`
+	// AllocatedBytes is the expected file size in bytes (required for uploads).
+	// Pass as string to match API expectations.
+	AllocatedBytes string `json:"allocated_bytes,omitempty"`
+	// PreferredTier is the preferred storage tier (1-5).
+	PreferredTier string `json:"preferred_tier,omitempty"`
+	// URL is a source URL to import the file from (optional).
+	// If provided, VergeOS will download the file from this URL.
+	URL string `json:"url,omitempty"`
+}
+
+// FileUpdateRequest is the request body for updating a file.
+type FileUpdateRequest struct {
+	// Name is the file name.
+	Name *string `json:"name,omitempty"`
+	// Description is the description.
+	Description *string `json:"description,omitempty"`
+	// PreferredTier is the preferred storage tier (1-5).
+	PreferredTier *string `json:"preferred_tier,omitempty"`
 }
 
 // ResourceGroup represents a resource group in VergeOS.
@@ -381,7 +420,7 @@ const (
 	clusterStatusFields     = "cluster,status,status_info,state,last_update,total_nodes,online_nodes,running_machines,total_ram,online_ram,used_ram,total_cores,online_cores,used_cores,phys_ram_used,phys_vram_used,phys_total_cpu"
 	nodeListFields          = "id,name,description,physical,cluster,machine,model,asset_tag,cpu,cpu_speed,cores,iommu,ram,overcommit,vm_ram,failover_ram,yb_version,os_version,kernel_version,appserver_version,vsan_version,qemu_version,vsan_nodeid,vsan_connected,maintenance,need_restart,restart_reason,ipmi_address,ipmi_user,ipmi_status,ipmi_status_info,max_core_temp,max_core_temp_warn_perc,critical_core_temp,pxe_vnet,capture_logs,lldp,note"
 	groupListFields         = "$key,name,description,enabled,type,email,system_group,auth_source,created,creator"
-	fileListFields          = "$key,name,description,type,size,path"
+	fileListFields          = "$key,name,description,type,owner,allocated_bytes,used_bytes,filesize,modified,preferred_tier,url,creator"
 	resourceGroupListFields = "$key,name,description,type,enabled"
 	settingListFields       = "key,value,default_value,description"
 )
