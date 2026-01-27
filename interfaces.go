@@ -795,6 +795,45 @@ type TenantLayer2NetworkServiceInterface interface {
 	Unassign(ctx context.Context, tenantID, vnetID int) error
 }
 
+// StorageTierServiceInterface defines the interface for storage tier operations (read-only).
+// Storage tiers provide system-wide VSAN storage capacity and usage information.
+type StorageTierServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]StorageTier, error)
+	Get(ctx context.Context, tier int) (*StorageTier, error)
+}
+
+// ClusterTierServiceInterface defines the interface for cluster tier operations (read-only).
+// Cluster tiers provide cluster-specific VSAN tier status and statistics.
+type ClusterTierServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]ClusterTier, error)
+	ListByCluster(ctx context.Context, clusterID int, opts ...ListOption) ([]ClusterTier, error)
+	Get(ctx context.Context, id int) (*ClusterTier, error)
+	GetByClusterAndTier(ctx context.Context, clusterID int, tierNum int) (*ClusterTier, error)
+}
+
+// MachineDrivePhysServiceInterface defines the interface for machine drive physical status operations (read-only).
+// This provides hardware-level drive information including temperature, wear level, and VSAN metrics.
+type MachineDrivePhysServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]MachineDrivePhys, error)
+	ListByVSANTier(ctx context.Context, tier int, opts ...ListOption) ([]MachineDrivePhys, error)
+	ListSpares(ctx context.Context, opts ...ListOption) ([]MachineDrivePhys, error)
+	ListWithWarnings(ctx context.Context, opts ...ListOption) ([]MachineDrivePhys, error)
+	Get(ctx context.Context, id int) (*MachineDrivePhys, error)
+	GetByParentDrive(ctx context.Context, driveID int) (*MachineDrivePhys, error)
+}
+
+// ClusterStatsHistoryServiceInterface defines the interface for cluster statistics history operations (read-only).
+// This provides historical metrics for cluster monitoring.
+type ClusterStatsHistoryServiceInterface interface {
+	ListShort(ctx context.Context, opts ...ListOption) ([]ClusterStatsHistory, error)
+	ListShortByCluster(ctx context.Context, clusterID int, opts ...ListOption) ([]ClusterStatsHistory, error)
+	ListLong(ctx context.Context, opts ...ListOption) ([]ClusterStatsHistory, error)
+	ListLongByCluster(ctx context.Context, clusterID int, opts ...ListOption) ([]ClusterStatsHistory, error)
+	GetLatestShort(ctx context.Context, clusterID int) (*ClusterStatsHistory, error)
+	GetShort(ctx context.Context, id int) (*ClusterStatsHistory, error)
+	GetLong(ctx context.Context, id int) (*ClusterStatsHistory, error)
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface                      = (*VMService)(nil)
@@ -862,4 +901,8 @@ var (
 	_ TenantSnapshotServiceInterface          = (*TenantSnapshotService)(nil)
 	_ LogServiceInterface                     = (*LogService)(nil)
 	_ TenantLayer2NetworkServiceInterface     = (*TenantLayer2NetworkService)(nil)
+	_ StorageTierServiceInterface             = (*StorageTierService)(nil)
+	_ ClusterTierServiceInterface             = (*ClusterTierService)(nil)
+	_ MachineDrivePhysServiceInterface        = (*MachineDrivePhysService)(nil)
+	_ ClusterStatsHistoryServiceInterface     = (*ClusterStatsHistoryService)(nil)
 )

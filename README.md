@@ -198,6 +198,15 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | `AlarmTypes` | Alarm type reference data (read-only, string keys) |
 | `Tasks` | Task monitoring, execution, and scheduling |
 
+### VSAN & Storage Monitoring
+
+| Service | Description |
+|---------|-------------|
+| `StorageTiers` | System-wide storage tier capacity, usage, deduplication (read-only) |
+| `ClusterTiers` | Cluster-specific tier status, redundancy, encryption (read-only) |
+| `MachineDrivePhys` | Physical drive metrics: temperature, wear, SMART, VSAN status (read-only) |
+| `ClusterStatsHistory` | Historical cluster stats: RAM, CPU, nodes, machines (read-only) |
+
 ### Backup & DR
 
 | Service | Description |
@@ -256,6 +265,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | [dr-sites](./examples/dr-sites/) | Remote sites and sync configuration |
 | [cloud-snapshots](./examples/cloud-snapshots/) | Cloud snapshot management |
 | [webhooks](./examples/webhooks/) | Webhook configuration |
+| [vsan-monitoring](./examples/vsan-monitoring/) | VSAN storage metrics for Prometheus exporters |
 
 ## Configuration
 

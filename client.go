@@ -104,6 +104,10 @@ type Client struct {
 	VolumeSnapshots         VolumeSnapshotServiceInterface
 	Permissions             PermissionServiceInterface
 	Logs                    LogServiceInterface
+	StorageTiers            StorageTierServiceInterface
+	ClusterTiers            ClusterTierServiceInterface
+	MachineDrivePhys        MachineDrivePhysServiceInterface
+	ClusterStatsHistory     ClusterStatsHistoryServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -278,6 +282,10 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.VolumeSnapshots = &VolumeSnapshotService{client: c}
 	c.Permissions = &PermissionService{client: c}
 	c.Logs = &LogService{client: c}
+	c.StorageTiers = &StorageTierService{client: c}
+	c.ClusterTiers = &ClusterTierService{client: c}
+	c.MachineDrivePhys = &MachineDrivePhysService{client: c}
+	c.ClusterStatsHistory = &ClusterStatsHistoryService{client: c}
 
 	return c, nil
 }
