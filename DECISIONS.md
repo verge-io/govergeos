@@ -222,46 +222,47 @@ This document captures key design decisions made during the development of goVer
 
 ## ADR-011: "goVergeOS" Naming Convention
 
-**Date:** 2026-01-21 (Updated: 2026-01-26)
+**Date:** 2026-01-21 (Updated: 2026-01-29)
 
 **Status:** Accepted
 
 **Context:** Verge is standardizing library naming across all language-specific packages:
 - **PSVergeOS** - PowerShell module
-- **pyVergeOS** - Python package
+- **pyvergeos** - Python package (lowercase module path)
 - **goVergeOS** - Go library (this project)
 
-The original name "VergeOS Go SDK" used the term "SDK" which implies more maturity and comprehensiveness than appropriate for what is essentially a Go API client library. The naming also didn't align with Verge's cross-language naming convention.
+The original name "VergeOS Go SDK" used the term "SDK" which implies more maturity and comprehensiveness than appropriate for what is essentially a Go API client library.
 
 This project serves as the foundation for the Terraform Provider, Prometheus Exporter, and the upcoming Cluster API (CAPI) provider.
 
-**Alternatives Considered:**
+**Evolution of Naming:**
 
-Go naming conventions (per https://go.dev/blog/package-names) recommend lowercase import paths. Common patterns in the Go ecosystem include:
-- `github.com/google/go-github` (package `github`)
-- `github.com/hashicorp/go-retryablehttp` (package `retryablehttp`)
-- `github.com/aws/aws-sdk-go` (package `aws`)
+1. **Original**: `vergeos-go-sdk` - SDK terminology was too formal
+2. **v0.1.0-alpha**: `goVergeOS` - Brand consistency with mixed case
+3. **v0.1.0**: `govergeos` - Go-idiomatic lowercase module path
 
-A more Go-idiomatic name would be `go-vergeos` or `vergeos-go`, resulting in an import path like `github.com/verge-io/go-vergeos`. However, this would break the `{lang}VergeOS` naming pattern used across Verge's language-specific libraries.
+The mixed-case `goVergeOS` import path caused friction:
+- Go module proxy encodes uppercase as `go!verge!o!s` in URLs
+- Users naturally type lowercase and get errors
+- No major Go libraries use mixed-case module paths (the `github.com/Sirupsen/logrus` → `github.com/sirupsen/logrus` rename is a cautionary tale)
 
-**Decision:** Rename from "VergeOS Go SDK" to "goVergeOS" to align with Verge's unified naming pattern, prioritizing brand consistency over Go-specific conventions. The Go package name (`vergeos`) remains unchanged and fully idiomatic—users still write `vergeos.NewClient()`.
+**Decision:** Use lowercase `govergeos` for all code paths (module path, repository name, User-Agent) while keeping "goVergeOS" as the marketing/branding name in documentation and titles.
 
 **Rationale:**
-- Brand consistency across PSVergeOS, pyVergeOS, and goVergeOS outweighs Go-specific import path conventions
-- The Go package name `vergeos` is fully idiomatic (lowercase, clear, concise)
-- Only the repository/import path uses mixedCaps; the actual package name follows Go conventions
-- "Library" positioning is more accurate than "SDK" for the current scope
-- Consolidates API client logic into a single source of truth for downstream consumers (Terraform Provider, Prometheus Exporter)
-- Provides a solid foundation for the upcoming CAPI provider
+- Go conventions strongly prefer lowercase import paths
+- All major Go SDKs use lowercase: `aws-sdk-go`, `go-github`, `stripe-go`
+- The package name `vergeos` is what developers actually type in code
+- Brand name in docs ("goVergeOS") vs. import path (`govergeos`) is a common pattern
+- Matches `pyvergeos` Python package naming at the module level
 
 **Consequences:**
-- Repository renamed from `vergeos-go-sdk` to `goVergeOS`
-- Module path changed from `github.com/verge-io/vergeos-go-sdk` to `github.com/verge-io/goVergeOS`
-- Import path uses mixedCaps (`goVergeOS`) which deviates from typical Go conventions, but package name (`vergeos`) is idiomatic
-- Consumers must update import paths (GitHub redirects handle legacy references)
-- User-Agent header changed from `vergeos-go-sdk/1.0` to `goVergeOS/1.0`
-- Consistent naming across documentation, package references, and marketing materials
-- Establishes branding pattern aligned with other Verge language libraries
+- Repository: `github.com/verge-io/govergeos`
+- Module path: `github.com/verge-io/govergeos`
+- Import: `import vergeos "github.com/verge-io/govergeos"`
+- User-Agent: `govergeos/1.0`
+- Documentation titles: "goVergeOS" (branding preserved)
+- Package name: `vergeos` (unchanged, fully idiomatic)
+- Users can now `go get github.com/verge-io/govergeos` without case sensitivity issues
 
 ---
 
