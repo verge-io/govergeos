@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/goVergeOS"
+	vergeos "github.com/verge-io/govergeos"
 )
 
 // TestWave12FilesList tests listing files.

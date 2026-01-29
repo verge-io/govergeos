@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/goVergeOS"
+	vergeos "github.com/verge-io/govergeos"
 )
 
 // TestWave11NASExtended tests the extended NAS services added in Wave 2 of the convergence plan:

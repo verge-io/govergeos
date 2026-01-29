@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/goVergeOS"
+	vergeos "github.com/verge-io/govergeos"
 )
 
 // TestWave10VMSnapshots tests the VM Snapshot service against a live VergeOS API.

@@ -13,7 +13,7 @@ import (
 	"log"
 	"os"
 
-	vergeos "github.com/verge-io/goVergeOS"
+	vergeos "github.com/verge-io/govergeos"
 )
 
 func main() {

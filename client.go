@@ -19,7 +19,7 @@ const (
 	// apiBasePath is the base path for the VergeOS API.
 	apiBasePath = "/api/v4"
 	// defaultUserAgent is the default User-Agent header.
-	defaultUserAgent = "goVergeOS/1.0"
+	defaultUserAgent = "govergeos/1.0"
 )
 
 // Client is the VergeOS API client.

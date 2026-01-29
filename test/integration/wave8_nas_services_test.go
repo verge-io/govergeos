@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/verge-io/goVergeOS"
+	"github.com/verge-io/govergeos"
 )
 
 // TestWave8NASServices tests the NAS services: CIFS shares, NFS shares, and volume browser.

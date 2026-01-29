@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/goVergeOS"
+	vergeos "github.com/verge-io/govergeos"
 )
 
 // TestWave1StorageFirewall tests the Wave 1 services (Volumes, VNet Rules, Rule Aliases)

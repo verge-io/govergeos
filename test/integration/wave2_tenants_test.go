@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/goVergeOS"
+	vergeos "github.com/verge-io/govergeos"
 )
 
 // TestWave2Tenants tests the Wave 2 multi-tenancy services (Tenants, TenantNodes, TenantStorage)

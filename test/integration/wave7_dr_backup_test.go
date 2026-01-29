@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/goVergeOS"
+	vergeos "github.com/verge-io/govergeos"
 )
 
 // TestWave7DRBackup tests the Wave 7 DR & Backup services (Sites, SiteSyncs, CloudSnapshots)

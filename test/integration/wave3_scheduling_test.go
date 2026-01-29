@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/goVergeOS"
+	vergeos "github.com/verge-io/govergeos"
 )
 
 // TestWave3Scheduling tests the Wave 3 scheduling services (SnapshotProfiles, SnapshotProfilePeriods)

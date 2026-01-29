@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/goVergeOS"
+	vergeos "github.com/verge-io/govergeos"
 )
 
 // TestWave4Monitoring tests the Wave 4 monitoring services (Alarms, AlarmTypes, Tasks)

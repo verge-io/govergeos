@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/goVergeOS"
+	vergeos "github.com/verge-io/govergeos"
 )
 
 // TestWave6VPNSecurity tests the Wave 6 VPN and Security services (WireGuard, IPSec, Certificates)
