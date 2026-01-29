@@ -1,5 +1,7 @@
 # goVergeOS
 
+> **Pre-release**: This library is under active development. APIs may change before v1.0.0.
+
 A Go client library for managing VergeOS infrastructure programmatically. goVergeOS provides complete API coverage for virtual machines, networking, storage, multi-tenancy, and disaster recovery operations.
 
 Built for infrastructure administrators and Go developers who want to automate VergeOS management. This library serves as the foundation for the [Terraform Provider](https://github.com/verge-io/terraform-provider-vergeio), [Prometheus Exporter](https://github.com/verge-io/vergeos-exporter), and other VergeOS tooling.
@@ -21,16 +23,24 @@ Built for infrastructure administrators and Go developers who want to automate V
 
 ## Installation
 
+This repository is currently private. Configure Go to bypass the module proxy:
+
 ```bash
-go get github.com/verge-io/goVergeOS
+# Set GOPRIVATE (add to your shell profile for persistence)
+export GOPRIVATE=github.com/verge-io/govergeos
+
+# Install the library
+go get github.com/verge-io/govergeos
 ```
+
+You'll need GitHub access configured (SSH key or `gh auth login`).
 
 ## Quick Start
 
 ### Connect to VergeOS
 
 ```go
-import vergeos "github.com/verge-io/goVergeOS"
+import vergeos "github.com/verge-io/govergeos"
 
 // Basic authentication
 client, err := vergeos.NewClient(
@@ -379,7 +389,7 @@ For detailed API examples for all services, see [docs/REFERENCE.md](./docs/REFER
 
 - [VergeOS Documentation](https://docs.verge.io/) - Official VergeOS documentation
 - [VergeOS API Reference](https://docs.verge.io/knowledge-base/category/api/) - REST API documentation
-- [GitHub Issues](https://github.com/verge-io/goVergeOS/issues) - Bug reports and feature requests
+- [GitHub Issues](https://github.com/verge-io/govergeos/issues) - Bug reports and feature requests
 - [VergeOS Support](https://www.verge.io/support) - Commercial support options
 
 ## Contributing
