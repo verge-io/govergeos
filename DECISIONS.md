@@ -446,3 +446,54 @@ func (s *VNetRuleService) setEnabled(ctx context.Context, id int, enabled bool, 
 **Related:**
 - ADR-013 (API Schema Source) - importance of verifying against live API
 - `.claude/reference/API-Schema/ENDPOINTS.md` - documents this exception
+
+---
+
+## ADR-016: Mandatory Version Check in NewClient
+
+**Date:** 2026-01-29
+
+**Status:** Accepted
+
+**Context:** The VergeOS API uses `/api/v4/` for all endpoints regardless of the actual software version. This means a server running VergeOS 4.x and one running 26.x both expose the same `/api/v4/` path, making it impossible to detect version mismatches from API paths alone.
+
+The SDK targets VergeOS 26 and relies on features, fields, and behaviors specific to that version. Using the SDK against an older VergeOS installation may result in:
+- Missing fields in API responses
+- Endpoints that don't exist
+- Different behavior for existing endpoints
+- Confusing partial failures that are hard to diagnose
+
+**Decision:** Perform a blocking version check in `NewClient()` that fetches `/version.json` and validates the server is running VergeOS 26.x. If the major version is not 26, client creation fails immediately with an `UnsupportedVersionError`.
+
+```go
+client, err := vergeos.NewClient(
+    vergeos.WithBaseURL("https://host"),
+    vergeos.WithCredentials("user", "pass"),
+)
+if err != nil {
+    // "unsupported server version 4.2.0: this SDK requires VergeOS 26.x"
+    log.Fatal(err)
+}
+```
+
+**Alternatives Considered:**
+
+1. **Lazy check on first API call** - Rejected because it delays error discovery; users might write significant code before hitting the check
+2. **Optional check via `WithVersionCheck()` option** - Rejected because it leads to confusing partial failures when users forget to enable it
+3. **No check at all** - Rejected because the SDK may silently malfunction on incompatible versions
+4. **Warning instead of error** - Rejected because warnings are easily ignored and don't prevent the underlying compatibility issues
+
+**Rationale:**
+- **Fail fast** - Users get immediate, clear feedback if the server version is incompatible
+- **No ambiguity** - The SDK either works fully or doesn't work at all; no partial compatibility
+- **Simple implementation** - One check at startup, no caching or repeated checks needed
+- **Clear error message** - Users know exactly what's wrong and what version is required
+- **Choke point** - `NewClient()` is the natural place to validate prerequisites before any API calls
+
+**Consequences:**
+- `NewClient()` makes a network request to `/version.json` before returning
+- Client creation fails if the server is not running VergeOS 26.x
+- Users connecting to older VergeOS installations must use an older SDK version
+- New `UnsupportedVersionError` type and `IsUnsupportedVersionError()` helper added
+- Adds `getAbsolute()` internal method for fetching non-API paths
+

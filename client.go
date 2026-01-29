@@ -287,6 +287,11 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.MachineDrivePhys = &MachineDrivePhysService{client: c}
 	c.ClusterStatsHistory = &ClusterStatsHistoryService{client: c}
 
+	// Validate server version before returning client
+	if err := c.checkServerVersion(context.Background()); err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }
 
@@ -410,6 +415,60 @@ func (c *Client) put(ctx context.Context, endpoint string, body interface{}, res
 // delete performs a DELETE request.
 func (c *Client) delete(ctx context.Context, endpoint string) error {
 	return c.do(ctx, http.MethodDelete, endpoint, nil, nil, nil)
+}
+
+// getAbsolute performs a GET request to an absolute path (not under /api/v4/).
+// This is used for endpoints like /version.json that are outside the API path.
+func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values, result interface{}) error {
+	// Build URL with absolute path
+	u := c.baseURL + path
+	if len(params) > 0 {
+		u = fmt.Sprintf("%s?%s", u, params.Encode())
+	}
+
+	// Create request
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return fmt.Errorf("vergeos: failed to create request: %w", err)
+	}
+
+	// Set authentication header
+	if c.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	} else {
+		req.SetBasicAuth(c.username, c.password)
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", c.userAgent)
+
+	// Execute request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("vergeos: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for HTTP errors
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode == 401 || resp.StatusCode == 403 {
+			return &AuthError{Message: string(body)}
+		}
+		return &APIError{
+			StatusCode: resp.StatusCode,
+			Endpoint:   path,
+			Message:    string(body),
+		}
+	}
+
+	// Decode response
+	if result != nil {
+		if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
+			return fmt.Errorf("vergeos: failed to decode response: %w", err)
+		}
+	}
+
+	return nil
 }
 
 // getKey extracts the key from an API response.
