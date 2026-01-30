@@ -247,3 +247,6 @@ Tests should be added following Go conventions:
 - Table-driven tests for comprehensive coverage
 - Mock HTTP responses for unit tests
 - Integration tests against live API (separate build tag)
+
+## Reserved Networks
+IMPORTANT: Never use "Core" or "DMZ" networks for workloads, services, VMs, or NAS. These networks are reserved for the VergeOS operating system. Always create a new network (e.g., "Internal") for test workloads and examples.

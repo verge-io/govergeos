@@ -497,3 +497,74 @@ if err != nil {
 - New `UnsupportedVersionError` type and `IsUnsupportedVersionError()` helper added
 - Adds `getAbsolute()` internal method for fetching non-API paths
 
+---
+
+## ADR-017: Explicit Environment Configuration
+
+**Date:** 2026-01-30
+
+**Status:** Accepted
+
+**Context:** The pyVergeOS SDK provides `VergeClient.from_env()` for convenient client creation from environment variables. The Go SDK currently requires manual `os.Getenv()` calls in every example and integration test. We need to add equivalent functionality while avoiding security and debugging pitfalls.
+
+Three approaches were considered:
+
+1. **`NewClientFromEnv()` function** - Separate constructor that reads environment variables
+2. **Automatic env var fallback in `NewClient()`** - Check env vars when options not provided
+3. **`WithEnvConfig()` option** - Explicit opt-in via functional option
+
+**Decision:** Use `WithEnvConfig()` as an explicit opt-in option that can be composed with other options.
+
+```go
+// Simple: all config from environment
+client, err := vergeos.NewClient(vergeos.WithEnvConfig())
+
+// Advanced: env vars with explicit override
+client, err := vergeos.NewClient(
+    vergeos.WithEnvConfig(),
+    vergeos.WithTimeout(60*time.Second),  // Override timeout from env
+)
+```
+
+**Alternatives Rejected:**
+
+1. **Automatic env var fallback** - Rejected because:
+   - Implicit behavior makes debugging difficult ("why is it connecting to X?")
+   - Security risk from accidental credential pickup
+   - Test pollution when real credentials leak into test environment
+
+2. **Separate `NewClientFromEnv()` function** - Rejected because:
+   - Two entry points increases API surface
+   - Cannot easily combine env vars with explicit overrides
+   - Less composable than functional options pattern (ADR-003)
+
+**Rationale:**
+- **Explicit opt-in** - Environment variables are never automatically picked up, matching pyVergeOS behavior
+- **Composable** - Works with existing functional options pattern; explicit options override env vars
+- **Single entry point** - `NewClient()` remains the only constructor
+- **Debuggable** - When `WithEnvConfig()` is in the code, the intent is clear
+- **Secure by default** - No accidental credential pickup from environment
+
+**Environment Variables Supported:**
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `VERGEOS_HOST` | Yes | - | Base URL |
+| `VERGEOS_USERNAME` | No* | - | Basic auth username |
+| `VERGEOS_PASSWORD` | No* | - | Basic auth password |
+| `VERGEOS_API_KEY` | No* | - | Bearer token auth |
+| `VERGEOS_VERIFY_SSL` | No | `true` | TLS certificate verification |
+| `VERGEOS_TIMEOUT` | No | `30` | Request timeout (seconds) |
+
+*One of (USERNAME+PASSWORD) or API_KEY required.
+
+**Consequences:**
+- New `WithEnvConfig()` option function added to `client.go`
+- Environment variables use `VERGEOS_` prefix (matching existing convention)
+- Default SSL verification is `true` (secure by default, matching pyVergeOS)
+- Integration tests can use `WithEnvConfig()` to reduce boilerplate
+- Examples demonstrate both explicit options and env-based configuration
+
+**Related:**
+- ADR-003 (Functional Options Pattern) - `WithEnvConfig()` follows this pattern
+- Plan: `.claude/plans/clientenvsslconfig.md`
+
