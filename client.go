@@ -9,6 +9,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -180,6 +182,84 @@ func WithHTTPClient(httpClient *http.Client) ClientOption {
 func WithUserAgent(userAgent string) ClientOption {
 	return func(c *Client) error {
 		c.userAgent = userAgent
+		return nil
+	}
+}
+
+// WithEnvConfig configures the client from environment variables.
+// This option should typically be applied first, allowing subsequent options
+// to override specific values.
+//
+// Environment variables:
+//   - VERGEOS_HOST: Base URL for the VergeOS API (required if not set via WithBaseURL)
+//   - VERGEOS_USERNAME + VERGEOS_PASSWORD: Basic authentication
+//   - VERGEOS_API_KEY: Bearer token authentication (alternative to username/password)
+//   - VERGEOS_VERIFY_SSL: Verify TLS certificates, "true" or "false" (default: "true")
+//   - VERGEOS_TIMEOUT: Request timeout in seconds (default: "30")
+//
+// Example:
+//
+//	export VERGEOS_HOST=https://vergeos.example.com
+//	export VERGEOS_USERNAME=admin
+//	export VERGEOS_PASSWORD=secret
+//	export VERGEOS_VERIFY_SSL=false
+//
+//	// Simple usage
+//	client, err := vergeos.NewClient(vergeos.WithEnvConfig())
+//
+//	// With explicit override
+//	client, err := vergeos.NewClient(
+//	    vergeos.WithEnvConfig(),
+//	    vergeos.WithTimeout(60*time.Second),
+//	)
+func WithEnvConfig() ClientOption {
+	return func(c *Client) error {
+		// Base URL (only if not already set)
+		if c.baseURL == "" {
+			if host := os.Getenv("VERGEOS_HOST"); host != "" {
+				c.baseURL = strings.TrimSuffix(host, "/")
+			}
+		}
+
+		// Authentication (only if not already set)
+		hasAuth := (c.username != "" && c.password != "") || c.apiKey != ""
+		if !hasAuth {
+			username := os.Getenv("VERGEOS_USERNAME")
+			password := os.Getenv("VERGEOS_PASSWORD")
+			apiKey := os.Getenv("VERGEOS_API_KEY")
+
+			if username != "" && password != "" {
+				c.username = username
+				c.password = password
+			} else if apiKey != "" {
+				c.apiKey = apiKey
+			}
+		}
+
+		// SSL verification (default: true = verify certificates)
+		// Only apply if VERGEOS_VERIFY_SSL is explicitly set to false
+		verifySSL := os.Getenv("VERGEOS_VERIFY_SSL")
+		if strings.ToLower(verifySSL) == "false" || verifySSL == "0" {
+			transport := &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+				MaxIdleConns:        100,
+				MaxIdleConnsPerHost: 20,
+				IdleConnTimeout:     90 * time.Second,
+			}
+			c.httpClient.Transport = transport
+		}
+
+		// Timeout (only if set in environment)
+		if timeoutStr := os.Getenv("VERGEOS_TIMEOUT"); timeoutStr != "" {
+			timeout, err := strconv.Atoi(timeoutStr)
+			if err != nil {
+				return fmt.Errorf("invalid VERGEOS_TIMEOUT value %q: %w", timeoutStr, err)
+			}
+			c.httpClient.Timeout = time.Duration(timeout) * time.Second
+		}
+
 		return nil
 	}
 }

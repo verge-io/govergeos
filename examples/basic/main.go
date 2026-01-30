@@ -8,6 +8,7 @@
 //	export VERGEOS_HOST=https://your-vergeos-host
 //	export VERGEOS_USERNAME=admin
 //	export VERGEOS_PASSWORD=yourpassword
+//	export VERGEOS_VERIFY_SSL=false  # Optional: for self-signed certificates
 //	go run main.go
 package main
 
@@ -15,27 +16,15 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 
 	vergeos "github.com/verge-io/govergeos"
 )
 
 func main() {
-	// Get configuration from environment
-	host := os.Getenv("VERGEOS_HOST")
-	username := os.Getenv("VERGEOS_USERNAME")
-	password := os.Getenv("VERGEOS_PASSWORD")
-
-	if host == "" || username == "" || password == "" {
-		log.Fatal("Please set VERGEOS_HOST, VERGEOS_USERNAME, and VERGEOS_PASSWORD environment variables")
-	}
-
-	// Create client
-	client, err := vergeos.NewClient(
-		vergeos.WithBaseURL(host),
-		vergeos.WithCredentials(username, password),
-		vergeos.WithInsecureTLS(true), // For self-signed certificates
-	)
+	// Create client from environment variables.
+	// Required: VERGEOS_HOST, VERGEOS_USERNAME, VERGEOS_PASSWORD (or VERGEOS_API_KEY)
+	// Optional: VERGEOS_VERIFY_SSL (default: true), VERGEOS_TIMEOUT (default: 30)
+	client, err := vergeos.NewClient(vergeos.WithEnvConfig())
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}

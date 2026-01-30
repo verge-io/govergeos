@@ -56,6 +56,39 @@ client, err := vergeos.NewClient(
 )
 ```
 
+### Environment Configuration
+
+Configure the client from environment variables using `WithEnvConfig()`:
+
+```go
+// Simple: all config from environment
+client, err := vergeos.NewClient(vergeos.WithEnvConfig())
+
+// With explicit override
+client, err := vergeos.NewClient(
+    vergeos.WithEnvConfig(),
+    vergeos.WithTimeout(60*time.Second),  // Override just timeout
+)
+```
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `VERGEOS_HOST` | Yes | - | Base URL (e.g., `https://vergeos.example.com`) |
+| `VERGEOS_USERNAME` | No* | - | Username for basic auth |
+| `VERGEOS_PASSWORD` | No* | - | Password for basic auth |
+| `VERGEOS_API_KEY` | No* | - | API key for bearer auth |
+| `VERGEOS_VERIFY_SSL` | No | `true` | Verify TLS certificates (`true`/`false`) |
+| `VERGEOS_TIMEOUT` | No | `30` | Request timeout in seconds |
+
+*One of (USERNAME+PASSWORD) or API_KEY is required.
+
+```bash
+export VERGEOS_HOST=https://vergeos.example.com
+export VERGEOS_USERNAME=admin
+export VERGEOS_PASSWORD=secret
+export VERGEOS_VERIFY_SSL=false  # For self-signed certs
+```
+
 ### Virtual Machine Operations
 
 ```go
@@ -283,6 +316,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 
 | Option | Description | Default |
 |--------|-------------|---------|
+| `WithEnvConfig()` | Configure from environment variables | - |
 | `WithBaseURL(url)` | VergeOS API base URL | Required |
 | `WithCredentials(user, pass)` | Username and password authentication | - |
 | `WithAPIKey(token)` | API key authentication | - |

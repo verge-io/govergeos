@@ -30,10 +30,23 @@
 //	    RAM:      8192,
 //	})
 //
+// # Environment Configuration
+//
+// Use WithEnvConfig() to configure the client from environment variables:
+//
+//	client, err := vergeos.NewClient(vergeos.WithEnvConfig())
+//
+// Environment variables:
+//   - VERGEOS_HOST: Base URL (required)
+//   - VERGEOS_USERNAME + VERGEOS_PASSWORD: Basic authentication
+//   - VERGEOS_API_KEY: Bearer token authentication
+//   - VERGEOS_VERIFY_SSL: TLS verification, "true" or "false" (default: "true")
+//   - VERGEOS_TIMEOUT: Request timeout in seconds (default: "30")
+//
 // # Authentication
 //
-// The library uses HTTP Basic Authentication. You can use either a "Normal" user
-// or an "API" user account. MFA must be disabled for the user account.
+// The library supports HTTP Basic Authentication and API key authentication.
+// For basic auth, MFA must be disabled for the user account.
 //
 // # Query Options
 //

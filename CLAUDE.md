@@ -78,8 +78,27 @@ go vet ./...
 VERGEOS_HOST=https://your-host \
 VERGEOS_USERNAME=user \
 VERGEOS_PASSWORD=pass \
+VERGEOS_VERIFY_SSL=false \
 go run ./examples/basic/
 ```
+
+## Environment Variables
+
+The SDK supports configuration via environment variables with explicit opt-in:
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `VERGEOS_HOST` | Yes | - | API base URL |
+| `VERGEOS_USERNAME` | No* | - | Basic auth username |
+| `VERGEOS_PASSWORD` | No* | - | Basic auth password |
+| `VERGEOS_API_KEY` | No* | - | Bearer token auth |
+| `VERGEOS_VERIFY_SSL` | No | `true` | TLS verification |
+| `VERGEOS_TIMEOUT` | No | `30` | Request timeout (seconds) |
+
+*One of (USERNAME+PASSWORD) or API_KEY required.
+
+Use `vergeos.NewClient(vergeos.WithEnvConfig())` to opt-in to environment configuration.
+Environment variables are never automatically picked up - this is intentional (see ADR-017).
 
 ## Reference Documentation
 

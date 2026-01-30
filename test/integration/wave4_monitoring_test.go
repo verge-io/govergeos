@@ -4,8 +4,6 @@ package integration
 
 import (
 	"context"
-	"encoding/json"
-	"os"
 	"testing"
 	"time"
 
@@ -242,39 +240,6 @@ func testTasks(t *testing.T, ctx context.Context, client *vergeos.Client) {
 
 	// Pretty print first task for field verification
 	prettyPrint(t, "Sample Task", first)
-}
-
-// setupTestClient creates a client from environment variables
-func setupTestClient(t *testing.T) *vergeos.Client {
-	host := os.Getenv("VERGEOS_HOST")
-	username := os.Getenv("VERGEOS_USERNAME")
-	password := os.Getenv("VERGEOS_PASSWORD")
-
-	if host == "" || username == "" || password == "" {
-		t.Skip("Skipping integration test: VERGEOS_HOST, VERGEOS_USERNAME, and VERGEOS_PASSWORD must be set")
-	}
-
-	client, err := vergeos.NewClient(
-		vergeos.WithBaseURL(host),
-		vergeos.WithCredentials(username, password),
-		vergeos.WithInsecureTLS(true),
-		vergeos.WithTimeout(30*time.Second),
-	)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-
-	return client
-}
-
-// prettyPrint logs a struct as formatted JSON for field verification
-func prettyPrint(t *testing.T, label string, v interface{}) {
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		t.Logf("%s: (failed to marshal: %v)", label, err)
-		return
-	}
-	t.Logf("%s:\n%s", label, string(data))
 }
 
 // TestAlarmSnoozeWorkflow tests snoozing and unsnoozing an alarm
