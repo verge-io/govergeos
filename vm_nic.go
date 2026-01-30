@@ -87,17 +87,14 @@ func (s *VMNICService) Create(ctx context.Context, vmID int, req *VMNICCreateReq
 		return nil, err
 	}
 
-	// Assign IP address if requested
+	// Assign IP address if requested (non-fatal: NIC was created but IP assignment may fail)
 	if req.AssignIPAddress && req.VNET > 0 && nic.MAC != "" {
 		addrReq := vnetAddressRequest{
 			VNET: req.VNET,
 			MAC:  nic.MAC,
 			Type: "static",
 		}
-		if err := s.client.post(ctx, "/vnet_addresses", addrReq, nil); err != nil {
-			// Non-fatal: NIC was created but IP assignment failed
-			// The caller can retry IP assignment
-		}
+		_ = s.client.post(ctx, "/vnet_addresses", addrReq, nil)
 	}
 
 	return nic, nil

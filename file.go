@@ -133,7 +133,7 @@ func (s *FileService) Download(ctx context.Context, id int) (io.ReadCloser, *Fil
 
 	// Check for errors
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, nil, &APIError{
 			StatusCode: resp.StatusCode,
 			Endpoint:   endpoint,
@@ -152,7 +152,7 @@ func (s *FileService) DownloadToFile(ctx context.Context, id int, destPath strin
 	if err != nil {
 		return "", err
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	// Determine output path
 	outputPath := destPath
@@ -165,7 +165,7 @@ func (s *FileService) DownloadToFile(ctx context.Context, id int, destPath strin
 	if err != nil {
 		return "", fmt.Errorf("vergeos: failed to create output file: %w", err)
 	}
-	defer outFile.Close()
+	defer func() { _ = outFile.Close() }()
 
 	// Copy data
 	_, err = io.Copy(outFile, reader)
@@ -228,7 +228,7 @@ func (s *FileService) UploadFromFile(ctx context.Context, localPath string, req 
 	if err != nil {
 		return nil, fmt.Errorf("vergeos: failed to open file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Get file size
 	info, err := file.Stat()
@@ -291,7 +291,7 @@ func (s *FileService) uploadChunk(ctx context.Context, id int, data []byte, offs
 	if err != nil {
 		return fmt.Errorf("vergeos: request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check for errors
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {

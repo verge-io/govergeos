@@ -134,7 +134,7 @@ func (s *CertificateService) Renew(ctx context.Context, id int) (*Certificate, e
 func (s *CertificateService) ListExpiring(ctx context.Context, days int, opts ...ListOption) ([]Certificate, error) {
 	// Calculate Unix timestamp for 'days' from now
 	// This is a simple filter approach - exact implementation depends on API support
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("valid eq true"))}
+	filterOpts := []ListOption{WithFilter("valid eq true")}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }

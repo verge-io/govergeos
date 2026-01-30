@@ -110,7 +110,7 @@ func (s *AlarmService) Unsnooze(ctx context.Context, id int) error {
 
 // Resolve resolves an alarm if it is resolvable.
 func (s *AlarmService) Resolve(ctx context.Context, id int) error {
-	endpoint := fmt.Sprintf("/alarm_actions")
+	endpoint := "/alarm_actions"
 	body := map[string]interface{}{
 		"alarm":  id,
 		"action": "resolve",

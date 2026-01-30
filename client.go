@@ -432,7 +432,7 @@ func (c *Client) do(ctx context.Context, method, endpoint string, body interface
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
@@ -526,7 +526,7 @@ func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values
 	if err != nil {
 		return fmt.Errorf("vergeos: request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check for HTTP errors
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {

@@ -130,7 +130,7 @@ func showCloudSnapshots(ctx context.Context, client *vergeos.Client) {
 			fmt.Printf("    Expires: Never\n")
 		} else {
 			expiresTime := time.Unix(snap.Expires, 0)
-			remaining := expiresTime.Sub(time.Now())
+			remaining := time.Until(expiresTime)
 			if remaining > 0 {
 				fmt.Printf("    Expires: %s (in %s)\n",
 					expiresTime.Format(time.RFC3339),

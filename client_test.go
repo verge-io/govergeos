@@ -10,12 +10,12 @@ import (
 
 // clearEnvVars clears all VERGEOS_* environment variables
 func clearEnvVars() {
-	os.Unsetenv("VERGEOS_HOST")
-	os.Unsetenv("VERGEOS_USERNAME")
-	os.Unsetenv("VERGEOS_PASSWORD")
-	os.Unsetenv("VERGEOS_API_KEY")
-	os.Unsetenv("VERGEOS_VERIFY_SSL")
-	os.Unsetenv("VERGEOS_TIMEOUT")
+	_ = os.Unsetenv("VERGEOS_HOST")
+	_ = os.Unsetenv("VERGEOS_USERNAME")
+	_ = os.Unsetenv("VERGEOS_PASSWORD")
+	_ = os.Unsetenv("VERGEOS_API_KEY")
+	_ = os.Unsetenv("VERGEOS_VERIFY_SSL")
+	_ = os.Unsetenv("VERGEOS_TIMEOUT")
 }
 
 // TestWithEnvConfigBasicAuth tests that basic auth credentials are read from env vars
@@ -23,9 +23,9 @@ func TestWithEnvConfigBasicAuth(t *testing.T) {
 	clearEnvVars()
 	defer clearEnvVars()
 
-	os.Setenv("VERGEOS_HOST", "https://example.com")
-	os.Setenv("VERGEOS_USERNAME", "testuser")
-	os.Setenv("VERGEOS_PASSWORD", "testpass")
+	_ = os.Setenv("VERGEOS_HOST", "https://example.com")
+	_ = os.Setenv("VERGEOS_USERNAME", "testuser")
+	_ = os.Setenv("VERGEOS_PASSWORD", "testpass")
 
 	// Create a bare client and apply the option
 	c := &Client{
@@ -53,8 +53,8 @@ func TestWithEnvConfigAPIKey(t *testing.T) {
 	clearEnvVars()
 	defer clearEnvVars()
 
-	os.Setenv("VERGEOS_HOST", "https://example.com")
-	os.Setenv("VERGEOS_API_KEY", "test-api-key-123")
+	_ = os.Setenv("VERGEOS_HOST", "https://example.com")
+	_ = os.Setenv("VERGEOS_API_KEY", "test-api-key-123")
 
 	c := &Client{
 		httpClient: &http.Client{Timeout: defaultTimeout},
@@ -79,10 +79,10 @@ func TestWithEnvConfigBasicAuthTakesPrecedence(t *testing.T) {
 	clearEnvVars()
 	defer clearEnvVars()
 
-	os.Setenv("VERGEOS_HOST", "https://example.com")
-	os.Setenv("VERGEOS_USERNAME", "testuser")
-	os.Setenv("VERGEOS_PASSWORD", "testpass")
-	os.Setenv("VERGEOS_API_KEY", "should-not-use-this")
+	_ = os.Setenv("VERGEOS_HOST", "https://example.com")
+	_ = os.Setenv("VERGEOS_USERNAME", "testuser")
+	_ = os.Setenv("VERGEOS_PASSWORD", "testpass")
+	_ = os.Setenv("VERGEOS_API_KEY", "should-not-use-this")
 
 	c := &Client{
 		httpClient: &http.Client{Timeout: defaultTimeout},
@@ -106,9 +106,9 @@ func TestWithEnvConfigHostTrailingSlash(t *testing.T) {
 	clearEnvVars()
 	defer clearEnvVars()
 
-	os.Setenv("VERGEOS_HOST", "https://example.com/")
-	os.Setenv("VERGEOS_USERNAME", "user")
-	os.Setenv("VERGEOS_PASSWORD", "pass")
+	_ = os.Setenv("VERGEOS_HOST", "https://example.com/")
+	_ = os.Setenv("VERGEOS_USERNAME", "user")
+	_ = os.Setenv("VERGEOS_PASSWORD", "pass")
 
 	c := &Client{
 		httpClient: &http.Client{Timeout: defaultTimeout},
@@ -147,11 +147,11 @@ func TestWithEnvConfigVerifySSL(t *testing.T) {
 			clearEnvVars()
 			defer clearEnvVars()
 
-			os.Setenv("VERGEOS_HOST", "https://example.com")
-			os.Setenv("VERGEOS_USERNAME", "user")
-			os.Setenv("VERGEOS_PASSWORD", "pass")
+			_ = os.Setenv("VERGEOS_HOST", "https://example.com")
+			_ = os.Setenv("VERGEOS_USERNAME", "user")
+			_ = os.Setenv("VERGEOS_PASSWORD", "pass")
 			if tt.value != "" {
-				os.Setenv("VERGEOS_VERIFY_SSL", tt.value)
+				_ = os.Setenv("VERGEOS_VERIFY_SSL", tt.value)
 			}
 
 			c := &Client{
@@ -204,11 +204,11 @@ func TestWithEnvConfigTimeout(t *testing.T) {
 			clearEnvVars()
 			defer clearEnvVars()
 
-			os.Setenv("VERGEOS_HOST", "https://example.com")
-			os.Setenv("VERGEOS_USERNAME", "user")
-			os.Setenv("VERGEOS_PASSWORD", "pass")
+			_ = os.Setenv("VERGEOS_HOST", "https://example.com")
+			_ = os.Setenv("VERGEOS_USERNAME", "user")
+			_ = os.Setenv("VERGEOS_PASSWORD", "pass")
 			if tt.value != "" {
-				os.Setenv("VERGEOS_TIMEOUT", tt.value)
+				_ = os.Setenv("VERGEOS_TIMEOUT", tt.value)
 			}
 
 			c := &Client{
@@ -244,9 +244,9 @@ func TestWithEnvConfigDoesNotOverrideExplicit(t *testing.T) {
 	clearEnvVars()
 	defer clearEnvVars()
 
-	os.Setenv("VERGEOS_HOST", "https://env-host.com")
-	os.Setenv("VERGEOS_USERNAME", "env-user")
-	os.Setenv("VERGEOS_PASSWORD", "env-pass")
+	_ = os.Setenv("VERGEOS_HOST", "https://env-host.com")
+	_ = os.Setenv("VERGEOS_USERNAME", "env-user")
+	_ = os.Setenv("VERGEOS_PASSWORD", "env-pass")
 
 	c := &Client{
 		baseURL:    "https://explicit-host.com",
@@ -277,8 +277,8 @@ func TestWithEnvConfigDoesNotOverrideAPIKey(t *testing.T) {
 	clearEnvVars()
 	defer clearEnvVars()
 
-	os.Setenv("VERGEOS_HOST", "https://env-host.com")
-	os.Setenv("VERGEOS_API_KEY", "env-api-key")
+	_ = os.Setenv("VERGEOS_HOST", "https://env-host.com")
+	_ = os.Setenv("VERGEOS_API_KEY", "env-api-key")
 
 	c := &Client{
 		apiKey:     "explicit-api-key",
@@ -303,8 +303,8 @@ func TestNewClientWithEnvConfigValidation(t *testing.T) {
 
 	// Test missing host
 	t.Run("missing host", func(t *testing.T) {
-		os.Setenv("VERGEOS_USERNAME", "user")
-		os.Setenv("VERGEOS_PASSWORD", "pass")
+		_ = os.Setenv("VERGEOS_USERNAME", "user")
+		_ = os.Setenv("VERGEOS_PASSWORD", "pass")
 		defer clearEnvVars()
 
 		_, err := NewClient(WithEnvConfig())
@@ -319,7 +319,7 @@ func TestNewClientWithEnvConfigValidation(t *testing.T) {
 	// Test missing auth
 	t.Run("missing auth", func(t *testing.T) {
 		clearEnvVars()
-		os.Setenv("VERGEOS_HOST", "https://example.com")
+		_ = os.Setenv("VERGEOS_HOST", "https://example.com")
 
 		_, err := NewClient(WithEnvConfig())
 		if err == nil {

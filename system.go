@@ -22,7 +22,7 @@ func (s *SystemService) GetInfo(ctx context.Context) (*SystemInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("vergeos: failed to get version info: %w", err)
 	}
-	defer req.Body.Close()
+	defer func() { _ = req.Body.Close() }()
 
 	body, err := io.ReadAll(req.Body)
 	if err != nil {

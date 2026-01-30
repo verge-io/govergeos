@@ -23,17 +23,9 @@ Built for infrastructure administrators and Go developers who want to automate V
 
 ## Installation
 
-This repository is currently private. Configure Go to bypass the module proxy:
-
 ```bash
-# Set GOPRIVATE (add to your shell profile for persistence)
-export GOPRIVATE=github.com/verge-io/govergeos
-
-# Install the library
 go get github.com/verge-io/govergeos
 ```
-
-You'll need GitHub access configured (SSH key or `gh auth login`).
 
 ## Quick Start
 
