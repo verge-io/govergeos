@@ -294,11 +294,13 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | [network-management](./examples/network-management/) | Create and manage virtual networks |
 | [tenants](./examples/tenants/) | Multi-tenant management for MSPs |
 | [volumes](./examples/volumes/) | NAS volume management and shares |
+| [nas-services](./examples/nas-services/) | NAS services, users, syncs, and snapshots |
 | [firewall-rules](./examples/firewall-rules/) | Network firewall rules and aliases |
 | [vpn](./examples/vpn/) | WireGuard and IPSec VPN |
 | [certificates](./examples/certificates/) | SSL/TLS certificate management |
 | [tags](./examples/tags/) | Tag management and assignments |
 | [users](./examples/users/) | User, group, and membership management |
+| [permissions](./examples/permissions/) | Resource-level access control |
 | [cloudinit](./examples/cloudinit/) | Cloud-init file management |
 | [files](./examples/files/) | List available files (ISOs, images) |
 | [snapshot-profiles](./examples/snapshot-profiles/) | Snapshot scheduling |
