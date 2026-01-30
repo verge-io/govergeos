@@ -9,27 +9,11 @@ import (
 	vergeos "github.com/verge-io/govergeos"
 )
 
-// TestWave3Scheduling tests the Wave 3 scheduling services (SnapshotProfiles, SnapshotProfilePeriods)
-// against a live VergeOS API to verify field mappings are correct.
-//
-// Run with:
-//
-//	VERGEOS_HOST=https://your-host VERGEOS_USERNAME=user VERGEOS_PASSWORD=pass \
-//	  go test -tags=integration -v ./test/integration/ -run TestWave3
-func TestWave3Scheduling(t *testing.T) {
+// TestSnapshotProfilesList tests the SnapshotProfiles and SnapshotProfilePeriods services.
+func TestSnapshotProfilesList(t *testing.T) {
 	client := setupTestClient(t)
 	ctx := context.Background()
 
-	t.Run("SnapshotProfiles", func(t *testing.T) {
-		testSnapshotProfiles(t, ctx, client)
-	})
-
-	t.Run("SnapshotProfilePeriods", func(t *testing.T) {
-		testSnapshotProfilePeriods(t, ctx, client)
-	})
-}
-
-func testSnapshotProfiles(t *testing.T, ctx context.Context, client *vergeos.Client) {
 	t.Log("Testing SnapshotProfiles service...")
 
 	// List all snapshot profiles
@@ -51,30 +35,40 @@ func testSnapshotProfiles(t *testing.T, ctx context.Context, client *vergeos.Cli
 		int(first.Key), first.Name, first.Description, first.IgnoreWarnings)
 
 	// Test Get
-	if first.Key > 0 {
+	t.Run("Get", func(t *testing.T) {
+		if first.Key == 0 {
+			t.Skip("No profile key available")
+		}
 		fetched, err := client.SnapshotProfiles.Get(ctx, int(first.Key))
 		if err != nil {
 			t.Errorf("SnapshotProfiles.Get(%d) failed: %v", int(first.Key), err)
 		} else {
 			t.Logf("SnapshotProfiles.Get succeeded: Name=%q", fetched.Name)
 		}
-	}
+	})
 
 	// Test GetByName
-	if first.Name != "" {
+	t.Run("GetByName", func(t *testing.T) {
+		if first.Name == "" {
+			t.Skip("No profile name available")
+		}
 		byName, err := client.SnapshotProfiles.GetByName(ctx, first.Name)
 		if err != nil {
 			t.Errorf("SnapshotProfiles.GetByName failed: %v", err)
 		} else {
 			t.Logf("GetByName succeeded: Key=%d", int(byName.Key))
 		}
-	}
+	})
 
 	// Pretty print first profile for field verification
 	prettyPrint(t, "Sample SnapshotProfile", first)
 }
 
-func testSnapshotProfilePeriods(t *testing.T, ctx context.Context, client *vergeos.Client) {
+// TestSnapshotProfilePeriodsList tests the SnapshotProfilePeriods service list operations.
+func TestSnapshotProfilePeriodsList(t *testing.T) {
+	client := setupTestClient(t)
+	ctx := context.Background()
+
 	t.Log("Testing SnapshotProfilePeriods service...")
 
 	// List all snapshot profile periods
@@ -96,7 +90,10 @@ func testSnapshotProfilePeriods(t *testing.T, ctx context.Context, client *verge
 		int(first.Key), first.Name, int(first.Profile), first.Frequency, first.Retention)
 
 	// Test Get
-	if first.Key > 0 {
+	t.Run("Get", func(t *testing.T) {
+		if first.Key == 0 {
+			t.Skip("No period key available")
+		}
 		fetched, err := client.SnapshotProfilePeriods.Get(ctx, int(first.Key))
 		if err != nil {
 			t.Errorf("SnapshotProfilePeriods.Get(%d) failed: %v", int(first.Key), err)
@@ -104,39 +101,40 @@ func testSnapshotProfilePeriods(t *testing.T, ctx context.Context, client *verge
 			t.Logf("SnapshotProfilePeriods.Get succeeded: Name=%q, Hour=%d, Minute=%d, DayOfWeek=%q",
 				fetched.Name, fetched.Hour, fetched.Minute, fetched.DayOfWeek)
 		}
-	}
+	})
 
 	// Test ListByProfile
-	if first.Profile > 0 {
+	t.Run("ListByProfile", func(t *testing.T) {
+		if first.Profile == 0 {
+			t.Skip("No profile ID available")
+		}
 		profilePeriods, err := client.SnapshotProfilePeriods.ListByProfile(ctx, int(first.Profile))
 		if err != nil {
 			t.Errorf("SnapshotProfilePeriods.ListByProfile failed: %v", err)
 		} else {
 			t.Logf("Found %d periods in profile %d", len(profilePeriods), int(first.Profile))
 		}
+	})
 
-		// Test GetByName
-		if first.Name != "" {
-			byName, err := client.SnapshotProfilePeriods.GetByName(ctx, int(first.Profile), first.Name)
-			if err != nil {
-				t.Errorf("SnapshotProfilePeriods.GetByName failed: %v", err)
-			} else {
-				t.Logf("GetByName succeeded: Key=%d", int(byName.Key))
-			}
+	// Test GetByName
+	t.Run("GetByName", func(t *testing.T) {
+		if first.Profile == 0 || first.Name == "" {
+			t.Skip("No profile ID or name available")
 		}
-	}
+		byName, err := client.SnapshotProfilePeriods.GetByName(ctx, int(first.Profile), first.Name)
+		if err != nil {
+			t.Errorf("SnapshotProfilePeriods.GetByName failed: %v", err)
+		} else {
+			t.Logf("GetByName succeeded: Key=%d", int(byName.Key))
+		}
+	})
 
 	// Pretty print first period for field verification
 	prettyPrint(t, "Sample SnapshotProfilePeriod", first)
 }
 
-// TestWave3SchedulingCRUD tests Create/Update/Delete operations for Wave 3 scheduling services.
-//
-// Run with:
-//
-//	VERGEOS_HOST=https://your-host VERGEOS_USERNAME=user VERGEOS_PASSWORD=pass \
-//	  go test -tags=integration -v ./test/integration/ -run TestWave3SchedulingCRUD
-func TestWave3SchedulingCRUD(t *testing.T) {
+// TestSnapshotProfilesCRUD tests Create/Update/Delete operations for SnapshotProfiles.
+func TestSnapshotProfilesCRUD(t *testing.T) {
 	client := setupTestClient(t)
 	ctx := context.Background()
 
@@ -162,21 +160,8 @@ func TestWave3SchedulingCRUD(t *testing.T) {
 		}
 	}()
 
-	// Run CRUD subtests
-	t.Run("SnapshotProfilesCRUD", func(t *testing.T) {
-		testSnapshotProfilesCRUD(t, ctx, client, profileID, profile)
-	})
-
-	t.Run("SnapshotProfilePeriodsCRUD", func(t *testing.T) {
-		testSnapshotProfilePeriodsCRUD(t, ctx, client, profileID)
-	})
-}
-
-func testSnapshotProfilesCRUD(t *testing.T, ctx context.Context, client *vergeos.Client, profileID int, profile *vergeos.SnapshotProfile) {
-	t.Log("Testing SnapshotProfiles CRUD (using existing test profile)...")
-
 	// Read
-	profile, err := client.SnapshotProfiles.Get(ctx, profileID)
+	profile, err = client.SnapshotProfiles.Get(ctx, profileID)
 	if err != nil {
 		t.Fatalf("SnapshotProfiles.Get failed: %v", err)
 	}
@@ -204,7 +189,11 @@ func testSnapshotProfilesCRUD(t *testing.T, ctx context.Context, client *vergeos
 		t.Logf("GetByName succeeded: Key=%d", int(byName.Key))
 	}
 
-	// Note: Delete is tested in the parent function's defer
+	// Test SnapshotProfilePeriods CRUD
+	t.Run("PeriodsCRUD", func(t *testing.T) {
+		testSnapshotProfilePeriodsCRUD(t, ctx, client, profileID)
+	})
+
 	t.Log("SnapshotProfiles CRUD test completed (delete will happen in cleanup)")
 }
 
@@ -212,12 +201,14 @@ func testSnapshotProfilePeriodsCRUD(t *testing.T, ctx context.Context, client *v
 	t.Log("Testing SnapshotProfilePeriods CRUD...")
 
 	// Create a daily period
+	hour := 2
+	minute := 0
 	period, err := client.SnapshotProfilePeriods.Create(ctx, &vergeos.SnapshotProfilePeriodCreateRequest{
 		Profile:   profileID,
 		Name:      "sdk-daily-test",
 		Frequency: "daily",
-		Hour:      ptrInt(2), // 2 AM
-		Minute:    ptrInt(0),
+		Hour:      &hour,
+		Minute:    &minute,
 		Retention: 7 * 24 * 60 * 60, // 7 days in seconds
 	})
 	if err != nil {
@@ -265,13 +256,16 @@ func testSnapshotProfilePeriodsCRUD(t *testing.T, ctx context.Context, client *v
 	}
 
 	// Create a second period (weekly) to test multiple periods
+	dayOfWeek := "sun"
+	weeklyHour := 0
+	weeklyMinute := 0
 	weeklyPeriod, err := client.SnapshotProfilePeriods.Create(ctx, &vergeos.SnapshotProfilePeriodCreateRequest{
 		Profile:   profileID,
 		Name:      "sdk-weekly-test",
 		Frequency: "weekly",
-		DayOfWeek: ptrString("sun"),
-		Hour:      ptrInt(0), // Midnight
-		Minute:    ptrInt(0),
+		DayOfWeek: &dayOfWeek,
+		Hour:      &weeklyHour,
+		Minute:    &weeklyMinute,
 		Retention: 28 * 24 * 60 * 60, // 4 weeks in seconds
 	})
 	if err != nil {
@@ -304,13 +298,4 @@ func testSnapshotProfilePeriodsCRUD(t *testing.T, ctx context.Context, client *v
 	} else {
 		t.Log("Verified: period correctly deleted (NotFoundError)")
 	}
-}
-
-// Helper functions for pointer values
-func ptrInt(v int) *int {
-	return &v
-}
-
-func ptrString(v string) *string {
-	return &v
 }

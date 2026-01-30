@@ -15,108 +15,90 @@ import (
 	vergeos "github.com/verge-io/govergeos"
 )
 
-// TestWave12FilesList tests listing files.
-func TestWave12FilesList(t *testing.T) {
+// TestFiles tests the Files service against a live VergeOS API.
+func TestFiles(t *testing.T) {
 	client := setupTestClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	files, err := client.Files.List(ctx)
-	if err != nil {
-		t.Fatalf("Failed to list files: %v", err)
-	}
-
-	t.Logf("Found %d file(s)", len(files))
-	for i, f := range files {
-		if i >= 5 {
-			t.Logf("  ... and %d more", len(files)-5)
-			break
+	t.Run("List", func(t *testing.T) {
+		files, err := client.Files.List(ctx)
+		if err != nil {
+			t.Fatalf("Files.List failed: %v", err)
 		}
-		sizeMB := f.Filesize / (1024 * 1024)
-		t.Logf("  - %s (ID: %d, Type: %s, Size: %d MB)", f.Name, f.ID, f.Type, sizeMB)
-	}
-}
+		t.Logf("Found %d file(s)", len(files))
 
-// TestWave12FilesListISOs tests listing ISO files.
-func TestWave12FilesListISOs(t *testing.T) {
-	client := setupTestClient(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	isos, err := client.Files.ListISOs(ctx)
-	if err != nil {
-		t.Fatalf("Failed to list ISOs: %v", err)
-	}
-
-	t.Logf("Found %d ISO file(s)", len(isos))
-	for i, iso := range isos {
-		if i >= 5 {
-			t.Logf("  ... and %d more", len(isos)-5)
-			break
+		for i, f := range files {
+			if i >= 5 {
+				t.Logf("  ... and %d more", len(files)-5)
+				break
+			}
+			sizeMB := f.Filesize / (1024 * 1024)
+			t.Logf("  - %s (ID: %d, Type: %s, Size: %d MB)", f.Name, f.ID, f.Type, sizeMB)
 		}
-		t.Logf("  - %s (ID: %d)", iso.Name, iso.ID)
-	}
+	})
+
+	t.Run("ListISOs", func(t *testing.T) {
+		isos, err := client.Files.ListISOs(ctx)
+		if err != nil {
+			t.Fatalf("Files.ListISOs failed: %v", err)
+		}
+		t.Logf("Found %d ISO file(s)", len(isos))
+
+		for i, iso := range isos {
+			if i >= 5 {
+				t.Logf("  ... and %d more", len(isos)-5)
+				break
+			}
+			t.Logf("  - %s (ID: %d)", iso.Name, iso.ID)
+		}
+	})
+
+	t.Run("Get", func(t *testing.T) {
+		files, err := client.Files.List(ctx, vergeos.WithLimit(1))
+		if err != nil {
+			t.Fatalf("Files.List failed: %v", err)
+		}
+
+		if len(files) == 0 {
+			t.Skip("No files found to test Get()")
+		}
+
+		file, err := client.Files.Get(ctx, files[0].ID.Int())
+		if err != nil {
+			t.Fatalf("Files.Get failed: %v", err)
+		}
+
+		t.Logf("File: %s", file.Name)
+		t.Logf("  ID: %d", file.ID)
+		t.Logf("  Type: %s", file.Type)
+		t.Logf("  Filesize: %d bytes", file.Filesize)
+		t.Logf("  AllocatedBytes: %d bytes", file.AllocatedBytes)
+		t.Logf("  UsedBytes: %d bytes", file.UsedBytes)
+		t.Logf("  PreferredTier: %s", file.PreferredTier)
+		t.Logf("  Creator: %s", file.Creator)
+	})
+
+	t.Run("GetByName", func(t *testing.T) {
+		files, err := client.Files.List(ctx, vergeos.WithLimit(1))
+		if err != nil {
+			t.Fatalf("Files.List failed: %v", err)
+		}
+
+		if len(files) == 0 {
+			t.Skip("No files found to test GetByName()")
+		}
+
+		file, err := client.Files.GetByName(ctx, files[0].Name)
+		if err != nil {
+			t.Fatalf("Files.GetByName failed: %v", err)
+		}
+		t.Logf("Found file by name: %s (ID: %d)", file.Name, file.ID)
+	})
 }
 
-// TestWave12FilesGet tests getting a file by ID.
-func TestWave12FilesGet(t *testing.T) {
-	client := setupTestClient(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// First list to get an ID
-	files, err := client.Files.List(ctx, vergeos.WithLimit(1))
-	if err != nil {
-		t.Fatalf("Failed to list files: %v", err)
-	}
-
-	if len(files) == 0 {
-		t.Skip("No files found to test Get()")
-	}
-
-	file, err := client.Files.Get(ctx, files[0].ID.Int())
-	if err != nil {
-		t.Fatalf("Failed to get file: %v", err)
-	}
-
-	t.Logf("File: %s", file.Name)
-	t.Logf("  ID: %d", file.ID)
-	t.Logf("  Type: %s", file.Type)
-	t.Logf("  Filesize: %d bytes", file.Filesize)
-	t.Logf("  AllocatedBytes: %d bytes", file.AllocatedBytes)
-	t.Logf("  UsedBytes: %d bytes", file.UsedBytes)
-	t.Logf("  PreferredTier: %s", file.PreferredTier)
-	t.Logf("  Creator: %s", file.Creator)
-}
-
-// TestWave12FilesGetByName tests getting a file by name.
-func TestWave12FilesGetByName(t *testing.T) {
-	client := setupTestClient(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// First list to get a name
-	files, err := client.Files.List(ctx, vergeos.WithLimit(1))
-	if err != nil {
-		t.Fatalf("Failed to list files: %v", err)
-	}
-
-	if len(files) == 0 {
-		t.Skip("No files found to test GetByName()")
-	}
-
-	file, err := client.Files.GetByName(ctx, files[0].Name)
-	if err != nil {
-		t.Fatalf("Failed to get file by name: %v", err)
-	}
-
-	t.Logf("Found file by name: %s (ID: %d)", file.Name, file.ID)
-}
-
-// TestWave12FilesUploadDownloadDelete tests the full file lifecycle.
-// This test creates a small test file, uploads it, downloads it, verifies the content,
-// and then deletes it.
-func TestWave12FilesUploadDownloadDelete(t *testing.T) {
+// TestFilesUploadDownloadDelete tests the full file lifecycle.
+func TestFilesUploadDownloadDelete(t *testing.T) {
 	client := setupTestClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -138,11 +120,10 @@ func TestWave12FilesUploadDownloadDelete(t *testing.T) {
 
 	createdFile, err := client.Files.Create(ctx, createReq)
 	if err != nil {
-		t.Fatalf("Failed to create file entry: %v", err)
+		t.Fatalf("Files.Create failed: %v", err)
 	}
 	t.Logf("  Created file entry with ID: %d", createdFile.ID)
 
-	// Ensure cleanup on test completion
 	defer func() {
 		t.Log("Cleanup: Deleting test file...")
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -159,7 +140,7 @@ func TestWave12FilesUploadDownloadDelete(t *testing.T) {
 	reader := bytes.NewReader(testContent)
 	uploadedFile, err := client.Files.Upload(ctx, createdFile.ID.Int(), reader, int64(len(testContent)))
 	if err != nil {
-		t.Fatalf("Failed to upload file content: %v", err)
+		t.Fatalf("Files.Upload failed: %v", err)
 	}
 	t.Logf("  Upload complete. UsedBytes: %d", uploadedFile.UsedBytes)
 
@@ -167,7 +148,7 @@ func TestWave12FilesUploadDownloadDelete(t *testing.T) {
 	t.Log("Step 3: Downloading file...")
 	downloadReader, downloadedFile, err := client.Files.Download(ctx, createdFile.ID.Int())
 	if err != nil {
-		t.Fatalf("Failed to download file: %v", err)
+		t.Fatalf("Files.Download failed: %v", err)
 	}
 	defer downloadReader.Close()
 
@@ -187,12 +168,11 @@ func TestWave12FilesUploadDownloadDelete(t *testing.T) {
 		t.Log("  Content verification: PASSED")
 	}
 
-	// Step 4: Delete is handled by defer above
 	t.Log("Step 4: Delete will be performed in cleanup...")
 }
 
-// TestWave12FilesUploadFromFile tests uploading from a local file path.
-func TestWave12FilesUploadFromFile(t *testing.T) {
+// TestFilesUploadFromFile tests uploading from a local file path.
+func TestFilesUploadFromFile(t *testing.T) {
 	client := setupTestClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -216,11 +196,10 @@ func TestWave12FilesUploadFromFile(t *testing.T) {
 		Description: "Integration test upload - safe to delete",
 	})
 	if err != nil {
-		t.Fatalf("Failed to upload from file: %v", err)
+		t.Fatalf("Files.UploadFromFile failed: %v", err)
 	}
 	t.Logf("  Upload successful. File ID: %d, Size: %d bytes", uploadedFile.ID, uploadedFile.Filesize)
 
-	// Cleanup
 	defer func() {
 		t.Log("Cleanup: Deleting uploaded file...")
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -251,8 +230,8 @@ func TestWave12FilesUploadFromFile(t *testing.T) {
 	}
 }
 
-// TestWave12FilesDownloadToFile tests downloading to a local file path.
-func TestWave12FilesDownloadToFile(t *testing.T) {
+// TestFilesDownloadToFile tests downloading to a local file path.
+func TestFilesDownloadToFile(t *testing.T) {
 	client := setupTestClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -260,7 +239,7 @@ func TestWave12FilesDownloadToFile(t *testing.T) {
 	// First, list files to find one to download
 	files, err := client.Files.List(ctx, vergeos.WithLimit(1))
 	if err != nil {
-		t.Fatalf("Failed to list files: %v", err)
+		t.Fatalf("Files.List failed: %v", err)
 	}
 
 	if len(files) == 0 {
@@ -273,14 +252,13 @@ func TestWave12FilesDownloadToFile(t *testing.T) {
 	}
 
 	tmpDir := t.TempDir()
-	destPath := filepath.Join(tmpDir, "downloaded-file")
 
 	t.Logf("Downloading file %s (ID: %d, Size: %d bytes) to %s",
-		files[0].Name, files[0].ID, files[0].Filesize, destPath)
+		files[0].Name, files[0].ID, files[0].Filesize, tmpDir)
 
 	downloadedPath, err := client.Files.DownloadToFile(ctx, files[0].ID.Int(), tmpDir)
 	if err != nil {
-		t.Fatalf("Failed to download to file: %v", err)
+		t.Fatalf("Files.DownloadToFile failed: %v", err)
 	}
 
 	t.Logf("Downloaded to: %s", downloadedPath)

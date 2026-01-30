@@ -57,3 +57,8 @@ func prettyPrint(t *testing.T, label string, v interface{}) {
 	}
 	t.Logf("%s:\n%s", label, string(data))
 }
+
+// ptr is a helper to create pointers to values for optional fields.
+func ptr[T any](v T) *T {
+	return &v
+}

@@ -398,16 +398,89 @@ go test ./...
 go test -v ./...                    # Verbose
 go test -run TestName ./...         # Single test
 
-# Integration tests (requires VergeOS credentials)
-export VERGEOS_HOST=https://your-host
-export VERGEOS_USERNAME=user
-export VERGEOS_PASSWORD=pass
-go test -tags=integration -v ./test/integration/
-
 # Code quality
 go fmt ./...
 go vet ./...
 ```
+
+## Integration Tests
+
+Integration tests run against a live VergeOS instance. Tests are organized by category for selective execution.
+
+### Setup
+
+```bash
+export VERGEOS_HOST=https://your-vergeos-host
+export VERGEOS_USERNAME=admin
+export VERGEOS_PASSWORD=your-password
+```
+
+### Run All Tests
+
+```bash
+go test -tags=integration -v ./test/integration/
+```
+
+### Run Tests by Category
+
+```bash
+# Virtual machines and snapshots
+go test -tags=integration -v ./test/integration/ -run "TestVMSnapshots"
+
+# Networking (addresses, DNS, hosts)
+go test -tags=integration -v ./test/integration/ -run "TestVNet"
+
+# NAS and storage
+go test -tags=integration -v ./test/integration/ -run "TestNAS|TestVolume"
+
+# Tenants
+go test -tags=integration -v ./test/integration/ -run "TestTenants"
+
+# Monitoring (alarms, tasks)
+go test -tags=integration -v ./test/integration/ -run "TestAlarms|TestTasks"
+
+# VSAN storage metrics
+go test -tags=integration -v ./test/integration/ -run "TestVSAN|TestStorage|TestClusterTiers"
+
+# DR and backup
+go test -tags=integration -v ./test/integration/ -run "TestSites|TestCloudSnapshots"
+
+# VPN (WireGuard, IPSec)
+go test -tags=integration -v ./test/integration/ -run "TestWireGuard|TestIPSec"
+
+# Files and certificates
+go test -tags=integration -v ./test/integration/ -run "TestFiles|TestCertificates"
+
+# Tags and permissions
+go test -tags=integration -v ./test/integration/ -run "TestTags|TestPermissions"
+
+# CRUD lifecycle tests only
+go test -tags=integration -v ./test/integration/ -run "CRUD"
+```
+
+### Test Files
+
+| File | Services Tested |
+|------|-----------------|
+| `api_keys_test.go` | User API Keys |
+| `certificates_test.go` | Certificates |
+| `clusters_test.go` | Clusters, Network Diagnostics |
+| `dr_test.go` | Sites, Site Syncs, Cloud Snapshots |
+| `files_test.go` | Files (upload/download) |
+| `logs_test.go` | System Logs |
+| `monitoring_test.go` | Alarms, Tasks |
+| `nas_test.go` | NAS Services, Users, Syncs, Snapshots, Shares |
+| `networking_test.go` | VNet Addresses, DNS, Hosts |
+| `permissions_test.go` | Permissions |
+| `rules_test.go` | VNet Rules, Aliases |
+| `snapshot_profiles_test.go` | Snapshot Profiles |
+| `tags_test.go` | Tags, Tag Categories |
+| `tenants_test.go` | Tenants, Nodes, Storage, Snapshots, Layer2 |
+| `vm_snapshots_test.go` | VM Snapshots |
+| `volumes_test.go` | Volumes |
+| `vpn_test.go` | WireGuard, IPSec |
+| `vsan_test.go` | Storage Tiers, Cluster Tiers, Drive Metrics |
+| `webhooks_test.go` | Webhooks |
 
 ## API Reference
 

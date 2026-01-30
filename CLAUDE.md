@@ -8,7 +8,7 @@ A Go client library for the VergeOS API (v4), serving as the foundation for the 
 - **Module**: `github.com/verge-io/goVergeOS`
 - **Dependencies**: Standard library only (no external deps)
 - **Authentication**: HTTP Basic Auth
-- **Testing**: `go test` (tests not yet implemented)
+- **Testing**: `go test` with integration tests (build tag: `integration`)
 
 ## Project Structure
 
@@ -261,11 +261,71 @@ Compare your types against the schema to ensure complete coverage:
 
 ## Testing Strategy
 
-Tests should be added following Go conventions:
-- Test files: `*_test.go` in same package
-- Table-driven tests for comprehensive coverage
-- Mock HTTP responses for unit tests
-- Integration tests against live API (separate build tag)
+Tests follow Go conventions with integration tests against a live VergeOS API.
+
+### Test Organization
+
+Integration tests are organized by service category in `test/integration/`:
+
+```
+test/integration/
+├── helpers_test.go          # Shared utilities (setupTestClient, prettyPrint, ptr)
+├── api_keys_test.go         # User API Keys
+├── certificates_test.go     # SSL/TLS Certificates
+├── clusters_test.go         # Clusters, Network Diagnostics
+├── dr_test.go               # Sites, Site Syncs, Cloud Snapshots
+├── files_test.go            # File upload/download
+├── groups_test.go           # Groups
+├── logs_test.go             # System Logs
+├── monitoring_test.go       # Alarms, Alarm Types, Tasks
+├── nas_test.go              # NAS Services, Users, Syncs, Snapshots, CIFS/NFS Shares
+├── networking_test.go       # VNet Addresses, DNS, Hosts
+├── permissions_test.go      # Permissions
+├── rules_test.go            # VNet Rules, Rule Aliases
+├── snapshot_profiles_test.go # Snapshot Profiles, Periods
+├── tags_test.go             # Tags, Tag Categories
+├── tenants_test.go          # Tenants, Tenant Nodes/Storage/Snapshots/Layer2
+├── version_test.go          # Version check
+├── vm_snapshots_test.go     # VM Snapshots, VM Migration
+├── volumes_test.go          # Volumes
+├── vpn_test.go              # WireGuard, IPSec
+├── vsan_test.go             # Storage Tiers, Cluster Tiers, Drive Phys, Stats
+└── webhooks_test.go         # Webhook URLs, Webhooks
+```
+
+### Running Integration Tests
+
+```bash
+# Set credentials
+export VERGEOS_HOST=https://your-vergeos-host
+export VERGEOS_USERNAME=admin
+export VERGEOS_PASSWORD=your-password
+
+# Run all integration tests
+go test -tags=integration -v ./test/integration/
+
+# Run by category
+go test -tags=integration -v ./test/integration/ -run "TestVMSnapshots"
+go test -tags=integration -v ./test/integration/ -run "TestNAS"
+go test -tags=integration -v ./test/integration/ -run "TestClusters"
+go test -tags=integration -v ./test/integration/ -run "TestVSAN"
+go test -tags=integration -v ./test/integration/ -run "TestDR"
+go test -tags=integration -v ./test/integration/ -run "TestVPN"
+
+# Run CRUD lifecycle tests only
+go test -tags=integration -v ./test/integration/ -run "CRUD"
+
+# Run multiple categories
+go test -tags=integration -v ./test/integration/ -run "TestNAS|TestVolume"
+```
+
+### Test Conventions
+
+- All tests require `//go:build integration` build tag
+- Tests use `setupTestClient(t)` from helpers_test.go
+- Context timeout: 2 minutes per test function
+- CRUD tests clean up created resources in defer blocks
+- Destructive tests (Create/Delete) often require opt-in via environment variables
 
 ## Reserved Networks
 IMPORTANT: Never use "Core" or "DMZ" networks for workloads, services, VMs, or NAS. These networks are reserved for the VergeOS operating system. Always create a new network (e.g., "Internal") for test workloads and examples.

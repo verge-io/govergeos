@@ -10,31 +10,11 @@ import (
 	vergeos "github.com/verge-io/govergeos"
 )
 
-// TestWave4Monitoring tests the Wave 4 monitoring services (Alarms, AlarmTypes, Tasks)
-// against a live VergeOS API to verify field mappings are correct.
-//
-// Run with:
-//
-//	VERGEOS_HOST=https://your-host VERGEOS_USERNAME=user VERGEOS_PASSWORD=pass \
-//	  go test -tags=integration -v ./test/integration/ -run TestWave4
-func TestWave4Monitoring(t *testing.T) {
+// TestAlarmTypesList tests the AlarmTypes service.
+func TestAlarmTypesList(t *testing.T) {
 	client := setupTestClient(t)
 	ctx := context.Background()
 
-	t.Run("AlarmTypes", func(t *testing.T) {
-		testAlarmTypes(t, ctx, client)
-	})
-
-	t.Run("Alarms", func(t *testing.T) {
-		testAlarms(t, ctx, client)
-	})
-
-	t.Run("Tasks", func(t *testing.T) {
-		testTasks(t, ctx, client)
-	})
-}
-
-func testAlarmTypes(t *testing.T, ctx context.Context, client *vergeos.Client) {
 	t.Log("Testing AlarmTypes service...")
 
 	// List all alarm types
@@ -61,28 +41,37 @@ func testAlarmTypes(t *testing.T, ctx context.Context, client *vergeos.Client) {
 	}
 
 	// Test Get by string key
-	if first.Key != "" {
+	t.Run("Get", func(t *testing.T) {
+		if first.Key == "" {
+			t.Skip("No alarm type key available")
+		}
 		fetched, err := client.AlarmTypes.Get(ctx, first.Key)
 		if err != nil {
 			t.Errorf("AlarmTypes.Get(%q) failed: %v", first.Key, err)
 		} else {
 			t.Logf("AlarmTypes.Get succeeded: Key=%q, Description=%q", fetched.Key, fetched.Description)
 		}
-	}
+	})
 
 	// Test ListByLevel
-	warningTypes, err := client.AlarmTypes.ListByLevel(ctx, vergeos.AlarmLevelWarning)
-	if err != nil {
-		t.Errorf("AlarmTypes.ListByLevel failed: %v", err)
-	} else {
-		t.Logf("Found %d alarm types with level 'warning'", len(warningTypes))
-	}
+	t.Run("ListByLevel", func(t *testing.T) {
+		warningTypes, err := client.AlarmTypes.ListByLevel(ctx, vergeos.AlarmLevelWarning)
+		if err != nil {
+			t.Errorf("AlarmTypes.ListByLevel failed: %v", err)
+		} else {
+			t.Logf("Found %d alarm types with level 'warning'", len(warningTypes))
+		}
+	})
 
 	// Pretty print first alarm type for field verification
 	prettyPrint(t, "Sample AlarmType", first)
 }
 
-func testAlarms(t *testing.T, ctx context.Context, client *vergeos.Client) {
+// TestAlarmsList tests the Alarms service.
+func TestAlarmsList(t *testing.T) {
+	client := setupTestClient(t)
+	ctx := context.Background()
+
 	t.Log("Testing Alarms service...")
 
 	// List all alarms
@@ -93,15 +82,18 @@ func testAlarms(t *testing.T, ctx context.Context, client *vergeos.Client) {
 
 	t.Logf("Found %d alarms", len(alarms))
 
-	if len(alarms) == 0 {
-		t.Log("No alarms found - system is healthy or no alerts configured")
-		// Still test ListActive to ensure it works
+	// Test ListActive even if no alarms
+	t.Run("ListActive", func(t *testing.T) {
 		activeAlarms, err := client.Alarms.ListActive(ctx)
 		if err != nil {
 			t.Errorf("Alarms.ListActive failed: %v", err)
 		} else {
 			t.Logf("ListActive returned %d active alarms", len(activeAlarms))
 		}
+	})
+
+	if len(alarms) == 0 {
+		t.Log("No alarms found - system is healthy or no alerts configured")
 		return
 	}
 
@@ -110,141 +102,45 @@ func testAlarms(t *testing.T, ctx context.Context, client *vergeos.Client) {
 	t.Logf("First alarm: Key=%d, Owner=%q, OwnerType=%q, Level=%q, Status=%q",
 		int(first.Key), first.Owner, first.OwnerType, first.Level, first.Status)
 
-	// Verify Owner is a string path (e.g., "vms/123")
-	if first.Owner == "" {
-		t.Log("Warning: Alarm.Owner is empty")
-	} else {
-		t.Logf("Alarm.Owner format verified: %q", first.Owner)
-	}
-
 	// Test Get by ID
-	fetched, err := client.Alarms.Get(ctx, int(first.Key))
-	if err != nil {
-		t.Errorf("Alarms.Get(%d) failed: %v", int(first.Key), err)
-	} else {
-		t.Logf("Alarms.Get succeeded: AlarmID=%q, Resolvable=%v", fetched.AlarmID, fetched.Resolvable)
-	}
-
-	// Test ListActive
-	activeAlarms, err := client.Alarms.ListActive(ctx)
-	if err != nil {
-		t.Errorf("Alarms.ListActive failed: %v", err)
-	} else {
-		t.Logf("Found %d active (non-snoozed) alarms", len(activeAlarms))
-	}
+	t.Run("Get", func(t *testing.T) {
+		fetched, err := client.Alarms.Get(ctx, int(first.Key))
+		if err != nil {
+			t.Errorf("Alarms.Get(%d) failed: %v", int(first.Key), err)
+		} else {
+			t.Logf("Alarms.Get succeeded: AlarmID=%q, Resolvable=%v", fetched.AlarmID, fetched.Resolvable)
+		}
+	})
 
 	// Test ListByLevel
-	errorAlarms, err := client.Alarms.ListByLevel(ctx, vergeos.AlarmLevelError)
-	if err != nil {
-		t.Errorf("Alarms.ListByLevel failed: %v", err)
-	} else {
-		t.Logf("Found %d alarms with level 'error'", len(errorAlarms))
-	}
+	t.Run("ListByLevel", func(t *testing.T) {
+		errorAlarms, err := client.Alarms.ListByLevel(ctx, vergeos.AlarmLevelError)
+		if err != nil {
+			t.Errorf("Alarms.ListByLevel failed: %v", err)
+		} else {
+			t.Logf("Found %d alarms with level 'error'", len(errorAlarms))
+		}
+	})
 
 	// Test ListByOwner if we have an owner
-	if first.Owner != "" {
+	t.Run("ListByOwner", func(t *testing.T) {
+		if first.Owner == "" {
+			t.Skip("No owner available")
+		}
 		ownerAlarms, err := client.Alarms.ListByOwner(ctx, first.Owner)
 		if err != nil {
 			t.Errorf("Alarms.ListByOwner failed: %v", err)
 		} else {
 			t.Logf("Found %d alarms for owner %q", len(ownerAlarms), first.Owner)
 		}
-	}
+	})
 
 	// Pretty print first alarm for field verification
 	prettyPrint(t, "Sample Alarm", first)
 }
 
-func testTasks(t *testing.T, ctx context.Context, client *vergeos.Client) {
-	t.Log("Testing Tasks service...")
-
-	// List all tasks
-	tasks, err := client.Tasks.List(ctx)
-	if err != nil {
-		t.Fatalf("Tasks.List failed: %v", err)
-	}
-
-	t.Logf("Found %d tasks", len(tasks))
-
-	if len(tasks) == 0 {
-		t.Log("No tasks found - no scheduled tasks configured")
-		// Still test ListRunning to ensure it works
-		runningTasks, err := client.Tasks.ListRunning(ctx)
-		if err != nil {
-			t.Errorf("Tasks.ListRunning failed: %v", err)
-		} else {
-			t.Logf("ListRunning returned %d running tasks", len(runningTasks))
-		}
-		return
-	}
-
-	// Log first task to verify field mapping
-	first := tasks[0]
-	t.Logf("First task: Key=%d, ID=%q, Owner=%q, Action=%q, Name=%q, Status=%q",
-		int(first.Key), first.ID, first.Owner, first.Action, first.Name, first.Status)
-
-	// Verify ID is a 40-character SHA1 hash
-	if len(first.ID) != 40 {
-		t.Logf("Warning: Task.ID length is %d, expected 40 (SHA1 hash)", len(first.ID))
-	}
-
-	// Verify Owner is a string path
-	if first.Owner == "" {
-		t.Log("Warning: Task.Owner is empty")
-	}
-
-	// Test Get by Key
-	fetched, err := client.Tasks.Get(ctx, int(first.Key))
-	if err != nil {
-		t.Errorf("Tasks.Get(%d) failed: %v", int(first.Key), err)
-	} else {
-		t.Logf("Tasks.Get succeeded: Name=%q, Enabled=%v, Status=%q",
-			fetched.Name, fetched.Enabled, fetched.Status)
-	}
-
-	// Test GetByID (SHA1 hash)
-	if first.ID != "" {
-		byID, err := client.Tasks.GetByID(ctx, first.ID)
-		if err != nil {
-			t.Errorf("Tasks.GetByID(%q) failed: %v", first.ID, err)
-		} else {
-			t.Logf("Tasks.GetByID succeeded: Key=%d", int(byID.Key))
-		}
-	}
-
-	// Test ListRunning
-	runningTasks, err := client.Tasks.ListRunning(ctx)
-	if err != nil {
-		t.Errorf("Tasks.ListRunning failed: %v", err)
-	} else {
-		t.Logf("Found %d running tasks", len(runningTasks))
-	}
-
-	// Test ListEnabled
-	enabledTasks, err := client.Tasks.ListEnabled(ctx)
-	if err != nil {
-		t.Errorf("Tasks.ListEnabled failed: %v", err)
-	} else {
-		t.Logf("Found %d enabled tasks", len(enabledTasks))
-	}
-
-	// Test ListByOwner if we have an owner
-	if first.Owner != "" {
-		ownerTasks, err := client.Tasks.ListByOwner(ctx, first.Owner)
-		if err != nil {
-			t.Errorf("Tasks.ListByOwner failed: %v", err)
-		} else {
-			t.Logf("Found %d tasks for owner %q", len(ownerTasks), first.Owner)
-		}
-	}
-
-	// Pretty print first task for field verification
-	prettyPrint(t, "Sample Task", first)
-}
-
-// TestAlarmSnoozeWorkflow tests snoozing and unsnoozing an alarm
-// This is a separate test because it modifies data
-func TestAlarmSnoozeWorkflow(t *testing.T) {
+// TestAlarmsSnooze tests snoozing and unsnoozing an alarm.
+func TestAlarmsSnooze(t *testing.T) {
 	client := setupTestClient(t)
 	ctx := context.Background()
 
@@ -301,9 +197,94 @@ func TestAlarmSnoozeWorkflow(t *testing.T) {
 	}
 }
 
-// TestTaskEnableDisable tests enabling and disabling a task
-// This is a separate test because it modifies data
-func TestTaskEnableDisable(t *testing.T) {
+// TestTasksList tests the Tasks service.
+func TestTasksList(t *testing.T) {
+	client := setupTestClient(t)
+	ctx := context.Background()
+
+	t.Log("Testing Tasks service...")
+
+	// List all tasks
+	tasks, err := client.Tasks.List(ctx)
+	if err != nil {
+		t.Fatalf("Tasks.List failed: %v", err)
+	}
+
+	t.Logf("Found %d tasks", len(tasks))
+
+	// Test ListRunning even if no tasks
+	t.Run("ListRunning", func(t *testing.T) {
+		runningTasks, err := client.Tasks.ListRunning(ctx)
+		if err != nil {
+			t.Errorf("Tasks.ListRunning failed: %v", err)
+		} else {
+			t.Logf("ListRunning returned %d running tasks", len(runningTasks))
+		}
+	})
+
+	// Test ListEnabled
+	t.Run("ListEnabled", func(t *testing.T) {
+		enabledTasks, err := client.Tasks.ListEnabled(ctx)
+		if err != nil {
+			t.Errorf("Tasks.ListEnabled failed: %v", err)
+		} else {
+			t.Logf("Found %d enabled tasks", len(enabledTasks))
+		}
+	})
+
+	if len(tasks) == 0 {
+		t.Log("No tasks found - no scheduled tasks configured")
+		return
+	}
+
+	// Log first task to verify field mapping
+	first := tasks[0]
+	t.Logf("First task: Key=%d, ID=%q, Owner=%q, Action=%q, Name=%q, Status=%q",
+		int(first.Key), first.ID, first.Owner, first.Action, first.Name, first.Status)
+
+	// Test Get by Key
+	t.Run("Get", func(t *testing.T) {
+		fetched, err := client.Tasks.Get(ctx, int(first.Key))
+		if err != nil {
+			t.Errorf("Tasks.Get(%d) failed: %v", int(first.Key), err)
+		} else {
+			t.Logf("Tasks.Get succeeded: Name=%q, Enabled=%v, Status=%q",
+				fetched.Name, fetched.Enabled, fetched.Status)
+		}
+	})
+
+	// Test GetByID (SHA1 hash)
+	t.Run("GetByID", func(t *testing.T) {
+		if first.ID == "" {
+			t.Skip("No task ID available")
+		}
+		byID, err := client.Tasks.GetByID(ctx, first.ID)
+		if err != nil {
+			t.Errorf("Tasks.GetByID(%q) failed: %v", first.ID, err)
+		} else {
+			t.Logf("Tasks.GetByID succeeded: Key=%d", int(byID.Key))
+		}
+	})
+
+	// Test ListByOwner if we have an owner
+	t.Run("ListByOwner", func(t *testing.T) {
+		if first.Owner == "" {
+			t.Skip("No owner available")
+		}
+		ownerTasks, err := client.Tasks.ListByOwner(ctx, first.Owner)
+		if err != nil {
+			t.Errorf("Tasks.ListByOwner failed: %v", err)
+		} else {
+			t.Logf("Found %d tasks for owner %q", len(ownerTasks), first.Owner)
+		}
+	})
+
+	// Pretty print first task for field verification
+	prettyPrint(t, "Sample Task", first)
+}
+
+// TestTasksEnableDisable tests enabling and disabling a task.
+func TestTasksEnableDisable(t *testing.T) {
 	client := setupTestClient(t)
 	ctx := context.Background()
 

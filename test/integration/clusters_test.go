@@ -4,7 +4,6 @@ package integration
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"testing"
 	"time"
@@ -12,48 +11,34 @@ import (
 	vergeos "github.com/verge-io/govergeos"
 )
 
-// TestWave15Sprint4 tests the Sprint 4 services:
-// - Cluster CRUD (Create/Update/Delete)
-// - Network Diagnostics and Statistics
-//
-// Run with:
-//
-//	VERGEOS_HOST=https://your-host VERGEOS_USERNAME=user VERGEOS_PASSWORD=pass \
-//	  go test -tags=integration -v ./test/integration/ -run TestWave15
-func TestWave15Sprint4(t *testing.T) {
-	client := setupTestClientWave15(t)
+// TestClusters tests the Clusters service against a live VergeOS API.
+func TestClusters(t *testing.T) {
+	client := setupTestClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	t.Run("ClusterCRUD", func(t *testing.T) {
-		testClusterCRUD(t, ctx, client)
+	t.Run("List", func(t *testing.T) {
+		clusters, err := client.Clusters.List(ctx)
+		if err != nil {
+			t.Fatalf("Clusters.List failed: %v", err)
+		}
+		t.Logf("Found %d clusters", len(clusters))
+
+		if len(clusters) == 0 {
+			t.Log("No clusters available")
+			return
+		}
+
+		prettyPrint(t, "First Cluster", clusters[0])
 	})
 
-	t.Run("NetworkDiagnosticsStatistics", func(t *testing.T) {
-		testNetworkDiagnosticsStatistics(t, ctx, client)
-	})
-}
-
-func testClusterCRUD(t *testing.T, ctx context.Context, client *vergeos.Client) {
-	t.Log("Testing Cluster CRUD operations...")
-
-	// List existing clusters
-	clusters, err := client.Clusters.List(ctx)
-	if err != nil {
-		t.Fatalf("Clusters.List failed: %v", err)
-	}
-	t.Logf("Found %d clusters", len(clusters))
-
-	if len(clusters) == 0 {
-		t.Log("No clusters available - skipping detailed tests")
-		return
-	}
-
-	prettyPrintWave15(t, "First Cluster", clusters[0])
-
-	// Test Get by ID
-	first := clusters[0]
 	t.Run("Get", func(t *testing.T) {
+		clusters, err := client.Clusters.List(ctx, vergeos.WithLimit(1))
+		if err != nil || len(clusters) == 0 {
+			t.Skip("No clusters available")
+		}
+
+		first := clusters[0]
 		cluster, err := client.Clusters.Get(ctx, int(first.Key))
 		if err != nil {
 			t.Fatalf("Clusters.Get failed: %v", err)
@@ -63,8 +48,13 @@ func testClusterCRUD(t *testing.T, ctx context.Context, client *vergeos.Client) 
 		}
 	})
 
-	// Test GetByName
 	t.Run("GetByName", func(t *testing.T) {
+		clusters, err := client.Clusters.List(ctx, vergeos.WithLimit(1))
+		if err != nil || len(clusters) == 0 {
+			t.Skip("No clusters available")
+		}
+
+		first := clusters[0]
 		cluster, err := client.Clusters.GetByName(ctx, first.Name)
 		if err != nil {
 			t.Fatalf("Clusters.GetByName failed: %v", err)
@@ -74,17 +64,27 @@ func testClusterCRUD(t *testing.T, ctx context.Context, client *vergeos.Client) 
 		}
 	})
 
-	// Test GetStatus
 	t.Run("GetStatus", func(t *testing.T) {
+		clusters, err := client.Clusters.List(ctx, vergeos.WithLimit(1))
+		if err != nil || len(clusters) == 0 {
+			t.Skip("No clusters available")
+		}
+
+		first := clusters[0]
 		status, err := client.Clusters.GetStatus(ctx, int(first.Key))
 		if err != nil {
 			t.Fatalf("Clusters.GetStatus failed: %v", err)
 		}
-		prettyPrintWave15(t, "Cluster Status", status)
+		prettyPrint(t, "Cluster Status", status)
 	})
 
-	// Test Update - safely update the description and revert it
 	t.Run("Update", func(t *testing.T) {
+		clusters, err := client.Clusters.List(ctx, vergeos.WithLimit(1))
+		if err != nil || len(clusters) == 0 {
+			t.Skip("No clusters available")
+		}
+
+		first := clusters[0]
 		clusterID := int(first.Key)
 		originalDesc := first.Description
 
@@ -113,19 +113,19 @@ func testClusterCRUD(t *testing.T, ctx context.Context, client *vergeos.Client) 
 		}
 		t.Logf("Reverted cluster description to: %s", originalDesc)
 	})
-
-	// Test Create/Delete - Skip on live systems unless explicitly enabled
-	// This test is potentially disruptive as it creates/deletes a cluster
-	if os.Getenv("VERGEOS_TEST_CREATE_CLUSTER") != "" {
-		t.Run("CreateDelete", func(t *testing.T) {
-			testClusterCreateDelete(t, ctx, client)
-		})
-	} else {
-		t.Log("Skipping Create/Delete test - set VERGEOS_TEST_CREATE_CLUSTER=1 to enable")
-	}
 }
 
-func testClusterCreateDelete(t *testing.T, ctx context.Context, client *vergeos.Client) {
+// TestClustersCRUD tests Create/Delete operations for Clusters.
+// This test is potentially disruptive - set VERGEOS_TEST_CREATE_CLUSTER=1 to enable.
+func TestClustersCRUD(t *testing.T) {
+	if os.Getenv("VERGEOS_TEST_CREATE_CLUSTER") == "" {
+		t.Skip("Skipping Create/Delete test - set VERGEOS_TEST_CREATE_CLUSTER=1 to enable")
+	}
+
+	client := setupTestClient(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
 	// Create a test cluster
 	clusterName := "sdk-test-cluster-" + time.Now().Format("20060102-150405")
 	req := &vergeos.ClusterCreateRequest{
@@ -139,9 +139,8 @@ func testClusterCreateDelete(t *testing.T, ctx context.Context, client *vergeos.
 		t.Fatalf("Clusters.Create failed: %v", err)
 	}
 	t.Logf("Created cluster with ID: %d", cluster.Key)
-	prettyPrintWave15(t, "Created Cluster", cluster)
+	prettyPrint(t, "Created Cluster", cluster)
 
-	// Clean up - delete the cluster
 	defer func() {
 		t.Logf("Deleting test cluster: %d", cluster.Key)
 		if err := client.Clusters.Delete(ctx, int(cluster.Key)); err != nil {
@@ -161,7 +160,12 @@ func testClusterCreateDelete(t *testing.T, ctx context.Context, client *vergeos.
 	}
 }
 
-func testNetworkDiagnosticsStatistics(t *testing.T, ctx context.Context, client *vergeos.Client) {
+// TestNetworkDiagnosticsStatistics tests network diagnostics and statistics.
+func TestNetworkDiagnosticsStatistics(t *testing.T) {
+	client := setupTestClient(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
 	t.Log("Testing Network Diagnostics and Statistics...")
 
 	// List networks
@@ -176,8 +180,7 @@ func testNetworkDiagnosticsStatistics(t *testing.T, ctx context.Context, client 
 		return
 	}
 
-	// Find a running external/internal network for diagnostics (running networks have PowerState=true)
-	// Prefer external networks as they have internet connectivity
+	// Find a running external/internal network for diagnostics
 	var runningNetwork *vergeos.Network
 	for _, net := range networks {
 		if net.PowerState && (net.Type == "external" || net.Type == "internal") {
@@ -195,7 +198,6 @@ func testNetworkDiagnosticsStatistics(t *testing.T, ctx context.Context, client 
 
 	t.Logf("Using running network for tests: %s (ID: %d, Type: %s)", runningNetwork.Name, runningNetwork.ID, runningNetwork.Type)
 
-	// Test GetDiagnostics (WhatsMyIP query)
 	t.Run("GetDiagnostics", func(t *testing.T) {
 		diagnostics, err := client.Networks.GetDiagnostics(ctx, int(runningNetwork.ID))
 		if err != nil {
@@ -208,7 +210,6 @@ func testNetworkDiagnosticsStatistics(t *testing.T, ctx context.Context, client 
 		}
 	})
 
-	// Test Ping (to a well-known address)
 	t.Run("Ping", func(t *testing.T) {
 		if runningNetwork.Type != "external" {
 			t.Skip("Ping test requires external network")
@@ -224,7 +225,6 @@ func testNetworkDiagnosticsStatistics(t *testing.T, ctx context.Context, client 
 		}
 	})
 
-	// Test DNS Lookup
 	t.Run("DNSLookup", func(t *testing.T) {
 		if runningNetwork.Type != "external" {
 			t.Skip("DNS lookup test requires external network")
@@ -240,7 +240,6 @@ func testNetworkDiagnosticsStatistics(t *testing.T, ctx context.Context, client 
 		}
 	})
 
-	// Test GetStatistics
 	t.Run("GetStatistics", func(t *testing.T) {
 		statistics, err := client.Networks.GetStatistics(ctx, int(runningNetwork.ID))
 		if err != nil {
@@ -249,11 +248,10 @@ func testNetworkDiagnosticsStatistics(t *testing.T, ctx context.Context, client 
 		}
 		t.Logf("Found %d statistics records", len(statistics))
 		if len(statistics) > 0 {
-			prettyPrintWave15(t, "Latest Statistics", statistics[0])
+			prettyPrint(t, "Latest Statistics", statistics[0])
 		}
 	})
 
-	// Test GetLatestStatistics
 	t.Run("GetLatestStatistics", func(t *testing.T) {
 		stats, err := client.Networks.GetLatestStatistics(ctx, int(runningNetwork.ID))
 		if err != nil {
@@ -267,7 +265,6 @@ func testNetworkDiagnosticsStatistics(t *testing.T, ctx context.Context, client 
 		t.Logf("Latest stats - Quality: %d%%, Latency: %dms", stats.Quality, stats.LatencyUSAvg/1000)
 	})
 
-	// Test RunQuery with firewall rules display
 	t.Run("ShowFirewallRules", func(t *testing.T) {
 		result, err := client.Networks.RunQueryWait(ctx, &vergeos.NetworkQueryRequest{
 			VNet:  int(runningNetwork.ID),
@@ -278,44 +275,10 @@ func testNetworkDiagnosticsStatistics(t *testing.T, ctx context.Context, client 
 			return
 		}
 		t.Logf("Firewall rules query status: %s", result.Status)
-		// Don't print full result as it can be very long
 		if len(result.Result) > 500 {
 			t.Logf("Firewall rules result (truncated): %s...", result.Result[:500])
 		} else if result.Result != "" {
 			t.Logf("Firewall rules result:\n%s", result.Result)
 		}
 	})
-}
-
-// setupTestClientWave15 creates a client from environment variables
-func setupTestClientWave15(t *testing.T) *vergeos.Client {
-	host := os.Getenv("VERGEOS_HOST")
-	username := os.Getenv("VERGEOS_USERNAME")
-	password := os.Getenv("VERGEOS_PASSWORD")
-
-	if host == "" || username == "" || password == "" {
-		t.Skip("Skipping integration test: VERGEOS_HOST, VERGEOS_USERNAME, and VERGEOS_PASSWORD must be set")
-	}
-
-	client, err := vergeos.NewClient(
-		vergeos.WithBaseURL(host),
-		vergeos.WithCredentials(username, password),
-		vergeos.WithInsecureTLS(true),
-		vergeos.WithTimeout(30*time.Second),
-	)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-
-	return client
-}
-
-// prettyPrintWave15 logs a struct as formatted JSON for field verification
-func prettyPrintWave15(t *testing.T, label string, v interface{}) {
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		t.Logf("%s: (failed to marshal: %v)", label, err)
-		return
-	}
-	t.Logf("%s:\n%s", label, string(data))
 }
