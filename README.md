@@ -1,5 +1,9 @@
 # goVergeOS
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/verge-io/govergeos.svg)](https://pkg.go.dev/github.com/verge-io/govergeos)
+[![Go 1.21+](https://img.shields.io/badge/go-1.21+-00ADD8.svg)](https://go.dev/dl/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > **Pre-release**: This library is under active development. APIs may change before v1.0.0.
 
 A Go client library for managing VergeOS infrastructure programmatically. goVergeOS provides complete API coverage for virtual machines, networking, storage, multi-tenancy, and disaster recovery operations.
