@@ -568,3 +568,59 @@ client, err := vergeos.NewClient(
 - ADR-003 (Functional Options Pattern) - `WithEnvConfig()` follows this pattern
 - Plan: `.claude/plans/clientenvsslconfig.md`
 
+---
+
+## ADR-018: Integration Test Rate Limiting
+
+**Date:** 2026-01-30
+
+**Status:** Accepted
+
+**Context:** Running the full integration test suite (~400 API calls) against a VergeOS server caused intermittent `connection reset by peer` and `EOF` errors. Investigation revealed:
+
+1. The VergeOS API does not return rate limit headers (`X-RateLimit-*`, `Retry-After`)
+2. The API does not return HTTP 429 responses when overloaded
+3. Instead, the server drops TCP connections when overwhelmed by rapid requests
+4. The default server settings include "Webserver max session API rate limit: 50" which may contribute to connection drops
+
+At ~36 requests/second, the server's connection handling became unstable, causing random test failures.
+
+**Decision:** Add a rate-limited HTTP transport wrapper in `test/integration/helpers_test.go` that enforces a 50ms delay between requests (~20 requests/second max). This is test-infrastructure only and does not affect the SDK itself.
+
+```go
+type rateLimitedTransport struct {
+    transport http.RoundTripper
+    delay     time.Duration
+    mu        sync.Mutex
+    lastReq   time.Time
+}
+```
+
+The SDK itself does NOT include built-in rate limiting because:
+- VergeOS is on-premises software where users control their own server settings
+- Rate limits are protective (preventing overload), not monetized
+- Different deployments have different limits based on hardware and configuration
+- Users can increase server-side limits if needed
+
+**Rationale:**
+- Test reliability is critical for CI/CD and development workflows
+- The rate limiting is isolated to tests, not imposed on SDK users
+- 50ms delay is a reasonable trade-off: tests complete in ~25 seconds vs ~11 seconds
+- Matches the philosophy of ADR-017 (explicit opt-in) - users control their own rate limiting
+
+**Consequences:**
+- Integration tests now pass consistently without connection errors
+- Test suite runs in ~25 seconds (previously ~11 seconds when it worked, but often failed)
+- The SDK does not include built-in rate limiting - users manage this themselves
+- Future consideration: Add a `RateLimitError` type for graceful 429 handling if the API ever returns them
+- Future consideration: Document that users making many rapid requests may need client-side throttling
+
+**Implications for SDK Users:**
+1. **No built-in rate limiting** - Users control their own servers and can tune limits
+2. **Should add `RateLimitError` type** - For graceful handling if 429s are ever returned
+3. **Document connection reset behavior** - Users making many rapid requests may need their own throttling
+
+**Related:**
+- ADR-017 (Explicit Environment Configuration) - Same philosophy of explicit opt-in
+- `test/integration/helpers_test.go` - Implementation location
+

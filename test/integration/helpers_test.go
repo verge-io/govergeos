@@ -3,15 +3,49 @@
 package integration
 
 import (
+	"crypto/tls"
 	"encoding/json"
+	"net/http"
 	"os"
+	"sync"
 	"testing"
+	"time"
 
 	vergeos "github.com/verge-io/govergeos"
 )
 
-// setupTestClient creates a VergeOS client configured from environment variables.
-// Uses WithEnvConfig() for clean, composable configuration.
+var (
+	// sharedClient is reused across all tests to avoid connection exhaustion.
+	// Creating a new client for each test function causes ~50+ version check
+	// requests plus connection churn, which can overwhelm the server.
+	sharedClient     *vergeos.Client
+	sharedClientOnce sync.Once
+	sharedClientErr  error
+)
+
+// rateLimitedTransport wraps an http.RoundTripper and adds a delay between requests
+// to avoid overwhelming the server with too many rapid requests.
+type rateLimitedTransport struct {
+	transport http.RoundTripper
+	delay     time.Duration
+	mu        sync.Mutex
+	lastReq   time.Time
+}
+
+func (t *rateLimitedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	t.mu.Lock()
+	elapsed := time.Since(t.lastReq)
+	if elapsed < t.delay {
+		time.Sleep(t.delay - elapsed)
+	}
+	t.lastReq = time.Now()
+	t.mu.Unlock()
+
+	return t.transport.RoundTrip(req)
+}
+
+// setupTestClient returns a shared VergeOS client configured from environment variables.
+// The client is created once and reused across all tests to reduce connection overhead.
 //
 // Required environment variables:
 //   - VERGEOS_HOST: Base URL for the VergeOS API
@@ -39,12 +73,36 @@ func setupTestClient(t *testing.T) *vergeos.Client {
 		os.Setenv("VERGEOS_VERIFY_SSL", "false")
 	}
 
-	client, err := vergeos.NewClient(vergeos.WithEnvConfig())
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
+	// Create client once and reuse - prevents connection exhaustion
+	sharedClientOnce.Do(func() {
+		// Create a rate-limited HTTP client to avoid overwhelming the server.
+		// VergeOS has a default "Webserver max session API rate limit" of 50,
+		// and rapid requests can cause "connection reset by peer" errors.
+		baseTransport := &http.Transport{
+			TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
+			MaxIdleConns:        10,
+			MaxIdleConnsPerHost: 5,
+			IdleConnTimeout:     30 * time.Second,
+		}
+		httpClient := &http.Client{
+			Timeout: 30 * time.Second,
+			Transport: &rateLimitedTransport{
+				transport: baseTransport,
+				delay:     50 * time.Millisecond, // ~20 requests/sec max
+			},
+		}
+
+		sharedClient, sharedClientErr = vergeos.NewClient(
+			vergeos.WithEnvConfig(),
+			vergeos.WithHTTPClient(httpClient),
+		)
+	})
+
+	if sharedClientErr != nil {
+		t.Fatalf("Failed to create client: %v", sharedClientErr)
 	}
 
-	return client
+	return sharedClient
 }
 
 // prettyPrint outputs a value as formatted JSON for test logging.
