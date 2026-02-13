@@ -267,18 +267,18 @@ shares, err := client.VolumeCIFSShares.List(ctx)
 share, err := client.VolumeCIFSShares.Create(ctx, &vergeos.VolumeCIFSShareCreateRequest{
     Volume:     volumeID,
     Name:       "shared-data",
-    Path:       "/data",
+    SharePath:  ptr("/data"),
     Browseable: ptr(true),
     ReadOnly:   ptr(false),
 })
 
 // Create an NFS share
 share, err := client.VolumeNFSShares.Create(ctx, &vergeos.VolumeNFSShareCreateRequest{
-    Volume:     volumeID,
-    Name:       "nfs-export",
-    Path:       "/export",
-    AllowedIPs: ptr("10.0.0.0/8"),
-    Squash:     ptr(vergeos.NFSSquashRoot),
+    Volume:       volumeID,
+    Name:         "nfs-export",
+    SharePath:    ptr("/export"),
+    AllowedHosts: ptr("10.0.0.0/8"),
+    Squash:       ptr(vergeos.NFSSquashRoot),
 })
 
 // Delete a share
@@ -293,7 +293,7 @@ Browse files within volumes asynchronously.
 
 ```go
 // Simple browse (handles async polling internally)
-entries, err := client.VolumeBrowser.Browse(ctx, volumeID, "/", 100)
+entries, err := client.VolumeBrowser.Browse(ctx, volumeID, "", 100)
 for _, entry := range entries {
     fmt.Printf("%s %s (%d bytes)\n", entry.Type, entry.Name, entry.Size)
 }

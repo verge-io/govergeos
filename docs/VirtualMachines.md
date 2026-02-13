@@ -23,7 +23,7 @@ vm, err := client.VMs.Create(ctx, &vergeos.VMCreateRequest{
     Name:     "my-vm",
     CPUCores: 4,
     RAM:      8192,
-    Cluster:  clusterID,
+    Cluster:  &clusterID,
 })
 
 // Update a VM
@@ -131,7 +131,7 @@ drive, err := client.VMDrives.Create(ctx, vmMachineID, &vergeos.VMDriveCreateReq
 
 // Update a drive (resize)
 drive, err := client.VMDrives.Update(ctx, driveID, &vergeos.VMDriveUpdateRequest{
-    SizeGB: ptr(100), // Increase size
+    SizeGB: ptr(int64(100)), // Increase size
 })
 ```
 

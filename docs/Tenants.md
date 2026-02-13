@@ -25,7 +25,7 @@ tenant, err := client.Tenants.GetByName(ctx, "customer-a")
 tenant, err := client.Tenants.Create(ctx, &vergeos.TenantCreateRequest{
     Name:        "customer-a",
     Password:    "admin-password",
-    Description: ptr("Customer A production environment"),
+    Description: "Customer A production environment",
 })
 
 // Update a tenant

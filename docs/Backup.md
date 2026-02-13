@@ -91,9 +91,9 @@ site, err := client.Sites.GetByName(ctx, "dr-site")
 
 // Create a site connection
 site, err := client.Sites.Create(ctx, &vergeos.SiteCreateRequest{
-    URL:      "https://dr-site.example.com",
-    Username: "sync-user",
-    Password: "sync-password",
+    URL:          "https://dr-site.example.com",
+    AuthUser:     "sync-user",
+    AuthPassword: "sync-password",
 })
 
 // Refresh site connection
@@ -152,7 +152,7 @@ snapshots, err := client.CloudSnapshots.List(ctx)
 // Create a cloud snapshot
 snapshot, err := client.CloudSnapshots.Create(ctx, &vergeos.CloudSnapshotCreateRequest{
     Name:        "pre-upgrade-snapshot",
-    Description: ptr("Snapshot before system upgrade"),
+    Description: "Snapshot before system upgrade",
 })
 
 // List VMs in a snapshot

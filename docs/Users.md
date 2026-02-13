@@ -51,7 +51,7 @@ group, err := client.Groups.Update(ctx, groupID, &vergeos.GroupUpdateRequest{
 err = client.Groups.Delete(ctx, groupID)
 
 // Manage group members
-err = client.Members.Add(ctx, groupID, userID)
+member, err := client.Members.Add(ctx, groupID, "username")
 ```
 
 ---
