@@ -100,6 +100,8 @@ type VMDriveCreateRequest struct {
 
 // VMDriveUpdateRequest is the request body for updating a drive.
 type VMDriveUpdateRequest struct {
+	// Machine is the VM to move this drive to. Used for hotplug attach/detach.
+	Machine *int `json:"machine,omitempty"`
 	// OrderID is the boot order ID.
 	OrderID *int `json:"orderid,omitempty"`
 	// Name is the drive name.
