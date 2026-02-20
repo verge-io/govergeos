@@ -67,6 +67,57 @@ type ClusterTier struct {
 	Status *ClusterTierStatus `json:"status,omitempty"`
 	// Stats contains the tier statistics.
 	Stats *ClusterTierStats `json:"stats,omitempty"`
+	// NodesOnline contains the list of node states for this tier.
+	// Only populated when the API returns these nested objects (e.g., fields=all).
+	// Note: fields=all also expands FK fields like Cluster to objects, which may
+	// require custom deserialization. Not included in default field list.
+	NodesOnline *ClusterTierNodesOnline `json:"nodes_online,omitempty"`
+	// DrivesOnline contains the list of drive states for this tier.
+	// Only populated when the API returns these nested objects (e.g., fields=all).
+	DrivesOnline []ClusterTierDriveState `json:"drives_online,omitempty"`
+}
+
+// CountOnlineNodes returns the number of nodes with state "online".
+func (ct *ClusterTier) CountOnlineNodes() int {
+	if ct.NodesOnline == nil {
+		return 0
+	}
+	count := 0
+	for _, n := range ct.NodesOnline.Nodes {
+		if n.State == "online" {
+			count++
+		}
+	}
+	return count
+}
+
+// CountOnlineDrives returns the number of drives with state "online".
+func (ct *ClusterTier) CountOnlineDrives() int {
+	count := 0
+	for _, d := range ct.DrivesOnline {
+		if d.State == "online" {
+			count++
+		}
+	}
+	return count
+}
+
+// ClusterTierNodeState represents the state of a node within a cluster tier.
+type ClusterTierNodeState struct {
+	// State is the node state (e.g., "online", "offline").
+	State string `json:"state,omitempty"`
+}
+
+// ClusterTierNodesOnline contains the list of node states for a cluster tier.
+type ClusterTierNodesOnline struct {
+	// Nodes is the list of node states.
+	Nodes []ClusterTierNodeState `json:"nodes,omitempty"`
+}
+
+// ClusterTierDriveState represents the state of a drive within a cluster tier.
+type ClusterTierDriveState struct {
+	// State is the drive state (e.g., "online", "offline", "repairing").
+	State string `json:"state,omitempty"`
 }
 
 // ClusterTierStatus contains status information for a cluster tier.
@@ -246,6 +297,15 @@ type MachineDrivePhys struct {
 	Location string `json:"location,omitempty"`
 	// Bus is the bus type.
 	Bus string `json:"bus,omitempty"`
+
+	// Computed fields (populated via field aliases in API queries)
+
+	// NodeDisplay is the name of the physical node containing this drive.
+	// Populated via computed field: parent_drive#machine#name
+	NodeDisplay string `json:"node_display,omitempty"`
+	// StatusList is the drive status (online, offline, repairing, initializing, verifying, noredundant, outofspace).
+	// Populated via computed field: parent_drive#status#status
+	StatusList string `json:"statuslist,omitempty"`
 }
 
 // ClusterStatsHistory represents a historical cluster statistics record.
@@ -314,7 +374,7 @@ const (
 	clusterTierListFields = "$key,cluster,tier,description,cost_per_gb,price_per_gb,status[tier,status,state,capacity,used,used_pct,allocated,redundant,encrypted,working,last_walk_time_ms,last_fullwalk_time_ms,transaction,repairs,bad_drives,fullwalk,progress,index_unique,state_timestamp,cur_space_throttle_ms,transaction_start_stamp],stats[reads,writes,read_bytes,write_bytes,rops,wops,rbps,wbps]"
 
 	// machineDrivePhysListFields lists all fields for machine drive physical status queries.
-	machineDrivePhysListFields = "$key,parent_drive,path,all_paths,modified,size,model,fw,serial,temp,temp_warn,encrypted,realloc_sectors,realloc_sectors_warn,wear_level,wear_level_warn,hours,hours_warn,current_pending_sector,current_pending_sector_warn,offline_uncorrectable,offline_uncorrectable_warn,smart,vsan_driveid,vsan_tier,vsan_used,vsan_max,vsan_read_errors,vsan_write_errors,vsan_avg_latency,vsan_max_latency,vsan_repairing,vsan_repair_estimate,vsan_last_error,vsan_throttle,vsan_path,vsan_online_since,spare,swap,swap_size,boot,boot_size,ybpart,ybpart_size,encryption_key,enclosure_slot,locate_status,location,bus"
+	machineDrivePhysListFields = "$key,parent_drive,path,all_paths,modified,size,model,fw,serial,temp,temp_warn,encrypted,realloc_sectors,realloc_sectors_warn,wear_level,wear_level_warn,hours,hours_warn,current_pending_sector,current_pending_sector_warn,offline_uncorrectable,offline_uncorrectable_warn,smart,vsan_driveid,vsan_tier,vsan_used,vsan_max,vsan_read_errors,vsan_write_errors,vsan_avg_latency,vsan_max_latency,vsan_repairing,vsan_repair_estimate,vsan_last_error,vsan_throttle,vsan_path,vsan_online_since,spare,swap,swap_size,boot,boot_size,ybpart,ybpart_size,encryption_key,enclosure_slot,locate_status,location,bus,parent_drive#machine#name as node_display,parent_drive#status#status as statuslist"
 
 	// clusterStatsHistoryFields lists all fields for cluster stats history queries.
 	clusterStatsHistoryFields = "$key,cluster,timestamp,total_nodes,online_nodes,running_machines,total_ram,online_ram,used_ram,total_cores,online_cores,used_cores,phys_ram_used,phys_vram_used,phys_total_cpu,gpus_total,gpus,gpus_idle,vgpus_total,vgpus,vgpus_idle"

@@ -848,6 +848,49 @@ type ClusterStatsHistoryServiceInterface interface {
 	GetLong(ctx context.Context, id int) (*ClusterStatsHistory, error)
 }
 
+// MachineStatsServiceInterface defines the interface for machine stats operations (read-only).
+// Machine stats provide per-node CPU, RAM, and temperature metrics.
+type MachineStatsServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]MachineStats, error)
+	GetByMachine(ctx context.Context, machineID int) (*MachineStats, error)
+	Get(ctx context.Context, id int) (*MachineStats, error)
+}
+
+// MachineDriveStatsServiceInterface defines the interface for machine drive stats operations (read-only).
+// Machine drive stats provide per-drive I/O metrics including reads, writes, throughput, and utilization.
+type MachineDriveStatsServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]MachineDriveStats, error)
+	ListPhysical(ctx context.Context, opts ...ListOption) ([]MachineDriveStats, error)
+	GetByDrive(ctx context.Context, driveID int) (*MachineDriveStats, error)
+	Get(ctx context.Context, id int) (*MachineDriveStats, error)
+}
+
+// MachineNICServiceInterface defines the interface for machine NIC operations (read-only).
+// Machine NICs provide per-NIC traffic counters and link status for physical nodes.
+type MachineNICServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]MachineNIC, error)
+	ListByMachine(ctx context.Context, machineID int, opts ...ListOption) ([]MachineNIC, error)
+	Get(ctx context.Context, id int) (*MachineNIC, error)
+}
+
+// UpdateSettingsServiceInterface defines the interface for update settings operations (read-only singleton).
+type UpdateSettingsServiceInterface interface {
+	Get(ctx context.Context) (*UpdateSettings, error)
+}
+
+// UpdateBranchServiceInterface defines the interface for update branch operations (read-only).
+type UpdateBranchServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]UpdateBranch, error)
+	Get(ctx context.Context, id int) (*UpdateBranch, error)
+}
+
+// UpdateSourcePackageServiceInterface defines the interface for update source package operations (read-only).
+type UpdateSourcePackageServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]UpdateSourcePackage, error)
+	ListByBranchAndSource(ctx context.Context, branch, source int) ([]UpdateSourcePackage, error)
+	Get(ctx context.Context, id int) (*UpdateSourcePackage, error)
+}
+
 // Compile-time verification that concrete types satisfy their interfaces.
 var (
 	_ VMServiceInterface                      = (*VMService)(nil)
@@ -919,4 +962,10 @@ var (
 	_ ClusterTierServiceInterface             = (*ClusterTierService)(nil)
 	_ MachineDrivePhysServiceInterface        = (*MachineDrivePhysService)(nil)
 	_ ClusterStatsHistoryServiceInterface     = (*ClusterStatsHistoryService)(nil)
+	_ MachineStatsServiceInterface            = (*MachineStatsService)(nil)
+	_ MachineDriveStatsServiceInterface       = (*MachineDriveStatsService)(nil)
+	_ MachineNICServiceInterface              = (*MachineNICService)(nil)
+	_ UpdateSettingsServiceInterface          = (*UpdateSettingsService)(nil)
+	_ UpdateBranchServiceInterface            = (*UpdateBranchService)(nil)
+	_ UpdateSourcePackageServiceInterface     = (*UpdateSourcePackageService)(nil)
 )
