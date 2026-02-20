@@ -110,6 +110,12 @@ type Client struct {
 	ClusterTiers            ClusterTierServiceInterface
 	MachineDrivePhys        MachineDrivePhysServiceInterface
 	ClusterStatsHistory     ClusterStatsHistoryServiceInterface
+	MachineStats            MachineStatsServiceInterface
+	MachineDriveStats       MachineDriveStatsServiceInterface
+	MachineNICs             MachineNICServiceInterface
+	UpdateSettings          UpdateSettingsServiceInterface
+	UpdateBranches          UpdateBranchServiceInterface
+	UpdateSourcePackages    UpdateSourcePackageServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -366,6 +372,12 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.ClusterTiers = &ClusterTierService{client: c}
 	c.MachineDrivePhys = &MachineDrivePhysService{client: c}
 	c.ClusterStatsHistory = &ClusterStatsHistoryService{client: c}
+	c.MachineStats = &MachineStatsService{client: c}
+	c.MachineDriveStats = &MachineDriveStatsService{client: c}
+	c.MachineNICs = &MachineNICService{client: c}
+	c.UpdateSettings = &UpdateSettingsService{client: c}
+	c.UpdateBranches = &UpdateBranchService{client: c}
+	c.UpdateSourcePackages = &UpdateSourcePackageService{client: c}
 
 	// Validate server version before returning client
 	if err := c.checkServerVersion(context.Background()); err != nil {
