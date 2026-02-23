@@ -282,6 +282,11 @@ func (s *FileService) uploadChunk(ctx context.Context, id int, data []byte, offs
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("User-Agent", s.client.userAgent)
 
+	// Disable connection reuse for chunk uploads. VergeOS 26.0.x closes
+	// connections between chunks, causing "use of closed network connection"
+	// errors when the HTTP client attempts to reuse them.
+	req.Close = true
+
 	// Set body
 	req.Body = io.NopCloser(newBytesReader(data))
 	req.ContentLength = int64(len(data))
