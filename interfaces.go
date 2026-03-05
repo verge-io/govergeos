@@ -58,6 +58,8 @@ type VMDriveServiceInterface interface {
 	Create(ctx context.Context, vmID int, req *VMDriveCreateRequest) (*VMDrive, error)
 	Update(ctx context.Context, driveID int, req *VMDriveUpdateRequest) (*VMDrive, error)
 	Delete(ctx context.Context, driveID int) error
+	HotplugDrive(ctx context.Context, vmID, driveID int) error
+	HotUnplugDrive(ctx context.Context, vmID, driveID int) error
 }
 
 // VMDeviceServiceInterface defines the interface for VM Device operations.
