@@ -204,8 +204,46 @@ func (s *VMDriveService) Delete(ctx context.Context, driveID int) error {
 	return nil
 }
 
-// hotUnplug hot-unplugs a drive from a running VM.
-func (s *VMDriveService) hotUnplug(ctx context.Context, vmID, driveID int) error {
+// HotplugDrive hot-plugs a drive into a running VM, making it visible to the guest OS.
+// vmID is the VM's $key (not the internal machine reference).
+// The drive must already be assigned to the VM (machine field set) before calling this.
+func (s *VMDriveService) HotplugDrive(ctx context.Context, vmID, driveID int) error {
+	action := vmAction{
+		VM:     vmID,
+		Action: vmActionHotplugDrive,
+		Params: vmActionParams{
+			Device: fmt.Sprintf("%d", driveID),
+		},
+	}
+
+	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
+		return err
+	}
+
+	// Wait for drive to come online
+	for i := 0; i < driveUnplugMaxRetries; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(driveUnplugPollInterval):
+		}
+
+		drive, err := s.Get(ctx, driveID)
+		if err != nil {
+			return err
+		}
+
+		if drive.PowerState == "online" {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("vergeos: timeout waiting for drive %d to hotplug", driveID)
+}
+
+// HotUnplugDrive hot-unplugs a drive from a running VM.
+// vmID is the VM's $key (not the internal machine reference).
+func (s *VMDriveService) HotUnplugDrive(ctx context.Context, vmID, driveID int) error {
 	action := vmAction{
 		VM:     vmID,
 		Action: vmActionHotplugDrive,
@@ -241,4 +279,9 @@ func (s *VMDriveService) hotUnplug(ctx context.Context, vmID, driveID int) error
 	}
 
 	return fmt.Errorf("vergeos: timeout waiting for drive %d to unplug", driveID)
+}
+
+// hotUnplug is the internal wrapper used by Delete.
+func (s *VMDriveService) hotUnplug(ctx context.Context, vmID, driveID int) error {
+	return s.HotUnplugDrive(ctx, vmID, driveID)
 }
