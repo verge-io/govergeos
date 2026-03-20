@@ -52,10 +52,10 @@ type MachineStatus struct {
 type GuestInfo struct {
 	// OSInfo contains operating system details.
 	OSInfo *GuestOSInfo `json:"osinfo,omitempty"`
-	// Network contains network interface information keyed by interface identifier.
-	Network map[string]*GuestNetworkInterface `json:"network,omitempty"`
-	// FSInfo contains filesystem information keyed by mount identifier.
-	FSInfo map[string]*GuestFSInfo `json:"fsinfo,omitempty"`
+	// Network contains network interface information from the guest agent.
+	Network []GuestNetworkInterface `json:"network,omitempty"`
+	// FSInfo contains filesystem information from the guest agent.
+	FSInfo []GuestFSInfo `json:"fsinfo,omitempty"`
 	// MemInfo contains memory usage information.
 	MemInfo *GuestMemInfo `json:"meminfo,omitempty"`
 	// Hostname is the guest hostname.
