@@ -1,6 +1,9 @@
 package vergeos
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // MachineStatus represents the runtime status of a VergeOS machine (VM).
 // This includes power state, node assignment, and guest agent information.
@@ -49,6 +52,9 @@ type MachineStatus struct {
 }
 
 // GuestInfo contains guest OS information reported by the VergeOS guest agent.
+// Network and FSInfo are normalized to slices, but the VergeOS API may return
+// them as either JSON arrays or JSON objects (maps keyed by string) depending
+// on the VM and guest agent version. The custom UnmarshalJSON handles both.
 type GuestInfo struct {
 	// OSInfo contains operating system details.
 	OSInfo *GuestOSInfo `json:"osinfo,omitempty"`
@@ -62,6 +68,71 @@ type GuestInfo struct {
 	Hostname string `json:"hostname,omitempty"`
 	// LastRefresh is the timestamp of the last agent refresh (Unix epoch).
 	LastRefresh int64 `json:"last_refresh,omitempty"`
+}
+
+// UnmarshalJSON handles the VergeOS API inconsistency where network and fsinfo
+// can be either a JSON array or a JSON object (map keyed by string).
+func (g *GuestInfo) UnmarshalJSON(data []byte) error {
+	// Use an alias to avoid infinite recursion.
+	type guestInfoRaw struct {
+		OSInfo      *GuestOSInfo    `json:"osinfo,omitempty"`
+		Network     json.RawMessage `json:"network,omitempty"`
+		FSInfo      json.RawMessage `json:"fsinfo,omitempty"`
+		MemInfo     *GuestMemInfo   `json:"meminfo,omitempty"`
+		Hostname    string          `json:"hostname,omitempty"`
+		LastRefresh int64           `json:"last_refresh,omitempty"`
+	}
+
+	var raw guestInfoRaw
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	g.OSInfo = raw.OSInfo
+	g.MemInfo = raw.MemInfo
+	g.Hostname = raw.Hostname
+	g.LastRefresh = raw.LastRefresh
+
+	if len(raw.Network) > 0 {
+		var err error
+		g.Network, err = unmarshalFlexList[GuestNetworkInterface](raw.Network)
+		if err != nil {
+			return fmt.Errorf("unmarshaling network: %w", err)
+		}
+	}
+
+	if len(raw.FSInfo) > 0 {
+		var err error
+		g.FSInfo, err = unmarshalFlexList[GuestFSInfo](raw.FSInfo)
+		if err != nil {
+			return fmt.Errorf("unmarshaling fsinfo: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// unmarshalFlexList unmarshals a JSON value that may be either an array or
+// an object (map keyed by string) into a slice. If it's an object, the map
+// values are collected into a slice (keys are discarded).
+func unmarshalFlexList[T any](data json.RawMessage) ([]T, error) {
+	// Try array first.
+	var arr []T
+	if err := json.Unmarshal(data, &arr); err == nil {
+		return arr, nil
+	}
+
+	// Try object (map keyed by string).
+	var m map[string]T
+	if err := json.Unmarshal(data, &m); err == nil {
+		result := make([]T, 0, len(m))
+		for _, v := range m {
+			result = append(result, v)
+		}
+		return result, nil
+	}
+
+	return nil, fmt.Errorf("expected JSON array or object, got: %.50s", data)
 }
 
 // GuestOSInfo contains operating system information from the guest agent.
