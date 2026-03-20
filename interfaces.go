@@ -43,8 +43,9 @@ type VMSnapshotServiceInterface interface {
 }
 
 // VMNICServiceInterface defines the interface for VM NIC operations.
+// Note: List takes a machineID (VM.Machine field), not the VM's $key/ID.
 type VMNICServiceInterface interface {
-	List(ctx context.Context, vmID int) ([]VMNIC, error)
+	List(ctx context.Context, machineID int) ([]VMNIC, error)
 	Get(ctx context.Context, nicID int) (*VMNIC, error)
 	Create(ctx context.Context, vmID int, req *VMNICCreateRequest) (*VMNIC, error)
 	Update(ctx context.Context, nicID int, req *VMNICUpdateRequest) (*VMNIC, error)

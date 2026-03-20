@@ -13,7 +13,7 @@ const (
 	networkActionPowerOff = "poweroff"
 	networkActionKill     = "killpower"
 	networkActionReset    = "reset"
-	networkActionApply    = "apply"
+	networkActionApply    = "refresh"
 	networkActionApplyDNS = "applydns"
 
 	// Network power state polling

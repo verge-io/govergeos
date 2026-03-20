@@ -22,10 +22,12 @@ type VMNICService struct {
 }
 
 // List returns all NICs for a VM.
-func (s *VMNICService) List(ctx context.Context, vmID int) ([]VMNIC, error) {
+// machineID is the VM's Machine field (not the VM's $key/ID).
+// The machine_nics table references the internal machine ID, not the VM row key.
+func (s *VMNICService) List(ctx context.Context, machineID int) ([]VMNIC, error) {
 	params := url.Values{}
 	params.Set("fields", nicListFields)
-	params.Set("filter", fmt.Sprintf("machine eq %d", vmID))
+	params.Set("filter", fmt.Sprintf("machine eq %d", machineID))
 
 	var nics []VMNIC
 	if err := s.client.get(ctx, "/machine_nics", params, &nics); err != nil {
