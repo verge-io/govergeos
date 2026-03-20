@@ -110,7 +110,7 @@ type vnetAddressRequest struct {
 }
 
 // nicListFields are the fields to request when listing NICs.
-const nicListFields = "$key,machine,orderid,name,description,interface,driver,model,vendor,port,enabled,disable_mq,vnet,macaddress,asset,device"
+const nicListFields = "$key,machine,orderid,name,description,interface,driver,model,vendor,port,enabled,disable_mq,vnet,macaddress,ipaddress,asset,device"
 
 // nicGetFields are the fields to request when getting a single NIC (includes power state).
-const nicGetFields = nicListFields + ",ipaddress,status#status as powerState"
+const nicGetFields = nicListFields + ",status#status as powerState"

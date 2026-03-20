@@ -850,6 +850,14 @@ type ClusterStatsHistoryServiceInterface interface {
 	GetLong(ctx context.Context, id int) (*ClusterStatsHistory, error)
 }
 
+// MachineStatusServiceInterface defines the interface for machine status operations (read-only).
+// Machine status provides runtime state, power state, node assignment, and guest agent information.
+type MachineStatusServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]MachineStatus, error)
+	Get(ctx context.Context, machineKey int) (*MachineStatus, error)
+	GetByKey(ctx context.Context, key int) (*MachineStatus, error)
+}
+
 // MachineStatsServiceInterface defines the interface for machine stats operations (read-only).
 // Machine stats provide per-node CPU, RAM, and temperature metrics.
 type MachineStatsServiceInterface interface {
@@ -964,6 +972,7 @@ var (
 	_ ClusterTierServiceInterface             = (*ClusterTierService)(nil)
 	_ MachineDrivePhysServiceInterface        = (*MachineDrivePhysService)(nil)
 	_ ClusterStatsHistoryServiceInterface     = (*ClusterStatsHistoryService)(nil)
+	_ MachineStatusServiceInterface           = (*MachineStatusService)(nil)
 	_ MachineStatsServiceInterface            = (*MachineStatsService)(nil)
 	_ MachineDriveStatsServiceInterface       = (*MachineDriveStatsService)(nil)
 	_ MachineNICServiceInterface              = (*MachineNICService)(nil)

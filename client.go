@@ -110,6 +110,7 @@ type Client struct {
 	ClusterTiers            ClusterTierServiceInterface
 	MachineDrivePhys        MachineDrivePhysServiceInterface
 	ClusterStatsHistory     ClusterStatsHistoryServiceInterface
+	MachineStatus           MachineStatusServiceInterface
 	MachineStats            MachineStatsServiceInterface
 	MachineDriveStats       MachineDriveStatsServiceInterface
 	MachineNICs             MachineNICServiceInterface
@@ -372,6 +373,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.ClusterTiers = &ClusterTierService{client: c}
 	c.MachineDrivePhys = &MachineDrivePhysService{client: c}
 	c.ClusterStatsHistory = &ClusterStatsHistoryService{client: c}
+	c.MachineStatus = &MachineStatusService{client: c}
 	c.MachineStats = &MachineStatsService{client: c}
 	c.MachineDriveStats = &MachineDriveStatsService{client: c}
 	c.MachineNICs = &MachineNICService{client: c}
