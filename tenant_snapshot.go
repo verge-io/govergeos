@@ -62,7 +62,7 @@ func (s *TenantSnapshotService) Get(ctx context.Context, id int) (*TenantSnapsho
 // GetByName returns a tenant snapshot by name within a specific tenant.
 func (s *TenantSnapshotService) GetByName(ctx context.Context, tenantID int, name string) (*TenantSnapshot, error) {
 	snapshots, err := s.List(ctx,
-		WithFilter(fmt.Sprintf("tenant eq %d and name eq '%s'", tenantID, name)),
+		WithFilter(fmt.Sprintf("tenant eq %d and name eq '%s'", tenantID, escapeFilterValue(name))),
 	)
 	if err != nil {
 		return nil, err

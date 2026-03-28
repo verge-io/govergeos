@@ -49,7 +49,7 @@ func (s *TenantService) Get(ctx context.Context, id int) (*Tenant, error) {
 
 // GetByName returns a tenant by name.
 func (s *TenantService) GetByName(ctx context.Context, name string) (*Tenant, error) {
-	tenants, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	tenants, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (s *TenantNodeService) Get(ctx context.Context, id int) (*TenantNode, error
 
 // GetByName returns a tenant node by name within a specific tenant.
 func (s *TenantNodeService) GetByName(ctx context.Context, tenantID int, name string) (*TenantNode, error) {
-	nodes, err := s.List(ctx, WithFilter(fmt.Sprintf("tenant eq %d and name eq '%s'", tenantID, name)))
+	nodes, err := s.List(ctx, WithFilter(fmt.Sprintf("tenant eq %d and name eq '%s'", tenantID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

@@ -37,13 +37,13 @@ func (s *LogService) List(ctx context.Context, opts ...ListOption) ([]Log, error
 
 // ListByLevel returns logs filtered by level.
 func (s *LogService) ListByLevel(ctx context.Context, level string, opts ...ListOption) ([]Log, error) {
-	opts = append(opts, WithFilter(fmt.Sprintf("level eq '%s'", level)))
+	opts = append(opts, WithFilter(fmt.Sprintf("level eq '%s'", escapeFilterValue(level))))
 	return s.List(ctx, opts...)
 }
 
 // ListByObjectType returns logs filtered by object type.
 func (s *LogService) ListByObjectType(ctx context.Context, objectType string, opts ...ListOption) ([]Log, error) {
-	opts = append(opts, WithFilter(fmt.Sprintf("object_type eq '%s'", objectType)))
+	opts = append(opts, WithFilter(fmt.Sprintf("object_type eq '%s'", escapeFilterValue(objectType))))
 	return s.List(ctx, opts...)
 }
 
@@ -65,7 +65,7 @@ func (s *LogService) ListWarnings(ctx context.Context, opts ...ListOption) ([]Lo
 
 // ListByUser returns logs filtered by username.
 func (s *LogService) ListByUser(ctx context.Context, username string, opts ...ListOption) ([]Log, error) {
-	opts = append(opts, WithFilter(fmt.Sprintf("user eq '%s'", username)))
+	opts = append(opts, WithFilter(fmt.Sprintf("user eq '%s'", escapeFilterValue(username))))
 	return s.List(ctx, opts...)
 }
 

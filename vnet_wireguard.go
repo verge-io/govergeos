@@ -55,7 +55,7 @@ func (s *VNetWireGuardService) Get(ctx context.Context, id int) (*VNetWireGuard,
 
 // GetByName returns a WireGuard interface by name within a specific network.
 func (s *VNetWireGuardService) GetByName(ctx context.Context, vnetID int, name string) (*VNetWireGuard, error) {
-	wgs, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and name eq '%s'", vnetID, name)))
+	wgs, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and name eq '%s'", vnetID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (s *VNetWireGuardPeerService) Get(ctx context.Context, id int) (*VNetWireGu
 
 // GetByName returns a WireGuard peer by name within a specific WireGuard interface.
 func (s *VNetWireGuardPeerService) GetByName(ctx context.Context, wireguardID int, name string) (*VNetWireGuardPeer, error) {
-	peers, err := s.List(ctx, WithFilter(fmt.Sprintf("wireguard eq %d and name eq '%s'", wireguardID, name)))
+	peers, err := s.List(ctx, WithFilter(fmt.Sprintf("wireguard eq %d and name eq '%s'", wireguardID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

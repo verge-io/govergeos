@@ -48,7 +48,7 @@ func (s *ClusterService) Get(ctx context.Context, id int) (*Cluster, error) {
 
 // GetByName returns a cluster by name.
 func (s *ClusterService) GetByName(ctx context.Context, name string) (*Cluster, error) {
-	clusters, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	clusters, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

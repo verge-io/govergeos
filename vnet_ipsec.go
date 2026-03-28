@@ -158,7 +158,7 @@ func (s *VNetIPSecPhase1Service) Get(ctx context.Context, id int) (*VNetIPSecPha
 
 // GetByName returns a Phase 1 configuration by name within an IPSec configuration.
 func (s *VNetIPSecPhase1Service) GetByName(ctx context.Context, ipsecID int, name string) (*VNetIPSecPhase1, error) {
-	phase1s, err := s.List(ctx, WithFilter(fmt.Sprintf("ipsec eq %d and name eq '%s'", ipsecID, name)))
+	phase1s, err := s.List(ctx, WithFilter(fmt.Sprintf("ipsec eq %d and name eq '%s'", ipsecID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (s *VNetIPSecPhase2Service) Get(ctx context.Context, id int) (*VNetIPSecPha
 
 // GetByName returns a Phase 2 configuration by name within a Phase 1.
 func (s *VNetIPSecPhase2Service) GetByName(ctx context.Context, phase1ID int, name string) (*VNetIPSecPhase2, error) {
-	phase2s, err := s.List(ctx, WithFilter(fmt.Sprintf("phase1 eq %d and name eq '%s'", phase1ID, name)))
+	phase2s, err := s.List(ctx, WithFilter(fmt.Sprintf("phase1 eq %d and name eq '%s'", phase1ID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

@@ -49,7 +49,7 @@ func (s *SnapshotProfileService) Get(ctx context.Context, id int) (*SnapshotProf
 
 // GetByName returns a snapshot profile by name.
 func (s *SnapshotProfileService) GetByName(ctx context.Context, name string) (*SnapshotProfile, error) {
-	profiles, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	profiles, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func (s *SnapshotProfilePeriodService) Get(ctx context.Context, id int) (*Snapsh
 
 // GetByName returns a snapshot profile period by name within a specific profile.
 func (s *SnapshotProfilePeriodService) GetByName(ctx context.Context, profileID int, name string) (*SnapshotProfilePeriod, error) {
-	periods, err := s.List(ctx, WithFilter(fmt.Sprintf("profile eq %d and name eq '%s'", profileID, name)))
+	periods, err := s.List(ctx, WithFilter(fmt.Sprintf("profile eq %d and name eq '%s'", profileID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

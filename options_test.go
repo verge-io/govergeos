@@ -171,3 +171,23 @@ func TestWithOffset(t *testing.T) {
 		t.Errorf("got %d", opts.Offset)
 	}
 }
+
+func TestEscapeFilterValue(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"normal", "normal"},
+		{"it's", "it''s"},
+		{"can't won't", "can''t won''t"},
+		{"no quotes", "no quotes"},
+		{"", ""},
+		{"'", "''"},
+	}
+	for _, tt := range tests {
+		got := escapeFilterValue(tt.input)
+		if got != tt.want {
+			t.Errorf("escapeFilterValue(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}

@@ -183,5 +183,5 @@ func (s *VolumeBrowserService) List(ctx context.Context, opts ...ListOption) ([]
 
 // ListByVolume returns all browse jobs for a specific volume.
 func (s *VolumeBrowserService) ListByVolume(ctx context.Context, volumeID string, opts ...ListOption) ([]VolumeBrowserJob, error) {
-	return s.List(ctx, append(opts, WithFilter(fmt.Sprintf("volume eq '%s'", volumeID)))...)
+	return s.List(ctx, append(opts, WithFilter(fmt.Sprintf("volume eq '%s'", escapeFilterValue(volumeID))))...)
 }

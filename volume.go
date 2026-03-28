@@ -55,7 +55,7 @@ func (s *VolumeService) Get(ctx context.Context, id string) (*Volume, error) {
 
 // GetByName returns a single volume by name within a service.
 func (s *VolumeService) GetByName(ctx context.Context, serviceID int, name string) (*Volume, error) {
-	volumes, err := s.List(ctx, WithFilter(fmt.Sprintf("service eq %d and name eq '%s'", serviceID, name)))
+	volumes, err := s.List(ctx, WithFilter(fmt.Sprintf("service eq %d and name eq '%s'", serviceID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

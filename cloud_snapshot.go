@@ -66,7 +66,7 @@ func (s *CloudSnapshotService) Get(ctx context.Context, id int) (*CloudSnapshot,
 
 // GetByName returns a cloud snapshot by name.
 func (s *CloudSnapshotService) GetByName(ctx context.Context, name string) (*CloudSnapshot, error) {
-	snapshots, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	snapshots, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

@@ -57,7 +57,7 @@ func (s *VNetRuleService) Get(ctx context.Context, id int) (*VNetRule, error) {
 
 // GetByName returns a firewall rule by name within a specific network.
 func (s *VNetRuleService) GetByName(ctx context.Context, vnetID int, name string) (*VNetRule, error) {
-	rules, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and name eq '%s'", vnetID, name)))
+	rules, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and name eq '%s'", vnetID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +218,7 @@ func (s *VNetRuleAliasService) Get(ctx context.Context, id int) (*VNetRuleAlias,
 
 // GetByName returns a rule alias by name.
 func (s *VNetRuleAliasService) GetByName(ctx context.Context, name string) (*VNetRuleAlias, error) {
-	aliases, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	aliases, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

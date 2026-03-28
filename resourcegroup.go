@@ -48,7 +48,7 @@ func (s *ResourceGroupService) Get(ctx context.Context, id int) (*ResourceGroup,
 
 // GetByName returns a resource group by name.
 func (s *ResourceGroupService) GetByName(ctx context.Context, name string) (*ResourceGroup, error) {
-	groups, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	groups, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

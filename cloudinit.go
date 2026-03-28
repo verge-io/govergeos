@@ -49,7 +49,7 @@ func (s *CloudInitService) Get(ctx context.Context, id int) (*CloudInitFile, err
 
 // GetByName returns a cloud-init file by name.
 func (s *CloudInitService) GetByName(ctx context.Context, name string) (*CloudInitFile, error) {
-	files, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	files, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

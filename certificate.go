@@ -48,7 +48,7 @@ func (s *CertificateService) Get(ctx context.Context, id int) (*Certificate, err
 
 // GetByDomain returns a certificate by its primary domain.
 func (s *CertificateService) GetByDomain(ctx context.Context, domain string) (*Certificate, error) {
-	certs, err := s.List(ctx, WithFilter(fmt.Sprintf("domain eq '%s'", domain)))
+	certs, err := s.List(ctx, WithFilter(fmt.Sprintf("domain eq '%s'", escapeFilterValue(domain))))
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (s *CertificateService) ListValid(ctx context.Context, opts ...ListOption) 
 
 // ListByType returns certificates of a specific type (manual, letsencrypt, self_signed).
 func (s *CertificateService) ListByType(ctx context.Context, certType string, opts ...ListOption) ([]Certificate, error) {
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("type eq '%s'", certType))}
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("type eq '%s'", escapeFilterValue(certType)))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }

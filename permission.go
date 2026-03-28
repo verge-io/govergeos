@@ -38,13 +38,13 @@ func (s *PermissionService) ListByIdentity(ctx context.Context, identityID int, 
 
 // ListByTable returns all permissions for a specific resource type.
 func (s *PermissionService) ListByTable(ctx context.Context, table string, opts ...ListOption) ([]Permission, error) {
-	opts = append([]ListOption{WithFilter(fmt.Sprintf("table eq '%s'", table))}, opts...)
+	opts = append([]ListOption{WithFilter(fmt.Sprintf("table eq '%s'", escapeFilterValue(table)))}, opts...)
 	return s.List(ctx, opts...)
 }
 
 // ListByResource returns all permissions for a specific resource instance.
 func (s *PermissionService) ListByResource(ctx context.Context, table string, rowID int64, opts ...ListOption) ([]Permission, error) {
-	opts = append([]ListOption{WithFilter(fmt.Sprintf("table eq '%s' and row eq %d", table, rowID))}, opts...)
+	opts = append([]ListOption{WithFilter(fmt.Sprintf("table eq '%s' and row eq %d", escapeFilterValue(table), rowID))}, opts...)
 	return s.List(ctx, opts...)
 }
 
@@ -67,7 +67,7 @@ func (s *PermissionService) Get(ctx context.Context, id int) (*Permission, error
 
 // GetByIdentityAndResource returns the permission for a specific identity and resource.
 func (s *PermissionService) GetByIdentityAndResource(ctx context.Context, identityID int, table string, rowID int64) (*Permission, error) {
-	permissions, err := s.List(ctx, WithFilter(fmt.Sprintf("identity eq %d and table eq '%s' and row eq %d", identityID, table, rowID)))
+	permissions, err := s.List(ctx, WithFilter(fmt.Sprintf("identity eq %d and table eq '%s' and row eq %d", identityID, escapeFilterValue(table), rowID)))
 	if err != nil {
 		return nil, err
 	}

@@ -49,7 +49,7 @@ func (s *TagService) Get(ctx context.Context, id int) (*Tag, error) {
 
 // GetByName returns a tag by name.
 func (s *TagService) GetByName(ctx context.Context, name string) (*Tag, error) {
-	tags, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	tags, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

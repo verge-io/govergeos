@@ -38,7 +38,7 @@ func (s *VNetAddressService) ListByNetwork(ctx context.Context, vnetID int, opts
 
 // ListByType returns all addresses of a specific type within a network.
 func (s *VNetAddressService) ListByType(ctx context.Context, vnetID int, addrType string, opts ...ListOption) ([]VNetAddress, error) {
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("vnet eq %d and type eq '%s'", vnetID, addrType))}
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("vnet eq %d and type eq '%s'", vnetID, escapeFilterValue(addrType)))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }
@@ -62,7 +62,7 @@ func (s *VNetAddressService) Get(ctx context.Context, id int) (*VNetAddress, err
 
 // GetByIP returns an address by IP within a specific network.
 func (s *VNetAddressService) GetByIP(ctx context.Context, vnetID int, ip string) (*VNetAddress, error) {
-	addresses, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and ip eq '%s'", vnetID, ip)))
+	addresses, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and ip eq '%s'", vnetID, escapeFilterValue(ip))))
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (s *VNetAddressService) GetByIP(ctx context.Context, vnetID int, ip string)
 
 // GetByMAC returns an address by MAC address within a specific network.
 func (s *VNetAddressService) GetByMAC(ctx context.Context, vnetID int, mac string) (*VNetAddress, error) {
-	addresses, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and mac eq '%s'", vnetID, mac)))
+	addresses, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and mac eq '%s'", vnetID, escapeFilterValue(mac))))
 	if err != nil {
 		return nil, err
 	}

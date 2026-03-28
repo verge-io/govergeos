@@ -40,7 +40,7 @@ func (s *TaskService) ListRunning(ctx context.Context, opts ...ListOption) ([]Ta
 // ListByOwner returns all tasks for a specific owner resource.
 // owner should be a resource path like "vms/123".
 func (s *TaskService) ListByOwner(ctx context.Context, owner string, opts ...ListOption) ([]Task, error) {
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("owner eq '%s'", owner))}
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("owner eq '%s'", escapeFilterValue(owner)))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }
@@ -71,7 +71,7 @@ func (s *TaskService) Get(ctx context.Context, id int) (*Task, error) {
 
 // GetByID returns a task by its 40-character SHA1 ID.
 func (s *TaskService) GetByID(ctx context.Context, taskID string) (*Task, error) {
-	tasks, err := s.List(ctx, WithFilter(fmt.Sprintf("id eq '%s'", taskID)))
+	tasks, err := s.List(ctx, WithFilter(fmt.Sprintf("id eq '%s'", escapeFilterValue(taskID))))
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (s *TaskService) GetByID(ctx context.Context, taskID string) (*Task, error)
 
 // GetByName returns a task by name for a specific owner.
 func (s *TaskService) GetByName(ctx context.Context, owner, name string) (*Task, error) {
-	tasks, err := s.List(ctx, WithFilter(fmt.Sprintf("owner eq '%s' and name eq '%s'", owner, name)))
+	tasks, err := s.List(ctx, WithFilter(fmt.Sprintf("owner eq '%s' and name eq '%s'", escapeFilterValue(owner), escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

@@ -62,7 +62,7 @@ func (s *UserService) Get(ctx context.Context, id int) (*User, error) {
 
 // GetByName returns a user by username.
 func (s *UserService) GetByName(ctx context.Context, name string) (*User, error) {
-	users, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	users, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

@@ -99,7 +99,7 @@ func (s *VMSnapshotService) Get(ctx context.Context, id int) (*VMSnapshot, error
 
 // GetByName returns a VM snapshot by name within a specific VM.
 func (s *VMSnapshotService) GetByName(ctx context.Context, vmID int, name string) (*VMSnapshot, error) {
-	snapshots, err := s.ListByVM(ctx, vmID, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	snapshots, err := s.ListByVM(ctx, vmID, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

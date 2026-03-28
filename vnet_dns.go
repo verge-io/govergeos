@@ -55,7 +55,7 @@ func (s *VNetDNSViewService) Get(ctx context.Context, id int) (*VNetDNSView, err
 
 // GetByName returns a DNS view by name within a specific network.
 func (s *VNetDNSViewService) GetByName(ctx context.Context, vnetID int, name string) (*VNetDNSView, error) {
-	views, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and name eq '%s'", vnetID, name)))
+	views, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and name eq '%s'", vnetID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +168,7 @@ func (s *VNetDNSZoneService) Get(ctx context.Context, id int) (*VNetDNSZone, err
 
 // GetByDomain returns a DNS zone by domain name within a specific view.
 func (s *VNetDNSZoneService) GetByDomain(ctx context.Context, viewID int, domain string) (*VNetDNSZone, error) {
-	zones, err := s.List(ctx, WithFilter(fmt.Sprintf("view eq %d and domain eq '%s'", viewID, domain)))
+	zones, err := s.List(ctx, WithFilter(fmt.Sprintf("view eq %d and domain eq '%s'", viewID, escapeFilterValue(domain))))
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +264,7 @@ func (s *VNetDNSRecordService) ListByZone(ctx context.Context, zoneID int, opts 
 
 // ListByType returns all DNS records of a specific type within a zone.
 func (s *VNetDNSRecordService) ListByType(ctx context.Context, zoneID int, recordType string, opts ...ListOption) ([]VNetDNSRecord, error) {
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("zone eq %d and type eq '%s'", zoneID, recordType))}
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("zone eq %d and type eq '%s'", zoneID, escapeFilterValue(recordType)))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }
@@ -288,7 +288,7 @@ func (s *VNetDNSRecordService) Get(ctx context.Context, id int) (*VNetDNSRecord,
 
 // GetByHostAndType returns a DNS record by host and type within a zone.
 func (s *VNetDNSRecordService) GetByHostAndType(ctx context.Context, zoneID int, host, recordType string) (*VNetDNSRecord, error) {
-	records, err := s.List(ctx, WithFilter(fmt.Sprintf("zone eq %d and host eq '%s' and type eq '%s'", zoneID, host, recordType)))
+	records, err := s.List(ctx, WithFilter(fmt.Sprintf("zone eq %d and host eq '%s' and type eq '%s'", zoneID, escapeFilterValue(host), escapeFilterValue(recordType))))
 	if err != nil {
 		return nil, err
 	}

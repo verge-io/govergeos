@@ -121,7 +121,7 @@ func (s *MemberService) Add(ctx context.Context, groupID int, member string) (*M
 func (s *MemberService) Remove(ctx context.Context, groupID int, member string) error {
 	// Find the membership
 	members, err := s.List(ctx,
-		WithFilter(fmt.Sprintf("parent_group eq %d and member eq '%s'", groupID, member)),
+		WithFilter(fmt.Sprintf("parent_group eq %d and member eq '%s'", groupID, escapeFilterValue(member))),
 	)
 	if err != nil {
 		return err

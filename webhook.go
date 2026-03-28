@@ -48,7 +48,7 @@ func (s *WebhookURLService) Get(ctx context.Context, id int) (*WebhookURL, error
 
 // GetByName returns a webhook URL by name.
 func (s *WebhookURLService) GetByName(ctx context.Context, name string) (*WebhookURL, error) {
-	webhooks, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	webhooks, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func (s *WebhookService) ListByWebhookURL(ctx context.Context, webhookURLID int,
 
 // ListByStatus returns all webhook messages with a specific status.
 func (s *WebhookService) ListByStatus(ctx context.Context, status string, opts ...ListOption) ([]Webhook, error) {
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("status eq '%s'", status))}
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("status eq '%s'", escapeFilterValue(status)))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }

@@ -48,7 +48,7 @@ func (s *SiteService) Get(ctx context.Context, id int) (*Site, error) {
 
 // GetByName returns a site by name.
 func (s *SiteService) GetByName(ctx context.Context, name string) (*Site, error) {
-	sites, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	sites, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (s *SiteService) GetByName(ctx context.Context, name string) (*Site, error)
 
 // GetBySiteID returns a site by its 40-character SHA1 site ID.
 func (s *SiteService) GetBySiteID(ctx context.Context, siteID string) (*Site, error) {
-	sites, err := s.List(ctx, WithFilter(fmt.Sprintf("id eq '%s'", siteID)))
+	sites, err := s.List(ctx, WithFilter(fmt.Sprintf("id eq '%s'", escapeFilterValue(siteID))))
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func (s *SiteSyncIncomingService) Get(ctx context.Context, id int) (*SiteSyncInc
 // GetByName returns an incoming sync by name within a site.
 func (s *SiteSyncIncomingService) GetByName(ctx context.Context, siteID int, name string) (*SiteSyncIncoming, error) {
 	syncs, err := s.List(ctx,
-		WithFilter(fmt.Sprintf("site eq %d and name eq '%s'", siteID, name)),
+		WithFilter(fmt.Sprintf("site eq %d and name eq '%s'", siteID, escapeFilterValue(name))),
 	)
 	if err != nil {
 		return nil, err
@@ -248,7 +248,7 @@ func (s *SiteSyncIncomingService) GetByName(ctx context.Context, siteID int, nam
 
 // GetBySyncID returns an incoming sync by its 40-character sync ID.
 func (s *SiteSyncIncomingService) GetBySyncID(ctx context.Context, syncID string) (*SiteSyncIncoming, error) {
-	syncs, err := s.List(ctx, WithFilter(fmt.Sprintf("sync_id eq '%s'", syncID)))
+	syncs, err := s.List(ctx, WithFilter(fmt.Sprintf("sync_id eq '%s'", escapeFilterValue(syncID))))
 	if err != nil {
 		return nil, err
 	}
@@ -387,7 +387,7 @@ func (s *SiteSyncOutgoingService) Get(ctx context.Context, id int) (*SiteSyncOut
 // GetByName returns an outgoing sync by name within a site.
 func (s *SiteSyncOutgoingService) GetByName(ctx context.Context, siteID int, name string) (*SiteSyncOutgoing, error) {
 	syncs, err := s.List(ctx,
-		WithFilter(fmt.Sprintf("site eq %d and name eq '%s'", siteID, name)),
+		WithFilter(fmt.Sprintf("site eq %d and name eq '%s'", siteID, escapeFilterValue(name))),
 	)
 	if err != nil {
 		return nil, err

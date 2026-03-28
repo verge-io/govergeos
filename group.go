@@ -48,7 +48,7 @@ func (s *GroupService) Get(ctx context.Context, id int) (*Group, error) {
 
 // GetByName returns a group by name.
 func (s *GroupService) GetByName(ctx context.Context, name string) (*Group, error) {
-	groups, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	groups, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

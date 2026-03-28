@@ -60,7 +60,7 @@ func (s *VolumeSyncService) Get(ctx context.Context, id string) (*VolumeSync, er
 
 // GetByName returns a volume sync by name within a specific service.
 func (s *VolumeSyncService) GetByName(ctx context.Context, serviceID int, name string) (*VolumeSync, error) {
-	syncs, err := s.List(ctx, WithFilter(fmt.Sprintf("service eq %d and name eq '%s'", serviceID, name)))
+	syncs, err := s.List(ctx, WithFilter(fmt.Sprintf("service eq %d and name eq '%s'", serviceID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

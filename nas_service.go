@@ -63,7 +63,7 @@ func (s *NASServiceService) GetByVM(ctx context.Context, vmID int) (*NASService,
 
 // GetByName returns a NAS service by name.
 func (s *NASServiceService) GetByName(ctx context.Context, name string) (*NASService, error) {
-	services, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	services, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (s *NASServiceUserService) Get(ctx context.Context, id string) (*NASService
 
 // GetByName returns a NAS service user by name within a specific service.
 func (s *NASServiceUserService) GetByName(ctx context.Context, serviceID int, name string) (*NASServiceUser, error) {
-	users, err := s.List(ctx, WithFilter(fmt.Sprintf("service eq %d and name eq '%s'", serviceID, name)))
+	users, err := s.List(ctx, WithFilter(fmt.Sprintf("service eq %d and name eq '%s'", serviceID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
