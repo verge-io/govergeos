@@ -24,8 +24,9 @@ func (s *VMDeviceService) List(ctx context.Context, vmID int) ([]VMDevice, error
 
 	// Load settings for each device
 	for i := range devices {
-		// Non-fatal: continue without settings if load fails
-		_ = s.loadSettings(ctx, &devices[i])
+		if err := s.loadSettings(ctx, &devices[i]); err != nil {
+			return nil, err
+		}
 	}
 
 	return devices, nil
@@ -45,8 +46,10 @@ func (s *VMDeviceService) Get(ctx context.Context, deviceID int) (*VMDevice, err
 		return nil, err
 	}
 
-	// Load settings based on device type (non-fatal: return device without settings if load fails)
-	_ = s.loadSettings(ctx, &device)
+	// Load settings based on device type
+	if err := s.loadSettings(ctx, &device); err != nil {
+		return nil, err
+	}
 
 	return &device, nil
 }
@@ -171,8 +174,10 @@ func (s *VMDeviceService) Create(ctx context.Context, vmID int, req *VMDeviceCre
 		return nil, err
 	}
 
-	// Update device settings if provided (non-fatal: device was created but settings update may fail)
-	_ = s.updateSettings(ctx, device, req.USBSettings, req.TPMSettings, req.VGPUSettings)
+	// Update device settings if provided
+	if err := s.updateSettings(ctx, device, req.USBSettings, req.TPMSettings, req.VGPUSettings); err != nil {
+		return nil, err
+	}
 
 	// Read back with settings
 	return s.Get(ctx, id)
@@ -198,8 +203,10 @@ func (s *VMDeviceService) Update(ctx context.Context, deviceID int, req *VMDevic
 		return nil, err
 	}
 
-	// Update device settings if provided (non-fatal: device was updated but settings update may fail)
-	_ = s.updateSettings(ctx, device, req.USBSettings, req.TPMSettings, req.VGPUSettings)
+	// Update device settings if provided
+	if err := s.updateSettings(ctx, device, req.USBSettings, req.TPMSettings, req.VGPUSettings); err != nil {
+		return nil, err
+	}
 
 	// Read back with settings
 	return s.Get(ctx, deviceID)

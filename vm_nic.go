@@ -89,14 +89,16 @@ func (s *VMNICService) Create(ctx context.Context, vmID int, req *VMNICCreateReq
 		return nil, err
 	}
 
-	// Assign IP address if requested (non-fatal: NIC was created but IP assignment may fail)
+	// Assign IP address if requested
 	if req.AssignIPAddress && req.VNET > 0 && nic.MAC != "" {
 		addrReq := vnetAddressRequest{
 			VNET: req.VNET,
 			MAC:  nic.MAC,
 			Type: "static",
 		}
-		_ = s.client.post(ctx, "/vnet_addresses", addrReq, nil)
+		if err := s.client.post(ctx, "/vnet_addresses", addrReq, nil); err != nil {
+			return nil, fmt.Errorf("vergeos: NIC created (ID %d) but IP assignment failed: %w", id, err)
+		}
 	}
 
 	return nic, nil
