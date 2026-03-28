@@ -118,8 +118,12 @@ func (s *VMDriveService) Create(ctx context.Context, vmID int, req *VMDriveCreat
 
 // waitForImport waits for a drive import to complete and handles resizing if needed.
 func (s *VMDriveService) waitForImport(ctx context.Context, driveID int, targetSizeGB int64) (*VMDrive, error) {
-	// Initial wait
-	time.Sleep(5 * time.Second)
+	// Initial wait before first poll
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-time.After(5 * time.Second):
+	}
 
 	for i := 0; i < importMaxRetries; i++ {
 		drive, err := s.Get(ctx, driveID)
