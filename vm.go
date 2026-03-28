@@ -193,12 +193,6 @@ func (s *VMService) waitForPowerState(ctx context.Context, id int, desiredState 
 	}
 
 	for i := 0; i < powerStateMaxRetries; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(powerStatePollInterval):
-		}
-
 		vm, err := s.Get(ctx, id)
 		if err != nil {
 			return err
@@ -206,6 +200,12 @@ func (s *VMService) waitForPowerState(ctx context.Context, id int, desiredState 
 
 		if vm.PowerState == desiredState {
 			return nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(powerStatePollInterval):
 		}
 	}
 

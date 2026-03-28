@@ -186,12 +186,6 @@ func (s *NetworkService) waitForPowerState(ctx context.Context, id int, desiredS
 	}
 
 	for i := 0; i < networkPowerStateMaxRetries; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(networkPowerStatePollInterval):
-		}
-
 		network, err := s.Get(ctx, id)
 		if err != nil {
 			return err
@@ -199,6 +193,12 @@ func (s *NetworkService) waitForPowerState(ctx context.Context, id int, desiredS
 
 		if network.PowerState == desiredState {
 			return nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(networkPowerStatePollInterval):
 		}
 	}
 
