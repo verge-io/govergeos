@@ -459,7 +459,7 @@ func (c *Client) do(ctx context.Context, method, endpoint string, body interface
 	}
 
 	// Check for HTTP errors
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		// Try to parse error message from response
 		var apiResp apiResponse
 		errMsg := string(respBody)
@@ -547,7 +547,7 @@ func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values
 	defer func() { _ = resp.Body.Close() }()
 
 	// Check for HTTP errors
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
 		if resp.StatusCode == 401 || resp.StatusCode == 403 {
 			return &AuthError{Message: string(body)}
