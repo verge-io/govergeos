@@ -326,6 +326,22 @@ type TenantStorageServiceInterface interface {
 	Delete(ctx context.Context, id int) error
 }
 
+// TenantStatusServiceInterface defines the interface for tenant status operations (read-only).
+type TenantStatusServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantStatus, error)
+	Get(ctx context.Context, tenantKey int) (*TenantStatus, error)
+	GetByKey(ctx context.Context, key int) (*TenantStatus, error)
+}
+
+// TenantStatsHistoryShortServiceInterface defines the interface for tenant short-term statistics history operations (read-only).
+// This provides high-resolution historical metrics for tenant monitoring.
+type TenantStatsHistoryShortServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantStatsHistoryShort, error)
+	ListByTenant(ctx context.Context, tenantID int, opts ...ListOption) ([]TenantStatsHistoryShort, error)
+	GetLatest(ctx context.Context, tenantID int) (*TenantStatsHistoryShort, error)
+	Get(ctx context.Context, id int) (*TenantStatsHistoryShort, error)
+}
+
 // SnapshotProfileServiceInterface defines the interface for SnapshotProfile operations.
 type SnapshotProfileServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]SnapshotProfile, error)

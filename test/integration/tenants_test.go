@@ -336,6 +336,131 @@ func TestTenantLayer2List(t *testing.T) {
 	})
 }
 
+// TestTenantStatusList tests the TenantStatus service.
+func TestTenantStatusList(t *testing.T) {
+	client := setupTestClient(t)
+	ctx := context.Background()
+
+	t.Log("Testing TenantStatus service...")
+
+	// List all tenant statuses
+	statuses, err := client.TenantStatus.List(ctx)
+	if err != nil {
+		t.Fatalf("TenantStatus.List failed: %v", err)
+	}
+
+	t.Logf("Found %d tenant statuses", len(statuses))
+
+	if len(statuses) == 0 {
+		t.Log("No tenant statuses found - this is expected on systems without tenants")
+		return
+	}
+
+	// Log first status to verify field mapping
+	first := statuses[0]
+	t.Logf("First tenant status: Key=%d, Tenant=%d, Status=%q, State=%q, Running=%v",
+		int(first.Key), first.Tenant, first.Status, first.State, first.Running)
+
+	// Test Get by tenant key
+	t.Run("Get", func(t *testing.T) {
+		if first.Tenant == 0 {
+			t.Skip("No tenant reference available")
+		}
+		fetched, err := client.TenantStatus.Get(ctx, first.Tenant)
+		if err != nil {
+			t.Errorf("TenantStatus.Get(%d) failed: %v", first.Tenant, err)
+		} else {
+			t.Logf("TenantStatus.Get succeeded: Status=%q, State=%q, Running=%v, Starting=%v, Stopping=%v",
+				fetched.Status, fetched.State, fetched.Running, fetched.Starting, fetched.Stopping)
+		}
+	})
+
+	// Test GetByKey
+	t.Run("GetByKey", func(t *testing.T) {
+		if first.Key == 0 {
+			t.Skip("No status key available")
+		}
+		fetched, err := client.TenantStatus.GetByKey(ctx, int(first.Key))
+		if err != nil {
+			t.Errorf("TenantStatus.GetByKey(%d) failed: %v", int(first.Key), err)
+		} else {
+			t.Logf("TenantStatus.GetByKey succeeded: Tenant=%d, Status=%q", fetched.Tenant, fetched.Status)
+		}
+	})
+
+	prettyPrint(t, "Sample TenantStatus", first)
+}
+
+// TestTenantStatsHistoryShort tests the TenantStatsHistoryShort service.
+func TestTenantStatsHistoryShort(t *testing.T) {
+	client := setupTestClient(t)
+	ctx := context.Background()
+
+	// Get tenants for testing
+	tenants, err := client.Tenants.List(ctx)
+	if err != nil {
+		t.Fatalf("Tenants.List failed: %v", err)
+	}
+	if len(tenants) == 0 {
+		t.Skip("No tenants found - skipping TenantStatsHistoryShort tests")
+	}
+	tenantID := int(tenants[0].Key)
+	t.Logf("Testing with tenant %d (%s)", tenantID, tenants[0].Name)
+
+	t.Run("List", func(t *testing.T) {
+		stats, err := client.TenantStatsHistoryShort.List(ctx, vergeos.WithLimit(5))
+		if err != nil {
+			t.Fatalf("TenantStatsHistoryShort.List failed: %v", err)
+		}
+		t.Logf("Found %d short-term history records (limited to 5)", len(stats))
+
+		if len(stats) > 0 {
+			first := stats[0]
+			t.Logf("First record: Key=%d, Tenant=%d, Timestamp=%d",
+				int(first.Key), first.Tenant, first.Timestamp)
+			t.Logf("Resources: RAMUsed=%d, VRAMUsed=%d, TotalCPU=%d, CoreCount=%d, IPCount=%d",
+				first.RAMUsed, first.VRAMUsed, first.TotalCPU, first.CoreCount, first.IPCount)
+			prettyPrint(t, "Sample TenantStatsHistoryShort", first)
+		}
+	})
+
+	t.Run("ListByTenant", func(t *testing.T) {
+		stats, err := client.TenantStatsHistoryShort.ListByTenant(ctx, tenantID, vergeos.WithLimit(5))
+		if err != nil {
+			t.Fatalf("TenantStatsHistoryShort.ListByTenant(%d) failed: %v", tenantID, err)
+		}
+		t.Logf("Found %d short-term records for tenant %d", len(stats), tenantID)
+	})
+
+	t.Run("GetLatest", func(t *testing.T) {
+		latest, err := client.TenantStatsHistoryShort.GetLatest(ctx, tenantID)
+		if err != nil {
+			if vergeos.IsNotFoundError(err) {
+				t.Logf("No recent stats for tenant %d (this is normal for new/idle tenants)", tenantID)
+			} else {
+				t.Fatalf("TenantStatsHistoryShort.GetLatest(%d) failed: %v", tenantID, err)
+			}
+		} else {
+			t.Logf("Latest stats for tenant %d: Timestamp=%d, RAMUsed=%d, RAMAllocated=%d, RAMPct=%d%%",
+				tenantID, latest.Timestamp, latest.RAMUsed, latest.RAMAllocated, latest.RAMPct)
+		}
+	})
+
+	t.Run("Get", func(t *testing.T) {
+		stats, err := client.TenantStatsHistoryShort.List(ctx, vergeos.WithLimit(1))
+		if err != nil || len(stats) == 0 {
+			t.Skip("No stats history records available")
+		}
+
+		first := stats[0]
+		fetched, err := client.TenantStatsHistoryShort.Get(ctx, int(first.Key))
+		if err != nil {
+			t.Fatalf("TenantStatsHistoryShort.Get(%d) failed: %v", int(first.Key), err)
+		}
+		t.Logf("TenantStatsHistoryShort.Get succeeded: Tenant=%d, Timestamp=%d", fetched.Tenant, fetched.Timestamp)
+	})
+}
+
 // TestTenantsCRUD tests Create/Update/Delete operations for Tenant services.
 func TestTenantsCRUD(t *testing.T) {
 	client := setupTestClient(t)

@@ -67,6 +67,8 @@ type Client struct {
 	Tenants                 TenantServiceInterface
 	TenantNodes             TenantNodeServiceInterface
 	TenantStorage           TenantStorageServiceInterface
+	TenantStatus            TenantStatusServiceInterface
+	TenantStatsHistoryShort TenantStatsHistoryShortServiceInterface
 	TenantSnapshots         TenantSnapshotServiceInterface
 	TenantLayer2Networks    TenantLayer2NetworkServiceInterface
 	SnapshotProfiles        SnapshotProfileServiceInterface
@@ -330,6 +332,8 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Tenants = &TenantService{client: c}
 	c.TenantNodes = &TenantNodeService{client: c}
 	c.TenantStorage = &TenantStorageService{client: c}
+	c.TenantStatus = &TenantStatusService{client: c}
+	c.TenantStatsHistoryShort = &TenantStatsHistoryShortService{client: c}
 	c.TenantSnapshots = &TenantSnapshotService{client: c}
 	c.TenantLayer2Networks = &TenantLayer2NetworkService{client: c}
 	c.SnapshotProfiles = &SnapshotProfileService{client: c}
