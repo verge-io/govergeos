@@ -22,6 +22,8 @@ const (
 	apiBasePath = "/api/v4"
 	// defaultUserAgent is the default User-Agent header.
 	defaultUserAgent = "govergeos/1.0"
+	// maxResponseSize is the maximum response body size (100 MB).
+	maxResponseSize = 100 << 20
 )
 
 // Client is the VergeOS API client.
@@ -457,8 +459,8 @@ func (c *Client) do(ctx context.Context, method, endpoint string, body interface
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	// Read response body
-	respBody, err := io.ReadAll(resp.Body)
+	// Read response body (bounded to prevent OOM from misbehaving servers)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	if err != nil {
 		return fmt.Errorf("vergeos: failed to read response body: %w", err)
 	}
@@ -553,7 +555,7 @@ func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values
 
 	// Check for HTTP errors
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 		if resp.StatusCode == 401 || resp.StatusCode == 403 {
 			return &AuthError{Message: string(body)}
 		}
