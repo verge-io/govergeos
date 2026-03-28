@@ -210,7 +210,7 @@ func TestTenantSnapshotService_Delete_NotFound(t *testing.T) {
 func TestTenantSnapshotService_Refresh(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/tenant_snapshot_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "refresh" {
 				t.Errorf("expected action 'refresh', got %v", body["action"])

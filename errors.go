@@ -23,7 +23,7 @@ func (e *APIError) Error() string {
 // NotFoundError is returned when a resource is not found.
 type NotFoundError struct {
 	Resource string
-	ID       interface{}
+	ID       any
 }
 
 // Error implements the error interface.

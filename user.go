@@ -16,7 +16,7 @@ const (
 type userAction struct {
 	User   int         `json:"user"`
 	Action string      `json:"action"`
-	Params interface{} `json:"params"`
+	Params any `json:"params"`
 }
 
 // UserService handles user operations.

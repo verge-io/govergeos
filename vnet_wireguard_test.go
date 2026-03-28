@@ -134,7 +134,7 @@ func TestVNetWireGuardService_Create(t *testing.T) {
 			if req.VNet != 10 {
 				t.Errorf("expected vnet 10, got %d", req.VNet)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1, "status": "OK"})
+			jsonResponse(w, 200, map[string]any{"$key": 1, "status": "OK"})
 		},
 		"GET /api/v4/vnet_wireguards/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetWireGuard{Key: 1, VNet: 10, Name: "wg0", IP: "10.0.0.1/24"})
@@ -395,7 +395,7 @@ func TestVNetWireGuardPeerService_Create(t *testing.T) {
 			if req.Name != "peer-a" {
 				t.Errorf("expected name 'peer-a', got %q", req.Name)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1, "status": "OK"})
+			jsonResponse(w, 200, map[string]any{"$key": 1, "status": "OK"})
 		},
 		"GET /api/v4/vnet_wireguard_peers/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetWireGuardPeer{Key: 1, WireGuard: 5, Name: "peer-a", PeerIP: "10.0.0.2", PublicKey: "abc123", AllowedIPs: "10.0.0.0/24"})

@@ -127,7 +127,7 @@ func (s *TenantService) PowerOnWithNode(ctx context.Context, id int, preferredNo
 		Action: "poweron",
 	}
 	if preferredNode > 0 {
-		action.Params = map[string]interface{}{
+		action.Params = map[string]any{
 			"preferred_node": preferredNode,
 		}
 	}
@@ -176,7 +176,7 @@ func (s *TenantService) Clone(ctx context.Context, id int, opts *TenantCloneOpti
 	action := tenantAction{
 		Tenant: id,
 		Action: "clone",
-		Params: map[string]interface{}{
+		Params: map[string]any{
 			"name":       opts.Name,
 			"no_vnet":    opts.NoVNet,
 			"no_storage": opts.NoStorage,
@@ -220,7 +220,7 @@ func (s *TenantService) IsolateOff(ctx context.Context, id int) error {
 type tenantAction struct {
 	Tenant int                    `json:"tenant"`
 	Action string                 `json:"action"`
-	Params map[string]interface{} `json:"params,omitempty"`
+	Params map[string]any `json:"params,omitempty"`
 }
 
 // TenantNodeService handles tenant node operations.
@@ -404,7 +404,7 @@ func (s *TenantNodeService) Migrate(ctx context.Context, id int, targetNode int)
 		Action:     "migrate",
 	}
 	if targetNode > 0 {
-		action.Params = map[string]interface{}{
+		action.Params = map[string]any{
 			"node": targetNode,
 		}
 	}
@@ -419,7 +419,7 @@ func (s *TenantNodeService) Migrate(ctx context.Context, id int, targetNode int)
 type tenantNodeAction struct {
 	TenantNode int                    `json:"tenant_node"`
 	Action     string                 `json:"action"`
-	Params     map[string]interface{} `json:"params,omitempty"`
+	Params     map[string]any `json:"params,omitempty"`
 }
 
 // TenantStatusService handles tenant status read operations.

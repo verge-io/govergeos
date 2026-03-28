@@ -131,5 +131,5 @@ func (s *TenantSnapshotService) SetExpires(ctx context.Context, id int, expires 
 type tenantSnapshotAction struct {
 	Tenant int                    `json:"tenant"`
 	Action string                 `json:"action"`
-	Params map[string]interface{} `json:"params,omitempty"`
+	Params map[string]any `json:"params,omitempty"`
 }

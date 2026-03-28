@@ -163,12 +163,12 @@ func TestCloudSnapshotService_GetByName_NotFound(t *testing.T) {
 func TestCloudSnapshotService_Create(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/cloud_snapshots": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["name"] != "manual-snap" {
 				t.Errorf("expected name 'manual-snap', got %v", body["name"])
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1})
+			jsonResponse(w, 200, map[string]any{"$key": 1})
 		},
 		"GET /api/v4/cloud_snapshots/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, CloudSnapshot{Key: 1, Name: "manual-snap", Status: "normal"})
@@ -296,7 +296,7 @@ func TestCloudSnapshotService_Delete_NotFound(t *testing.T) {
 func TestCloudSnapshotService_Refresh(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/cloud_snapshot_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "refresh" {
 				t.Errorf("expected action 'refresh', got %v", body["action"])
@@ -314,12 +314,12 @@ func TestCloudSnapshotService_Refresh(t *testing.T) {
 func TestCloudSnapshotService_Clone(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/cloud_snapshot_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "clone" {
 				t.Errorf("expected action 'clone', got %v", body["action"])
 			}
-			params, ok := body["params"].(map[string]interface{})
+			params, ok := body["params"].(map[string]any)
 			if !ok {
 				t.Fatal("expected params in body")
 			}
@@ -363,7 +363,7 @@ func TestCloudSnapshotService_Clone_MissingName(t *testing.T) {
 func TestCloudSnapshotService_RequestFromProvider(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/cloud_snapshot_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "request" {
 				t.Errorf("expected action 'request', got %v", body["action"])
@@ -381,7 +381,7 @@ func TestCloudSnapshotService_RequestFromProvider(t *testing.T) {
 func TestCloudSnapshotService_FindTenants(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/cloud_snapshot_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "find_tenants" {
 				t.Errorf("expected action 'find_tenants', got %v", body["action"])
@@ -399,7 +399,7 @@ func TestCloudSnapshotService_FindTenants(t *testing.T) {
 func TestCloudSnapshotService_FindVMs(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/cloud_snapshot_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "find_vms" {
 				t.Errorf("expected action 'find_vms', got %v", body["action"])

@@ -402,13 +402,13 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 
 // apiResponse represents the standard VergeOS API response structure.
 type apiResponse struct {
-	Key      interface{} `json:"$key,omitempty"`
-	Response interface{} `json:"response,omitempty"`
+	Key      any `json:"$key,omitempty"`
+	Response any `json:"response,omitempty"`
 	Err      string      `json:"err,omitempty"`
 }
 
 // request performs an HTTP request to the VergeOS API.
-func (c *Client) request(ctx context.Context, method, endpoint string, body interface{}, params url.Values) (*http.Response, error) {
+func (c *Client) request(ctx context.Context, method, endpoint string, body any, params url.Values) (*http.Response, error) {
 	// Build URL
 	u := fmt.Sprintf("%s%s%s", c.baseURL, apiBasePath, endpoint)
 	if len(params) > 0 {
@@ -452,7 +452,7 @@ func (c *Client) request(ctx context.Context, method, endpoint string, body inte
 }
 
 // do performs an HTTP request and decodes the response.
-func (c *Client) do(ctx context.Context, method, endpoint string, body interface{}, params url.Values, result interface{}) error {
+func (c *Client) do(ctx context.Context, method, endpoint string, body any, params url.Values, result any) error {
 	resp, err := c.request(ctx, method, endpoint, body, params)
 	if err != nil {
 		return err
@@ -503,17 +503,17 @@ func (c *Client) do(ctx context.Context, method, endpoint string, body interface
 }
 
 // get performs a GET request.
-func (c *Client) get(ctx context.Context, endpoint string, params url.Values, result interface{}) error {
+func (c *Client) get(ctx context.Context, endpoint string, params url.Values, result any) error {
 	return c.do(ctx, http.MethodGet, endpoint, nil, params, result)
 }
 
 // post performs a POST request and returns the created resource's key.
-func (c *Client) post(ctx context.Context, endpoint string, body interface{}, result interface{}) error {
+func (c *Client) post(ctx context.Context, endpoint string, body any, result any) error {
 	return c.do(ctx, http.MethodPost, endpoint, body, nil, result)
 }
 
 // put performs a PUT request.
-func (c *Client) put(ctx context.Context, endpoint string, body interface{}, result interface{}) error {
+func (c *Client) put(ctx context.Context, endpoint string, body any, result any) error {
 	return c.do(ctx, http.MethodPut, endpoint, body, nil, result)
 }
 
@@ -524,7 +524,7 @@ func (c *Client) delete(ctx context.Context, endpoint string) error {
 
 // getAbsolute performs a GET request to an absolute path (not under /api/v4/).
 // This is used for endpoints like /version.json that are outside the API path.
-func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values, result interface{}) error {
+func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values, result any) error {
 	// Build URL with absolute path
 	u := c.baseURL + path
 	if len(params) > 0 {

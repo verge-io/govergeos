@@ -125,7 +125,7 @@ func TestTagCategoryService_Create(t *testing.T) {
 			if req.Name != "environment" {
 				t.Errorf("expected name 'environment', got %q", req.Name)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1})
+			jsonResponse(w, 200, map[string]any{"$key": 1})
 		},
 		"GET /api/v4/tag_categories/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, TagCategory{Key: 1, Name: "environment", TaggableVMs: true})

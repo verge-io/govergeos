@@ -158,7 +158,7 @@ func (s *TaskService) Delete(ctx context.Context, id int) error {
 // Execute triggers immediate execution of a task.
 func (s *TaskService) Execute(ctx context.Context, id int, opts *TaskExecuteOptions) error {
 	endpoint := "/task_actions"
-	body := map[string]interface{}{
+	body := map[string]any{
 		"task":   id,
 		"action": "execute",
 	}

@@ -182,7 +182,7 @@ func (s *VMSnapshotService) Restore(ctx context.Context, id int, opts *VMSnapsho
 		return err
 	}
 
-	params := map[string]interface{}{}
+	params := map[string]any{}
 	if opts != nil {
 		params["poweron"] = opts.PowerOn
 	}
@@ -190,7 +190,7 @@ func (s *VMSnapshotService) Restore(ctx context.Context, id int, opts *VMSnapsho
 	action := struct {
 		VM     int                    `json:"vm"`
 		Action string                 `json:"action"`
-		Params map[string]interface{} `json:"params"`
+		Params map[string]any `json:"params"`
 	}{
 		VM:     int(snapshot.Machine),
 		Action: "restore",

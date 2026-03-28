@@ -124,7 +124,7 @@ func TestCloudInitService_Create(t *testing.T) {
 			if req.Name != "user-data" {
 				t.Errorf("expected name 'user-data', got %q", req.Name)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1})
+			jsonResponse(w, 200, map[string]any{"$key": 1})
 		},
 		"GET /api/v4/cloudinit_files/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, CloudInitFile{ID: 1, Name: "user-data", Contents: "#cloud-config"})

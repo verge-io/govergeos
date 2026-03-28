@@ -19,7 +19,7 @@ func TestVolumeBrowserService_CreateJob(t *testing.T) {
 				t.Errorf("expected query 'get-dir', got %q", req.Query)
 			}
 			// Return the job ID as a string key
-			jsonResponse(w, 200, map[string]interface{}{
+			jsonResponse(w, 200, map[string]any{
 				"$key": "abc123sha1hash",
 			})
 		},

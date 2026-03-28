@@ -345,7 +345,7 @@ func (s *NetworkService) Ping(ctx context.Context, networkID int, target string,
 	if count <= 0 {
 		count = 4
 	}
-	params := map[string]interface{}{
+	params := map[string]any{
 		"address": target,
 		"count":   count,
 	}
@@ -358,7 +358,7 @@ func (s *NetworkService) Ping(ctx context.Context, networkID int, target string,
 
 // Traceroute runs a traceroute diagnostic on a network.
 func (s *NetworkService) Traceroute(ctx context.Context, networkID int, target string) (*NetworkQuery, error) {
-	params := map[string]interface{}{
+	params := map[string]any{
 		"address": target,
 	}
 	return s.RunQueryWait(ctx, &NetworkQueryRequest{
@@ -370,7 +370,7 @@ func (s *NetworkService) Traceroute(ctx context.Context, networkID int, target s
 
 // DNSLookup runs a DNS lookup diagnostic on a network.
 func (s *NetworkService) DNSLookup(ctx context.Context, networkID int, hostname string) (*NetworkQuery, error) {
-	params := map[string]interface{}{
+	params := map[string]any{
 		"hostname": hostname,
 	}
 	return s.RunQueryWait(ctx, &NetworkQueryRequest{

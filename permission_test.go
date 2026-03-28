@@ -174,7 +174,7 @@ func TestPermissionService_Create(t *testing.T) {
 			if req.Row != 100 {
 				t.Errorf("expected row 100, got %d", req.Row)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1, "status": "OK"})
+			jsonResponse(w, 200, map[string]any{"$key": 1, "status": "OK"})
 		},
 		"GET /api/v4/permissions/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, Permission{Key: 1, Identity: 10, Table: "vms", Row: 100, Read: true})
@@ -352,7 +352,7 @@ func TestPermissionService_Grant(t *testing.T) {
 			if req.Delete == nil || *req.Delete {
 				t.Error("expected delete=false")
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1, "status": "OK"})
+			jsonResponse(w, 200, map[string]any{"$key": 1, "status": "OK"})
 		},
 		"GET /api/v4/permissions/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, Permission{Key: 1, Identity: 10, Table: "vms", Row: 100, List: true, Read: true, Modify: true})
@@ -382,7 +382,7 @@ func TestPermissionService_GrantReadOnly(t *testing.T) {
 			if req.Delete != nil && *req.Delete {
 				t.Error("expected delete=false")
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1, "status": "OK"})
+			jsonResponse(w, 200, map[string]any{"$key": 1, "status": "OK"})
 		},
 		"GET /api/v4/permissions/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, Permission{Key: 1, Identity: 10, Table: "vms", Row: 100, List: true, Read: true})
@@ -418,7 +418,7 @@ func TestPermissionService_GrantFullAccess(t *testing.T) {
 			if req.Delete == nil || !*req.Delete {
 				t.Error("expected delete=true")
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1, "status": "OK"})
+			jsonResponse(w, 200, map[string]any{"$key": 1, "status": "OK"})
 		},
 		"GET /api/v4/permissions/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, Permission{Key: 1, Identity: 10, Table: "vms", Row: 100, List: true, Read: true, Create: true, Modify: true, Delete: true})

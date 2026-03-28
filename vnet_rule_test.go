@@ -132,7 +132,7 @@ func TestVNetRuleService_Create(t *testing.T) {
 			if req.VNet != 10 {
 				t.Errorf("expected vnet 10, got %d", req.VNet)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 5, "status": "ok"})
+			jsonResponse(w, 200, map[string]any{"$key": 5, "status": "ok"})
 		},
 		"GET /api/v4/vnet_rules/5": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetRule{Key: 5, VNet: 10, Name: "allow-http", Action: "accept", Enabled: true})
@@ -418,7 +418,7 @@ func TestVNetRuleAliasService_Create(t *testing.T) {
 			if req.Name != "web-servers" {
 				t.Errorf("expected name 'web-servers', got %q", req.Name)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 3, "status": "ok"})
+			jsonResponse(w, 200, map[string]any{"$key": 3, "status": "ok"})
 		},
 		"GET /api/v4/vnet_rule_aliases/3": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetRuleAlias{Key: 3, Name: "web-servers", Value: "192.168.1.10,192.168.1.11"})

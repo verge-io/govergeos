@@ -112,7 +112,7 @@ func TestTagMemberService_Create(t *testing.T) {
 			if req.Member != "vms/123" {
 				t.Errorf("expected member 'vms/123', got %q", req.Member)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1})
+			jsonResponse(w, 200, map[string]any{"$key": 1})
 		},
 		"GET /api/v4/tag_members/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, TagMember{Key: 1, Tag: 10, Member: "vms/123"})
@@ -294,7 +294,7 @@ func TestTagMemberService_Assign(t *testing.T) {
 			if req.Member != "vms/123" {
 				t.Errorf("expected member 'vms/123', got %q", req.Member)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 5})
+			jsonResponse(w, 200, map[string]any{"$key": 5})
 		},
 		"GET /api/v4/tag_members/5": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, TagMember{Key: 5, Tag: 10, Member: "vms/123"})

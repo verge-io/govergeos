@@ -18,7 +18,7 @@ const (
 type nodeAction struct {
 	Node   int         `json:"node"`
 	Action string      `json:"action"`
-	Params interface{} `json:"params"`
+	Params any `json:"params"`
 }
 
 // NodeService handles node read operations.

@@ -205,7 +205,7 @@ func TestTaskService_Create(t *testing.T) {
 			if req.Owner != "vms/123" {
 				t.Errorf("expected owner 'vms/123', got %q", req.Owner)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1})
+			jsonResponse(w, 200, map[string]any{"$key": 1})
 		},
 		"GET /api/v4/tasks/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, Task{Key: 1, Name: "daily-snapshot", Owner: "vms/123", Action: "snapshot"})
@@ -368,7 +368,7 @@ func TestTaskService_Delete_NotFound(t *testing.T) {
 func TestTaskService_Execute(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/task_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "execute" {
 				t.Errorf("expected action 'execute', got %v", body["action"])
@@ -390,9 +390,9 @@ func TestTaskService_Execute(t *testing.T) {
 func TestTaskService_Execute_WithParams(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/task_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			params, ok := body["params"].(map[string]interface{})
+			params, ok := body["params"].(map[string]any)
 			if !ok {
 				t.Error("expected params in request body")
 			}
@@ -404,7 +404,7 @@ func TestTaskService_Execute_WithParams(t *testing.T) {
 	}))
 
 	err := client.Tasks.Execute(context.Background(), 1, &TaskExecuteOptions{
-		Params: map[string]interface{}{"force": true},
+		Params: map[string]any{"force": true},
 	})
 	if err != nil {
 		t.Fatalf("Execute with params failed: %v", err)

@@ -131,7 +131,7 @@ func TestSiteService_Create(t *testing.T) {
 			if req.URL == "" {
 				t.Error("expected url in request body")
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1})
+			jsonResponse(w, 200, map[string]any{"$key": 1})
 		},
 		"GET /api/v4/sites/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, Site{Key: 1, Name: "new-site", URL: "https://remote.example.com"})
@@ -243,7 +243,7 @@ func TestSiteService_Delete_NotFound(t *testing.T) {
 func TestSiteService_Refresh(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "refresh" {
 				t.Errorf("expected action 'refresh', got %v", body["action"])
@@ -261,7 +261,7 @@ func TestSiteService_Refresh(t *testing.T) {
 func TestSiteService_RefreshSettings(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "refresh_settings" {
 				t.Errorf("expected action 'refresh_settings', got %v", body["action"])
@@ -279,7 +279,7 @@ func TestSiteService_RefreshSettings(t *testing.T) {
 func TestSiteService_Reauthenticate(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "reauthenticate" {
 				t.Errorf("expected action 'reauthenticate', got %v", body["action"])
@@ -297,7 +297,7 @@ func TestSiteService_Reauthenticate(t *testing.T) {
 func TestSiteService_RunUpdates(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "run_updates" {
 				t.Errorf("expected action 'run_updates', got %v", body["action"])
@@ -315,7 +315,7 @@ func TestSiteService_RunUpdates(t *testing.T) {
 func TestSiteService_ClearSyncedLogs(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "clear_synced_logs" {
 				t.Errorf("expected action 'clear_synced_logs', got %v", body["action"])
@@ -471,7 +471,7 @@ func TestSiteSyncIncomingService_Create(t *testing.T) {
 			if req.Name != "new-inc-sync" {
 				t.Errorf("expected name 'new-inc-sync', got %q", req.Name)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1})
+			jsonResponse(w, 200, map[string]any{"$key": 1})
 		},
 		"GET /api/v4/site_syncs_incoming/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, SiteSyncIncoming{Key: 1, Name: "new-inc-sync", Site: 10})
@@ -594,7 +594,7 @@ func TestSiteSyncIncomingService_Delete_NotFound(t *testing.T) {
 func TestSiteSyncIncomingService_Enable(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_syncs_incoming_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "enable" {
 				t.Errorf("expected action 'enable', got %v", body["action"])
@@ -612,7 +612,7 @@ func TestSiteSyncIncomingService_Enable(t *testing.T) {
 func TestSiteSyncIncomingService_Disable(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_syncs_incoming_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "disable" {
 				t.Errorf("expected action 'disable', got %v", body["action"])
@@ -745,7 +745,7 @@ func TestSiteSyncOutgoingService_Create(t *testing.T) {
 			if req.Site != 10 {
 				t.Errorf("expected site 10, got %d", req.Site)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1})
+			jsonResponse(w, 200, map[string]any{"$key": 1})
 		},
 		"GET /api/v4/site_syncs_outgoing/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, SiteSyncOutgoing{Key: 1, Name: "new-out-sync", Site: 10})
@@ -868,7 +868,7 @@ func TestSiteSyncOutgoingService_Delete_NotFound(t *testing.T) {
 func TestSiteSyncOutgoingService_Enable(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_syncs_outgoing_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "enable" {
 				t.Errorf("expected action 'enable', got %v", body["action"])
@@ -886,7 +886,7 @@ func TestSiteSyncOutgoingService_Enable(t *testing.T) {
 func TestSiteSyncOutgoingService_Disable(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_syncs_outgoing_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "disable" {
 				t.Errorf("expected action 'disable', got %v", body["action"])
@@ -904,12 +904,12 @@ func TestSiteSyncOutgoingService_Disable(t *testing.T) {
 func TestSiteSyncOutgoingService_Throttle(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_syncs_outgoing_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "throttle" {
 				t.Errorf("expected action 'throttle', got %v", body["action"])
 			}
-			params, ok := body["params"].(map[string]interface{})
+			params, ok := body["params"].(map[string]any)
 			if !ok {
 				t.Fatal("expected params in body")
 			}
@@ -929,7 +929,7 @@ func TestSiteSyncOutgoingService_Throttle(t *testing.T) {
 func TestSiteSyncOutgoingService_DisableThrottle(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_syncs_outgoing_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "throttle_disable" {
 				t.Errorf("expected action 'throttle_disable', got %v", body["action"])
@@ -947,7 +947,7 @@ func TestSiteSyncOutgoingService_DisableThrottle(t *testing.T) {
 func TestSiteSyncOutgoingService_RefreshSnapshots(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/site_syncs_outgoing_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "refresh" {
 				t.Errorf("expected action 'refresh', got %v", body["action"])
@@ -1051,7 +1051,7 @@ func TestSiteSyncProfilePeriodService_Create(t *testing.T) {
 			if req.Retention != 86400 {
 				t.Errorf("expected retention 86400, got %d", req.Retention)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1})
+			jsonResponse(w, 200, map[string]any{"$key": 1})
 		},
 		"GET /api/v4/site_syncs_outgoing_profile_periods/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, SiteSyncProfilePeriod{Key: 1, SiteSyncsOutgoing: 5, ProfilePeriod: 3, Retention: 86400})

@@ -484,7 +484,7 @@ func (s *SiteSyncOutgoingService) Throttle(ctx context.Context, id int, throttle
 	action := siteSyncOutgoingAction{
 		SiteSyncOutgoing: id,
 		Action:           "throttle",
-		Params: map[string]interface{}{
+		Params: map[string]any{
 			"throttle": throttle,
 		},
 	}

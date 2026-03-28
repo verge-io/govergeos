@@ -296,7 +296,7 @@ func TestVMDriveService_Delete_HotUnplug(t *testing.T) {
 			jsonResponse(w, 200, VMDrive{ID: FlexInt(1), Machine: 10, PowerState: state})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "hotplugdrive" {
 				t.Errorf("expected action 'hotplugdrive', got %v", body["action"])
@@ -318,12 +318,12 @@ func TestVMDriveService_HotplugDrive(t *testing.T) {
 	getCalls := 0
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "hotplugdrive" {
 				t.Errorf("expected action 'hotplugdrive', got %v", body["action"])
 			}
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if params["device"] != "5" {
 				t.Errorf("expected device '5', got %v", params["device"])
 			}
@@ -349,12 +349,12 @@ func TestVMDriveService_HotUnplugDrive(t *testing.T) {
 	getCalls := 0
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "hotplugdrive" {
 				t.Errorf("expected action 'hotplugdrive', got %v", body["action"])
 			}
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if params["unplug"] != true {
 				t.Error("expected unplug to be true for hot-unplug")
 			}

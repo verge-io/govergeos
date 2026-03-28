@@ -109,7 +109,7 @@ func TestSnapshotProfileService_Create(t *testing.T) {
 			if req.Name != "weekly" {
 				t.Errorf("expected name 'weekly', got %q", req.Name)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 3})
+			jsonResponse(w, 200, map[string]any{"$key": 3})
 		},
 		"GET /api/v4/snapshot_profiles/3": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, SnapshotProfile{Key: 3, Name: "weekly"})
@@ -359,7 +359,7 @@ func TestSnapshotProfilePeriodService_Create(t *testing.T) {
 			if req.Profile != 5 {
 				t.Errorf("expected profile 5, got %d", req.Profile)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 10})
+			jsonResponse(w, 200, map[string]any{"$key": 10})
 		},
 		"GET /api/v4/snapshot_profile_periods/10": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, SnapshotProfilePeriod{Key: 10, Profile: 5, Name: "hourly", Frequency: "hourly", Retention: 86400})

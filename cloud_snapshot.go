@@ -87,7 +87,7 @@ func (s *CloudSnapshotService) Create(ctx context.Context, req *CloudSnapshotCre
 	}
 
 	// Cloud snapshots use table_actions/create endpoint
-	tableAction := map[string]interface{}{
+	tableAction := map[string]any{
 		"name": req.Name,
 	}
 	if req.Description != "" {
@@ -173,7 +173,7 @@ func (s *CloudSnapshotService) Clone(ctx context.Context, id int, opts *CloudSna
 	action := cloudSnapshotAction{
 		CloudSnapshot: id,
 		Action:        "clone",
-		Params: map[string]interface{}{
+		Params: map[string]any{
 			"name": opts.Name,
 		},
 	}

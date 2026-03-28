@@ -132,7 +132,7 @@ func TestVNetDNSViewService_Create(t *testing.T) {
 			if req.VNet != 10 {
 				t.Errorf("expected vnet 10, got %d", req.VNet)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 3, "status": "ok"})
+			jsonResponse(w, 200, map[string]any{"$key": 3, "status": "ok"})
 		},
 		"GET /api/v4/vnet_dns_views/3": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetDNSView{Key: 3, VNet: 10, Name: "internal"})
@@ -378,7 +378,7 @@ func TestVNetDNSZoneService_Create(t *testing.T) {
 			if req.View != 1 {
 				t.Errorf("expected view 1, got %d", req.View)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 5, "status": "ok"})
+			jsonResponse(w, 200, map[string]any{"$key": 5, "status": "ok"})
 		},
 		"GET /api/v4/vnet_dns_zones/5": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetDNSZone{Key: 5, View: 1, Domain: "test.local", Type: "master"})
@@ -647,7 +647,7 @@ func TestVNetDNSRecordService_Create(t *testing.T) {
 			if req.Value != "192.168.1.30" {
 				t.Errorf("expected value '192.168.1.30', got %q", req.Value)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 5, "status": "ok"})
+			jsonResponse(w, 200, map[string]any{"$key": 5, "status": "ok"})
 		},
 		"GET /api/v4/vnet_dns_zone_records/5": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetDNSRecord{Key: 5, Zone: 1, Host: "api", Type: "A", Value: "192.168.1.30"})

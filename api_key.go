@@ -92,7 +92,7 @@ func (s *UserAPIKeyService) Create(ctx context.Context, req *UserAPIKeyCreateReq
 
 	// Extract token from response if available
 	var token string
-	if respMap, ok := resp.Response.(map[string]interface{}); ok {
+	if respMap, ok := resp.Response.(map[string]any); ok {
 		if t, ok := respMap["token"].(string); ok {
 			token = t
 		}

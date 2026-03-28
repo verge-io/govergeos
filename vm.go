@@ -264,7 +264,7 @@ type VMCloneOptions struct {
 
 // Clone creates a copy of a VM.
 func (s *VMService) Clone(ctx context.Context, id int, opts *VMCloneOptions) error {
-	params := map[string]interface{}{}
+	params := map[string]any{}
 	if opts != nil {
 		if opts.Name != "" {
 			params["name"] = opts.Name
@@ -275,7 +275,7 @@ func (s *VMService) Clone(ctx context.Context, id int, opts *VMCloneOptions) err
 	action := struct {
 		VM     int                    `json:"vm"`
 		Action string                 `json:"action"`
-		Params map[string]interface{} `json:"params"`
+		Params map[string]any `json:"params"`
 	}{
 		VM:     id,
 		Action: vmActionClone,
@@ -298,7 +298,7 @@ type VMSnapshotOptions struct {
 
 // Snapshot takes a snapshot of a VM.
 func (s *VMService) Snapshot(ctx context.Context, id int, opts *VMSnapshotOptions) error {
-	params := map[string]interface{}{}
+	params := map[string]any{}
 	if opts != nil {
 		if opts.Retention > 0 {
 			params["retention"] = opts.Retention
@@ -309,7 +309,7 @@ func (s *VMService) Snapshot(ctx context.Context, id int, opts *VMSnapshotOption
 	action := struct {
 		VM     int                    `json:"vm"`
 		Action string                 `json:"action"`
-		Params map[string]interface{} `json:"params"`
+		Params map[string]any `json:"params"`
 	}{
 		VM:     id,
 		Action: vmActionSnapshot,
@@ -340,7 +340,7 @@ func (s *VMService) Migrate(ctx context.Context, id int, opts *VMMigrateOptions)
 		return &ValidationError{Field: "target_node", Message: "target_node is required"}
 	}
 
-	params := map[string]interface{}{
+	params := map[string]any{
 		"node": opts.TargetNode,
 	}
 
@@ -354,7 +354,7 @@ func (s *VMService) Migrate(ctx context.Context, id int, opts *VMMigrateOptions)
 	action := struct {
 		VM     int                    `json:"vm"`
 		Action string                 `json:"action"`
-		Params map[string]interface{} `json:"params"`
+		Params map[string]any `json:"params"`
 	}{
 		VM:     id,
 		Action: "migrate",

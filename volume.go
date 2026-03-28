@@ -134,7 +134,7 @@ func (s *VolumeService) Enable(ctx context.Context, id string) error {
 	action := volumeAction{
 		Volume: id,
 		Action: "enable",
-		Params: map[string]interface{}{},
+		Params: map[string]any{},
 	}
 
 	if err := s.client.post(ctx, "/volume_actions", action, nil); err != nil {
@@ -148,7 +148,7 @@ func (s *VolumeService) Disable(ctx context.Context, id string) error {
 	action := volumeAction{
 		Volume: id,
 		Action: "disable",
-		Params: map[string]interface{}{},
+		Params: map[string]any{},
 	}
 
 	if err := s.client.post(ctx, "/volume_actions", action, nil); err != nil {
@@ -162,7 +162,7 @@ func (s *VolumeService) Reset(ctx context.Context, id string) error {
 	action := volumeAction{
 		Volume: id,
 		Action: "reset",
-		Params: map[string]interface{}{},
+		Params: map[string]any{},
 	}
 
 	if err := s.client.post(ctx, "/volume_actions", action, nil); err != nil {
@@ -175,7 +175,7 @@ func (s *VolumeService) Reset(ctx context.Context, id string) error {
 type volumeAction struct {
 	Volume string                 `json:"volume"`
 	Action string                 `json:"action"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]any `json:"params"`
 }
 
 // getStringKey extracts a string key from an API response.
