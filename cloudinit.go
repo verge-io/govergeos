@@ -108,7 +108,7 @@ func (s *CloudInitService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/cloudinit_files/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "CloudInit", ID: id}
 		}
 		return err
 	}

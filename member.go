@@ -102,7 +102,7 @@ func (s *MemberService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/members/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "Member", ID: id}
 		}
 		return err
 	}

@@ -264,7 +264,7 @@ func (s *VMDeviceService) Delete(ctx context.Context, deviceID int) error {
 	endpoint := fmt.Sprintf("/machine_devices/%d", deviceID)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "VMDevice", ID: deviceID}
 		}
 		return err
 	}

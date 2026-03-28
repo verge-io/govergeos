@@ -252,8 +252,11 @@ func TestNetworkService_Delete_NotFound(t *testing.T) {
 
 	// Delete returns nil for not-found (idempotent)
 	err := client.Networks.Delete(context.Background(), 999)
-	if err != nil {
-		t.Fatalf("Delete should succeed for not-found, got: %v", err)
+	if err == nil {
+		t.Fatal("expected NotFoundError for deleted network")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }
 

@@ -133,7 +133,7 @@ func (s *ClusterService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/clusters/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "Cluster", ID: id}
 		}
 		return err
 	}

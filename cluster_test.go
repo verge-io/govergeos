@@ -271,7 +271,10 @@ func TestClusterService_Delete_NotFound(t *testing.T) {
 
 	// Cluster.Delete returns nil for 404 (already deleted)
 	err := client.Clusters.Delete(context.Background(), 999)
-	if err != nil {
-		t.Fatalf("expected nil for not-found delete, got: %v", err)
+	if err == nil {
+		t.Fatal("expected NotFoundError for deleted cluster")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }

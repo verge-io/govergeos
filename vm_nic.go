@@ -129,7 +129,7 @@ func (s *VMNICService) Delete(ctx context.Context, nicID int) error {
 	nic, err := s.Get(ctx, nicID)
 	if err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "VMNIC", ID: nicID}
 		}
 		return err
 	}
@@ -144,7 +144,7 @@ func (s *VMNICService) Delete(ctx context.Context, nicID int) error {
 	endpoint := fmt.Sprintf("/machine_nics/%d", nicID)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "VMNIC", ID: nicID}
 		}
 		return err
 	}

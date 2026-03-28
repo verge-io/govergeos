@@ -115,7 +115,7 @@ func (s *NetworkService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnets/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "Network", ID: id}
 		}
 		return err
 	}

@@ -274,10 +274,13 @@ func TestVMDriveService_Delete_NotFound(t *testing.T) {
 		},
 	}))
 
-	// Delete of already-gone drive should succeed (idempotent)
+	// Delete of already-gone drive returns NotFoundError
 	err := client.VMDrives.Delete(context.Background(), 999)
-	if err != nil {
-		t.Fatalf("Delete of missing drive should be nil, got: %v", err)
+	if err == nil {
+		t.Fatal("expected NotFoundError for deleted drive")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }
 

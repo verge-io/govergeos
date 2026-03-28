@@ -106,7 +106,13 @@ func (s *FileService) Update(ctx context.Context, id int, req *FileUpdateRequest
 // Files that are referenced by VM drives cannot be deleted until the reference is removed.
 func (s *FileService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/files/%d", id)
-	return s.client.delete(ctx, endpoint)
+	if err := s.client.delete(ctx, endpoint); err != nil {
+		if IsNotFoundError(err) {
+			return &NotFoundError{Resource: "File", ID: id}
+		}
+		return err
+	}
+	return nil
 }
 
 // Download downloads a file from VergeOS and returns an io.ReadCloser.

@@ -275,8 +275,11 @@ func TestTagMemberService_Delete_NotFound(t *testing.T) {
 
 	// Delete returns nil for not found (already deleted)
 	err := client.TagMembers.Delete(context.Background(), 999)
-	if err != nil {
-		t.Fatalf("Delete should not error for not found, got: %v", err)
+	if err == nil {
+		t.Fatal("expected NotFoundError for deleted tag member")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }
 

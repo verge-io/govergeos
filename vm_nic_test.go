@@ -208,10 +208,13 @@ func TestVMNICService_Delete_NotFound(t *testing.T) {
 		},
 	}))
 
-	// Delete of already-gone NIC should succeed (idempotent)
+	// Delete of already-gone NIC returns NotFoundError
 	err := client.VMNICs.Delete(context.Background(), 999)
-	if err != nil {
-		t.Fatalf("Delete of missing NIC should be nil, got: %v", err)
+	if err == nil {
+		t.Fatal("expected NotFoundError for deleted NIC")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }
 

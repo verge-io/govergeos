@@ -243,7 +243,10 @@ func TestCloudInitService_Delete_NotFound(t *testing.T) {
 
 	// Delete returns nil for not found (already deleted)
 	err := client.CloudInitFiles.Delete(context.Background(), 999)
-	if err != nil {
-		t.Fatalf("Delete should not error for not found, got: %v", err)
+	if err == nil {
+		t.Fatal("expected NotFoundError for deleted cloud-init")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }

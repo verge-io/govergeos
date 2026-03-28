@@ -88,5 +88,11 @@ func (s *GroupService) Update(ctx context.Context, id int, req *GroupUpdateReque
 // Delete deletes a group by ID.
 func (s *GroupService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/groups/%d", id)
-	return s.client.delete(ctx, endpoint)
+	if err := s.client.delete(ctx, endpoint); err != nil {
+		if IsNotFoundError(err) {
+			return &NotFoundError{Resource: "Group", ID: id}
+		}
+		return err
+	}
+	return nil
 }

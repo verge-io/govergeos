@@ -206,7 +206,7 @@ func (s *VMDriveService) Delete(ctx context.Context, driveID int) error {
 	drive, err := s.Get(ctx, driveID)
 	if err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "VMDrive", ID: driveID}
 		}
 		return err
 	}
@@ -221,7 +221,7 @@ func (s *VMDriveService) Delete(ctx context.Context, driveID int) error {
 	endpoint := fmt.Sprintf("/machine_drives/%d", driveID)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "VMDrive", ID: driveID}
 		}
 		return err
 	}

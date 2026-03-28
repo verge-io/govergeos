@@ -115,7 +115,7 @@ func (s *TagMemberService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tag_members/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "TagMember", ID: id}
 		}
 		return err
 	}
