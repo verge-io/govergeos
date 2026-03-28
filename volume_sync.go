@@ -60,7 +60,7 @@ func (s *VolumeSyncService) Get(ctx context.Context, id string) (*VolumeSync, er
 
 // GetByName returns a volume sync by name within a specific service.
 func (s *VolumeSyncService) GetByName(ctx context.Context, serviceID int, name string) (*VolumeSync, error) {
-	syncs, err := s.List(ctx, WithFilter(fmt.Sprintf("service eq %d and name eq '%s'", serviceID, name)))
+	syncs, err := s.List(ctx, WithFilter(fmt.Sprintf("service eq %d and name eq '%s'", serviceID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (s *VolumeSyncService) Disable(ctx context.Context, id string) error {
 type volumeSyncAction struct {
 	Sync   string                 `json:"sync"`
 	Action string                 `json:"action"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]any `json:"params"`
 }
 
 // Start starts a volume sync job immediately.
@@ -164,7 +164,7 @@ func (s *VolumeSyncService) Start(ctx context.Context, id string) error {
 	action := volumeSyncAction{
 		Sync:   id,
 		Action: "start",
-		Params: map[string]interface{}{},
+		Params: map[string]any{},
 	}
 
 	if err := s.client.post(ctx, "/volume_sync_actions", action, nil); err != nil {
@@ -178,7 +178,7 @@ func (s *VolumeSyncService) Stop(ctx context.Context, id string) error {
 	action := volumeSyncAction{
 		Sync:   id,
 		Action: "stop",
-		Params: map[string]interface{}{},
+		Params: map[string]any{},
 	}
 
 	if err := s.client.post(ctx, "/volume_sync_actions", action, nil); err != nil {

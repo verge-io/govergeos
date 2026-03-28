@@ -18,7 +18,7 @@ const (
 type nodeAction struct {
 	Node   int         `json:"node"`
 	Action string      `json:"action"`
-	Params interface{} `json:"params"`
+	Params any `json:"params"`
 }
 
 // NodeService handles node read operations.
@@ -70,7 +70,7 @@ func (s *NodeService) Get(ctx context.Context, id int) (*Node, error) {
 
 // GetByName returns a node by name.
 func (s *NodeService) GetByName(ctx context.Context, name string) (*Node, error) {
-	nodes, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	nodes, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

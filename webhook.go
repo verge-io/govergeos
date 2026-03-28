@@ -38,7 +38,7 @@ func (s *WebhookURLService) Get(ctx context.Context, id int) (*WebhookURL, error
 	endpoint := fmt.Sprintf("/webhook_urls/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &webhook); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "WebhookURL", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "WebhookURL", ID: id}
 		}
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (s *WebhookURLService) Get(ctx context.Context, id int) (*WebhookURL, error
 
 // GetByName returns a webhook URL by name.
 func (s *WebhookURLService) GetByName(ctx context.Context, name string) (*WebhookURL, error) {
-	webhooks, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	webhooks, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (s *WebhookURLService) Update(ctx context.Context, id int, req *WebhookURLU
 	endpoint := fmt.Sprintf("/webhook_urls/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "WebhookURL", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "WebhookURL", ID: id}
 		}
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (s *WebhookURLService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/webhook_urls/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "WebhookURL", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "WebhookURL", ID: id}
 		}
 		return err
 	}
@@ -166,7 +166,7 @@ func (s *WebhookService) ListByWebhookURL(ctx context.Context, webhookURLID int,
 
 // ListByStatus returns all webhook messages with a specific status.
 func (s *WebhookService) ListByStatus(ctx context.Context, status string, opts ...ListOption) ([]Webhook, error) {
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("status eq '%s'", status))}
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("status eq '%s'", escapeFilterValue(status)))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }
@@ -192,7 +192,7 @@ func (s *WebhookService) Get(ctx context.Context, id int) (*Webhook, error) {
 	endpoint := fmt.Sprintf("/webhooks/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &webhook); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Webhook", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "Webhook", ID: id}
 		}
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func (s *WebhookService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/webhooks/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "Webhook", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "Webhook", ID: id}
 		}
 		return err
 	}

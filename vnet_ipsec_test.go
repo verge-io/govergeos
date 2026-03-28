@@ -112,7 +112,7 @@ func TestVNetIPSecService_Create(t *testing.T) {
 			if req.VNet != 10 {
 				t.Errorf("expected vnet 10, got %d", req.VNet)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1, "status": "OK"})
+			jsonResponse(w, 200, map[string]any{"$key": 1, "status": "OK"})
 		},
 		"GET /api/v4/vnet_ipsecs/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetIPSec{Key: 1, VNet: 10, Enabled: true, Mode: "normal"})
@@ -331,7 +331,7 @@ func TestVNetIPSecPhase1Service_Create(t *testing.T) {
 			if req.Name != "phase1-a" {
 				t.Errorf("expected name 'phase1-a', got %q", req.Name)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1, "status": "OK"})
+			jsonResponse(w, 200, map[string]any{"$key": 1, "status": "OK"})
 		},
 		"GET /api/v4/vnet_ipsec_phase1s/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetIPSecPhase1{Key: 1, IPSec: 5, Name: "phase1-a", RemoteGateway: "1.2.3.4"})
@@ -587,7 +587,7 @@ func TestVNetIPSecPhase2Service_Create(t *testing.T) {
 			if req.Name != "phase2-a" {
 				t.Errorf("expected name 'phase2-a', got %q", req.Name)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1, "status": "OK"})
+			jsonResponse(w, 200, map[string]any{"$key": 1, "status": "OK"})
 		},
 		"GET /api/v4/vnet_ipsec_phase2s/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetIPSecPhase2{Key: 1, Phase1: 3, Name: "phase2-a", Local: "10.0.0.0/24"})

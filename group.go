@@ -48,7 +48,7 @@ func (s *GroupService) Get(ctx context.Context, id int) (*Group, error) {
 
 // GetByName returns a group by name.
 func (s *GroupService) GetByName(ctx context.Context, name string) (*Group, error) {
-	groups, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	groups, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +62,9 @@ func (s *GroupService) GetByName(ctx context.Context, name string) (*Group, erro
 
 // Create creates a new group and returns it.
 func (s *GroupService) Create(ctx context.Context, req *GroupCreateRequest) (*Group, error) {
+	if req == nil {
+		return nil, &ValidationError{Message: "create request is required"}
+	}
 	var result struct {
 		Key FlexInt `json:"$key"`
 	}
@@ -85,5 +88,11 @@ func (s *GroupService) Update(ctx context.Context, id int, req *GroupUpdateReque
 // Delete deletes a group by ID.
 func (s *GroupService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/groups/%d", id)
-	return s.client.delete(ctx, endpoint)
+	if err := s.client.delete(ctx, endpoint); err != nil {
+		if IsNotFoundError(err) {
+			return &NotFoundError{Resource: "Group", ID: id}
+		}
+		return err
+	}
+	return nil
 }

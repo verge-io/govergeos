@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 )
 
 // SystemService handles system information operations.
@@ -18,13 +19,18 @@ func (s *SystemService) GetInfo(ctx context.Context) (*SystemInfo, error) {
 	// Build URL for version.json (not under /api/v4/)
 	u := fmt.Sprintf("%s/version.json", s.client.baseURL)
 
-	req, err := s.client.httpClient.Get(u)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, fmt.Errorf("vergeos: failed to create version request: %w", err)
+	}
+
+	resp, err := s.client.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("vergeos: failed to get version info: %w", err)
 	}
-	defer func() { _ = req.Body.Close() }()
+	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(req.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("vergeos: failed to read version response: %w", err)
 	}

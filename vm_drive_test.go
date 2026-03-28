@@ -36,6 +36,53 @@ func TestVMDriveService_List(t *testing.T) {
 	}
 }
 
+func TestVMDriveService_ListAll(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
+			filter := r.URL.Query().Get("filter")
+			if filter != "" {
+				t.Errorf("expected no filter for ListAll, got %q", filter)
+			}
+			jsonResponse(w, 200, []VMDrive{
+				{ID: FlexInt(1), Machine: 42, Name: "disk0", SizeBytes: 10 * bytesPerGB},
+				{ID: FlexInt(2), Machine: 99, Name: "disk1", SizeBytes: 20 * bytesPerGB},
+			})
+		},
+	}))
+
+	drives, err := client.VMDrives.ListAll(context.Background())
+	if err != nil {
+		t.Fatalf("ListAll failed: %v", err)
+	}
+	if len(drives) != 2 {
+		t.Fatalf("expected 2 drives, got %d", len(drives))
+	}
+	// Verify drives span multiple VMs
+	if drives[0].Machine == drives[1].Machine {
+		t.Error("expected drives from different VMs")
+	}
+	if drives[0].SizeGB != 10 {
+		t.Errorf("expected SizeGB 10, got %d", drives[0].SizeGB)
+	}
+}
+
+func TestVMDriveService_ListAll_WithFilter(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
+			filter := r.URL.Query().Get("filter")
+			if filter != "status eq 'online'" {
+				t.Errorf("expected status filter, got %q", filter)
+			}
+			jsonResponse(w, 200, []VMDrive{})
+		},
+	}))
+
+	_, err := client.VMDrives.ListAll(context.Background(), WithFilter("status eq 'online'"))
+	if err != nil {
+		t.Fatalf("ListAll with filter failed: %v", err)
+	}
+}
+
 func TestVMDriveService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_drives/1": func(w http.ResponseWriter, r *http.Request) {
@@ -227,10 +274,13 @@ func TestVMDriveService_Delete_NotFound(t *testing.T) {
 		},
 	}))
 
-	// Delete of already-gone drive should succeed (idempotent)
+	// Delete of already-gone drive returns NotFoundError
 	err := client.VMDrives.Delete(context.Background(), 999)
-	if err != nil {
-		t.Fatalf("Delete of missing drive should be nil, got: %v", err)
+	if err == nil {
+		t.Fatal("expected NotFoundError for deleted drive")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }
 
@@ -246,7 +296,7 @@ func TestVMDriveService_Delete_HotUnplug(t *testing.T) {
 			jsonResponse(w, 200, VMDrive{ID: FlexInt(1), Machine: 10, PowerState: state})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "hotplugdrive" {
 				t.Errorf("expected action 'hotplugdrive', got %v", body["action"])
@@ -268,12 +318,12 @@ func TestVMDriveService_HotplugDrive(t *testing.T) {
 	getCalls := 0
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "hotplugdrive" {
 				t.Errorf("expected action 'hotplugdrive', got %v", body["action"])
 			}
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if params["device"] != "5" {
 				t.Errorf("expected device '5', got %v", params["device"])
 			}
@@ -299,12 +349,12 @@ func TestVMDriveService_HotUnplugDrive(t *testing.T) {
 	getCalls := 0
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "hotplugdrive" {
 				t.Errorf("expected action 'hotplugdrive', got %v", body["action"])
 			}
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if params["unplug"] != true {
 				t.Error("expected unplug to be true for hot-unplug")
 			}

@@ -3,6 +3,7 @@ package vergeos
 import (
 	"fmt"
 	"net/url"
+	"strings"
 )
 
 // ListOptions contains options for list operations.
@@ -30,7 +31,11 @@ type ListOption func(*ListOptions)
 //   - "name eq 'vm1' and enabled eq true"
 func WithFilter(filter string) ListOption {
 	return func(opts *ListOptions) {
-		opts.Filter = filter
+		if opts.Filter != "" {
+			opts.Filter = opts.Filter + " and " + filter
+		} else {
+			opts.Filter = filter
+		}
 	}
 }
 
@@ -103,4 +108,11 @@ func (opts *ListOptions) toQueryParams() url.Values {
 	}
 
 	return params
+}
+
+// escapeFilterValue escapes single quotes in a string value for use in
+// VergeOS API filter expressions. A value containing an unescaped single
+// quote would break the filter syntax.
+func escapeFilterValue(s string) string {
+	return strings.ReplaceAll(s, "'", "''")
 }

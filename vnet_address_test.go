@@ -185,7 +185,7 @@ func TestVNetAddressService_Create(t *testing.T) {
 			if req.Type != "static" {
 				t.Errorf("expected type 'static', got %q", req.Type)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 5, "status": "ok"})
+			jsonResponse(w, 200, map[string]any{"$key": 5, "status": "ok"})
 		},
 		"GET /api/v4/vnet_addresses/5": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetAddress{Key: 5, VNet: 10, IP: "192.168.1.200", Type: "static"})

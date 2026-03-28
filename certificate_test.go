@@ -156,7 +156,7 @@ func TestCertificateService_Create(t *testing.T) {
 			if req.DomainName != "example.com" {
 				t.Errorf("expected domain 'example.com', got %q", req.DomainName)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 1, "status": "OK"})
+			jsonResponse(w, 200, map[string]any{"$key": 1, "status": "OK"})
 		},
 		"GET /api/v4/certificates/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, Certificate{Key: 1, Domain: "example.com", Type: "self_signed"})

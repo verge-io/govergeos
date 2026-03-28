@@ -426,7 +426,7 @@ type NetworkUpdateRequest struct {
 type vnetAction struct {
 	VNet   int         `json:"vnet"`
 	Action string      `json:"action"`
-	Params interface{} `json:"params"`
+	Params any `json:"params"`
 }
 
 // networkListFields are the fields to request when listing networks.
@@ -470,7 +470,7 @@ type NetworkQuery struct {
 	// whatsmyip, arp, arp-scan, frr, trace, dhcp_release_renew, wireguard, firewall, nmap, tcp_connect
 	Query string `json:"query,omitempty"`
 	// Params contains query-specific parameters (JSON object).
-	Params map[string]interface{} `json:"params,omitempty"`
+	Params map[string]any `json:"params,omitempty"`
 	// Status is the query status (running, error, complete).
 	Status string `json:"status,omitempty"`
 	// Result is the query output.
@@ -494,7 +494,7 @@ type NetworkQueryRequest struct {
 	// whatsmyip, arp, arp-scan, frr, trace, dhcp_release_renew, wireguard, firewall, nmap, tcp_connect
 	Query string `json:"query"`
 	// Params contains query-specific parameters.
-	Params map[string]interface{} `json:"params,omitempty"`
+	Params map[string]any `json:"params,omitempty"`
 }
 
 // NetworkMonitorStats represents network monitoring statistics.

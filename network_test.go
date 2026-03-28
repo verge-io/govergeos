@@ -252,8 +252,11 @@ func TestNetworkService_Delete_NotFound(t *testing.T) {
 
 	// Delete returns nil for not-found (idempotent)
 	err := client.Networks.Delete(context.Background(), 999)
-	if err != nil {
-		t.Fatalf("Delete should succeed for not-found, got: %v", err)
+	if err == nil {
+		t.Fatal("expected NotFoundError for deleted network")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }
 
@@ -285,12 +288,12 @@ func TestNetworkService_Kill(t *testing.T) {
 func TestNetworkService_Reset(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vnet_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "reset" {
 				t.Errorf("expected action 'reset', got %v", body["action"])
 			}
-			params, ok := body["params"].(map[string]interface{})
+			params, ok := body["params"].(map[string]any)
 			if !ok {
 				t.Fatal("expected params to be a map")
 			}
@@ -310,9 +313,9 @@ func TestNetworkService_Reset(t *testing.T) {
 func TestNetworkService_Reset_NoApply(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vnet_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			params, _ := body["params"].(map[string]interface{})
+			params, _ := body["params"].(map[string]any)
 			if params["apply"] != false {
 				t.Errorf("expected apply=false, got %v", params["apply"])
 			}

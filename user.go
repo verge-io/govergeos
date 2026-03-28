@@ -16,7 +16,7 @@ const (
 type userAction struct {
 	User   int         `json:"user"`
 	Action string      `json:"action"`
-	Params interface{} `json:"params"`
+	Params any `json:"params"`
 }
 
 // UserService handles user operations.
@@ -62,7 +62,7 @@ func (s *UserService) Get(ctx context.Context, id int) (*User, error) {
 
 // GetByName returns a user by username.
 func (s *UserService) GetByName(ctx context.Context, name string) (*User, error) {
-	users, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	users, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (s *UserService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/users/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "User", ID: id}
 		}
 		return err
 	}

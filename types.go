@@ -2,6 +2,7 @@ package vergeos
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 )
 
@@ -33,9 +34,7 @@ func (f *FlexInt) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	// Default to 0
-	*f = 0
-	return nil
+	return fmt.Errorf("vergeos: cannot unmarshal %s into FlexInt", string(data))
 }
 
 // MarshalJSON implements json.Marshaler for FlexInt.
@@ -97,8 +96,7 @@ func (f *FlexFK) UnmarshalJSON(data []byte) error {
 		}
 	}
 
-	*f = 0
-	return nil
+	return fmt.Errorf("vergeos: cannot unmarshal %s into FlexFK", string(data))
 }
 
 // MarshalJSON implements json.Marshaler for FlexFK.

@@ -22,6 +22,8 @@ const (
 	apiBasePath = "/api/v4"
 	// defaultUserAgent is the default User-Agent header.
 	defaultUserAgent = "govergeos/1.0"
+	// maxResponseSize is the maximum response body size (100 MB).
+	maxResponseSize = 100 << 20
 )
 
 // Client is the VergeOS API client.
@@ -152,18 +154,27 @@ func WithAPIKey(apiKey string) ClientOption {
 	}
 }
 
+// cloneOrNewTransport returns a clone of the existing transport if it is an
+// *http.Transport, or a fresh transport with sensible defaults otherwise.
+func cloneOrNewTransport(rt http.RoundTripper) *http.Transport {
+	if t, ok := rt.(*http.Transport); ok {
+		return t.Clone()
+	}
+	return &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 20,
+		IdleConnTimeout:     90 * time.Second,
+	}
+}
+
 // WithInsecureTLS configures whether to skip TLS certificate verification.
 // This is useful for self-signed certificates.
 func WithInsecureTLS(insecure bool) ClientOption {
 	return func(c *Client) error {
 		if insecure {
-			transport := &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
-				MaxIdleConns:        100,
-				MaxIdleConnsPerHost: 20,
-				IdleConnTimeout:     90 * time.Second,
+			transport := cloneOrNewTransport(c.httpClient.Transport)
+			transport.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
 			}
 			c.httpClient.Transport = transport
 		}
@@ -249,13 +260,9 @@ func WithEnvConfig() ClientOption {
 		// Only apply if VERGEOS_VERIFY_SSL is explicitly set to false
 		verifySSL := os.Getenv("VERGEOS_VERIFY_SSL")
 		if strings.ToLower(verifySSL) == "false" || verifySSL == "0" {
-			transport := &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
-				MaxIdleConns:        100,
-				MaxIdleConnsPerHost: 20,
-				IdleConnTimeout:     90 * time.Second,
+			transport := cloneOrNewTransport(c.httpClient.Transport)
+			transport.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
 			}
 			c.httpClient.Transport = transport
 		}
@@ -395,13 +402,13 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 
 // apiResponse represents the standard VergeOS API response structure.
 type apiResponse struct {
-	Key      interface{} `json:"$key,omitempty"`
-	Response interface{} `json:"response,omitempty"`
+	Key      any `json:"$key,omitempty"`
+	Response any `json:"response,omitempty"`
 	Err      string      `json:"err,omitempty"`
 }
 
 // request performs an HTTP request to the VergeOS API.
-func (c *Client) request(ctx context.Context, method, endpoint string, body interface{}, params url.Values) (*http.Response, error) {
+func (c *Client) request(ctx context.Context, method, endpoint string, body any, params url.Values) (*http.Response, error) {
 	// Build URL
 	u := fmt.Sprintf("%s%s%s", c.baseURL, apiBasePath, endpoint)
 	if len(params) > 0 {
@@ -445,21 +452,21 @@ func (c *Client) request(ctx context.Context, method, endpoint string, body inte
 }
 
 // do performs an HTTP request and decodes the response.
-func (c *Client) do(ctx context.Context, method, endpoint string, body interface{}, params url.Values, result interface{}) error {
+func (c *Client) do(ctx context.Context, method, endpoint string, body any, params url.Values, result any) error {
 	resp, err := c.request(ctx, method, endpoint, body, params)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	// Read response body
-	respBody, err := io.ReadAll(resp.Body)
+	// Read response body (bounded to prevent OOM from misbehaving servers)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	if err != nil {
 		return fmt.Errorf("vergeos: failed to read response body: %w", err)
 	}
 
 	// Check for HTTP errors
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		// Try to parse error message from response
 		var apiResp apiResponse
 		errMsg := string(respBody)
@@ -496,17 +503,17 @@ func (c *Client) do(ctx context.Context, method, endpoint string, body interface
 }
 
 // get performs a GET request.
-func (c *Client) get(ctx context.Context, endpoint string, params url.Values, result interface{}) error {
+func (c *Client) get(ctx context.Context, endpoint string, params url.Values, result any) error {
 	return c.do(ctx, http.MethodGet, endpoint, nil, params, result)
 }
 
 // post performs a POST request and returns the created resource's key.
-func (c *Client) post(ctx context.Context, endpoint string, body interface{}, result interface{}) error {
+func (c *Client) post(ctx context.Context, endpoint string, body any, result any) error {
 	return c.do(ctx, http.MethodPost, endpoint, body, nil, result)
 }
 
 // put performs a PUT request.
-func (c *Client) put(ctx context.Context, endpoint string, body interface{}, result interface{}) error {
+func (c *Client) put(ctx context.Context, endpoint string, body any, result any) error {
 	return c.do(ctx, http.MethodPut, endpoint, body, nil, result)
 }
 
@@ -517,7 +524,7 @@ func (c *Client) delete(ctx context.Context, endpoint string) error {
 
 // getAbsolute performs a GET request to an absolute path (not under /api/v4/).
 // This is used for endpoints like /version.json that are outside the API path.
-func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values, result interface{}) error {
+func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values, result any) error {
 	// Build URL with absolute path
 	u := c.baseURL + path
 	if len(params) > 0 {
@@ -547,8 +554,8 @@ func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values
 	defer func() { _ = resp.Body.Close() }()
 
 	// Check for HTTP errors
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 		if resp.StatusCode == 401 || resp.StatusCode == 403 {
 			return &AuthError{Message: string(body)}
 		}

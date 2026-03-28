@@ -2,6 +2,7 @@ package vergeos
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 )
@@ -103,6 +104,47 @@ func TestMachineStatusService_GetByKey(t *testing.T) {
 	}
 	if status.NodeName != "node1" {
 		t.Errorf("expected node_name 'node1', got %q", status.NodeName)
+	}
+}
+
+func TestGuestInfo_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		wantErr bool
+	}{
+		{"empty array", `[]`, false},
+		{"empty array with spaces", `[ ]`, false},
+		{"valid object", `{"hostname":"test","last_refresh":1234}`, false},
+		{"empty object", `{}`, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var g GuestInfo
+			err := json.Unmarshal([]byte(tt.input), &g)
+			if tt.wantErr && err == nil {
+				t.Error("expected error, got nil")
+			}
+			if !tt.wantErr && err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestGuestInfo_UnmarshalJSON_InMachineStatus(t *testing.T) {
+	// Simulate the full MachineStatus response where agent_guest_info is []
+	input := `{"$key":1,"machine":10,"running":true,"agent_guest_info":[]}`
+	var ms MachineStatus
+	if err := json.Unmarshal([]byte(input), &ms); err != nil {
+		t.Fatalf("unexpected error unmarshaling MachineStatus with empty guest info: %v", err)
+	}
+	if ms.AgentGuestInfo == nil {
+		t.Fatal("expected AgentGuestInfo to be non-nil (allocated but zero-value)")
+	}
+	if ms.AgentGuestInfo.Hostname != "" {
+		t.Errorf("expected empty hostname, got %q", ms.AgentGuestInfo.Hostname)
 	}
 }
 

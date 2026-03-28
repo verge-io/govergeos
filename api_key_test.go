@@ -134,7 +134,7 @@ func TestUserAPIKeyService_Create(t *testing.T) {
 			}
 			jsonResponse(w, 200, apiResponse{
 				Key:      float64(5),
-				Response: map[string]interface{}{"token": "secret-token-123"},
+				Response: map[string]any{"token": "secret-token-123"},
 			})
 		},
 		"GET /api/v4/user_api_keys/5": func(w http.ResponseWriter, r *http.Request) {

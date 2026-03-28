@@ -102,7 +102,7 @@ func (s *MemberService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/members/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "Member", ID: id}
 		}
 		return err
 	}
@@ -121,7 +121,7 @@ func (s *MemberService) Add(ctx context.Context, groupID int, member string) (*M
 func (s *MemberService) Remove(ctx context.Context, groupID int, member string) error {
 	// Find the membership
 	members, err := s.List(ctx,
-		WithFilter(fmt.Sprintf("parent_group eq %d and member eq '%s'", groupID, member)),
+		WithFilter(fmt.Sprintf("parent_group eq %d and member eq '%s'", groupID, escapeFilterValue(member))),
 	)
 	if err != nil {
 		return err

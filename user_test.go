@@ -250,10 +250,13 @@ func TestUserService_Delete_NotFound(t *testing.T) {
 		},
 	}))
 
-	// Delete of already-deleted resource returns nil
+	// Delete of non-existent resource returns NotFoundError
 	err := client.Users.Delete(context.Background(), 999)
-	if err != nil {
-		t.Fatalf("expected nil for already-deleted user, got %v", err)
+	if err == nil {
+		t.Fatal("expected NotFoundError for deleted user")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }
 

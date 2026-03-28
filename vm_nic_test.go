@@ -208,10 +208,13 @@ func TestVMNICService_Delete_NotFound(t *testing.T) {
 		},
 	}))
 
-	// Delete of already-gone NIC should succeed (idempotent)
+	// Delete of already-gone NIC returns NotFoundError
 	err := client.VMNICs.Delete(context.Background(), 999)
-	if err != nil {
-		t.Fatalf("Delete of missing NIC should be nil, got: %v", err)
+	if err == nil {
+		t.Fatal("expected NotFoundError for deleted NIC")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }
 
@@ -228,7 +231,7 @@ func TestVMNICService_Delete_HotUnplug(t *testing.T) {
 			jsonResponse(w, 200, VMNIC{ID: FlexInt(1), Machine: 10, PowerState: state})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "hotplugnic" {
 				t.Errorf("expected action 'hotplugnic', got %v", body["action"])

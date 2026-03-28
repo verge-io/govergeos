@@ -45,7 +45,7 @@ func (s *VNetDNSViewService) Get(ctx context.Context, id int) (*VNetDNSView, err
 	endpoint := fmt.Sprintf("/vnet_dns_views/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &view); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetDNSView", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetDNSView", ID: id}
 		}
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s *VNetDNSViewService) Get(ctx context.Context, id int) (*VNetDNSView, err
 
 // GetByName returns a DNS view by name within a specific network.
 func (s *VNetDNSViewService) GetByName(ctx context.Context, vnetID int, name string) (*VNetDNSView, error) {
-	views, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and name eq '%s'", vnetID, name)))
+	views, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and name eq '%s'", vnetID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (s *VNetDNSViewService) Update(ctx context.Context, id int, req *VNetDNSVie
 	endpoint := fmt.Sprintf("/vnet_dns_views/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetDNSView", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetDNSView", ID: id}
 		}
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (s *VNetDNSViewService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_dns_views/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "VNetDNSView", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "VNetDNSView", ID: id}
 		}
 		return err
 	}
@@ -158,7 +158,7 @@ func (s *VNetDNSZoneService) Get(ctx context.Context, id int) (*VNetDNSZone, err
 	endpoint := fmt.Sprintf("/vnet_dns_zones/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &zone); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetDNSZone", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetDNSZone", ID: id}
 		}
 		return nil, err
 	}
@@ -168,7 +168,7 @@ func (s *VNetDNSZoneService) Get(ctx context.Context, id int) (*VNetDNSZone, err
 
 // GetByDomain returns a DNS zone by domain name within a specific view.
 func (s *VNetDNSZoneService) GetByDomain(ctx context.Context, viewID int, domain string) (*VNetDNSZone, error) {
-	zones, err := s.List(ctx, WithFilter(fmt.Sprintf("view eq %d and domain eq '%s'", viewID, domain)))
+	zones, err := s.List(ctx, WithFilter(fmt.Sprintf("view eq %d and domain eq '%s'", viewID, escapeFilterValue(domain))))
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ func (s *VNetDNSZoneService) Update(ctx context.Context, id int, req *VNetDNSZon
 	endpoint := fmt.Sprintf("/vnet_dns_zones/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetDNSZone", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetDNSZone", ID: id}
 		}
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (s *VNetDNSZoneService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_dns_zones/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "VNetDNSZone", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "VNetDNSZone", ID: id}
 		}
 		return err
 	}
@@ -264,7 +264,7 @@ func (s *VNetDNSRecordService) ListByZone(ctx context.Context, zoneID int, opts 
 
 // ListByType returns all DNS records of a specific type within a zone.
 func (s *VNetDNSRecordService) ListByType(ctx context.Context, zoneID int, recordType string, opts ...ListOption) ([]VNetDNSRecord, error) {
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("zone eq %d and type eq '%s'", zoneID, recordType))}
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("zone eq %d and type eq '%s'", zoneID, escapeFilterValue(recordType)))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }
@@ -278,7 +278,7 @@ func (s *VNetDNSRecordService) Get(ctx context.Context, id int) (*VNetDNSRecord,
 	endpoint := fmt.Sprintf("/vnet_dns_zone_records/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &record); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetDNSRecord", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetDNSRecord", ID: id}
 		}
 		return nil, err
 	}
@@ -288,7 +288,7 @@ func (s *VNetDNSRecordService) Get(ctx context.Context, id int) (*VNetDNSRecord,
 
 // GetByHostAndType returns a DNS record by host and type within a zone.
 func (s *VNetDNSRecordService) GetByHostAndType(ctx context.Context, zoneID int, host, recordType string) (*VNetDNSRecord, error) {
-	records, err := s.List(ctx, WithFilter(fmt.Sprintf("zone eq %d and host eq '%s' and type eq '%s'", zoneID, host, recordType)))
+	records, err := s.List(ctx, WithFilter(fmt.Sprintf("zone eq %d and host eq '%s' and type eq '%s'", zoneID, escapeFilterValue(host), escapeFilterValue(recordType))))
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +335,7 @@ func (s *VNetDNSRecordService) Update(ctx context.Context, id int, req *VNetDNSR
 	endpoint := fmt.Sprintf("/vnet_dns_zone_records/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetDNSRecord", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetDNSRecord", ID: id}
 		}
 		return nil, err
 	}
@@ -348,7 +348,7 @@ func (s *VNetDNSRecordService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_dns_zone_records/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "VNetDNSRecord", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "VNetDNSRecord", ID: id}
 		}
 		return err
 	}

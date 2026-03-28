@@ -32,7 +32,7 @@ func (s *VolumeCIFSShareService) List(ctx context.Context, opts ...ListOption) (
 
 // ListByVolume returns all CIFS shares belonging to a specific volume.
 func (s *VolumeCIFSShareService) ListByVolume(ctx context.Context, volumeID string, opts ...ListOption) ([]VolumeCIFSShare, error) {
-	return s.List(ctx, append(opts, WithFilter(fmt.Sprintf("volume eq '%s'", volumeID)))...)
+	return s.List(ctx, append(opts, WithFilter(fmt.Sprintf("volume eq '%s'", escapeFilterValue(volumeID))))...)
 }
 
 // Get returns a single CIFS share by its SHA1 ID.
@@ -54,7 +54,7 @@ func (s *VolumeCIFSShareService) Get(ctx context.Context, id string) (*VolumeCIF
 
 // GetByName returns a single CIFS share by name within a volume.
 func (s *VolumeCIFSShareService) GetByName(ctx context.Context, volumeID, name string) (*VolumeCIFSShare, error) {
-	shares, err := s.List(ctx, WithFilter(fmt.Sprintf("volume eq '%s' and name eq '%s'", volumeID, name)))
+	shares, err := s.List(ctx, WithFilter(fmt.Sprintf("volume eq '%s' and name eq '%s'", escapeFilterValue(volumeID), escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (s *VolumeNFSShareService) List(ctx context.Context, opts ...ListOption) ([
 
 // ListByVolume returns all NFS shares belonging to a specific volume.
 func (s *VolumeNFSShareService) ListByVolume(ctx context.Context, volumeID string, opts ...ListOption) ([]VolumeNFSShare, error) {
-	return s.List(ctx, append(opts, WithFilter(fmt.Sprintf("volume eq '%s'", volumeID)))...)
+	return s.List(ctx, append(opts, WithFilter(fmt.Sprintf("volume eq '%s'", escapeFilterValue(volumeID))))...)
 }
 
 // Get returns a single NFS share by its SHA1 ID.
@@ -176,7 +176,7 @@ func (s *VolumeNFSShareService) Get(ctx context.Context, id string) (*VolumeNFSS
 
 // GetByName returns a single NFS share by name within a volume.
 func (s *VolumeNFSShareService) GetByName(ctx context.Context, volumeID, name string) (*VolumeNFSShare, error) {
-	shares, err := s.List(ctx, WithFilter(fmt.Sprintf("volume eq '%s' and name eq '%s'", volumeID, name)))
+	shares, err := s.List(ctx, WithFilter(fmt.Sprintf("volume eq '%s' and name eq '%s'", escapeFilterValue(volumeID), escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

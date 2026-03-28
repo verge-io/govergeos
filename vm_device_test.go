@@ -313,7 +313,10 @@ func TestVMDeviceService_Delete_NotFound(t *testing.T) {
 
 	// Delete of already-gone device should succeed (idempotent)
 	err := client.VMDevices.Delete(context.Background(), 999)
-	if err != nil {
-		t.Fatalf("Delete of missing device should be nil, got: %v", err)
+	if err == nil {
+		t.Fatal("expected NotFoundError for deleted device")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }

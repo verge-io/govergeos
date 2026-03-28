@@ -205,7 +205,7 @@ func TestAlarmService_Unsnooze(t *testing.T) {
 func TestAlarmService_Resolve(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/alarm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "resolve" {
 				t.Errorf("expected action 'resolve', got %v", body["action"])

@@ -177,7 +177,7 @@ func TestWebhookURLService_Delete(t *testing.T) {
 func TestWebhookURLService_Send(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/webhook_url_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "send" {
 				t.Errorf("expected action 'send', got %v", body["action"])

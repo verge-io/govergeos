@@ -56,7 +56,7 @@ func (s *CloudSnapshotService) Get(ctx context.Context, id int) (*CloudSnapshot,
 	endpoint := fmt.Sprintf("/cloud_snapshots/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &snapshot); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "CloudSnapshot", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "CloudSnapshot", ID: id}
 		}
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (s *CloudSnapshotService) Get(ctx context.Context, id int) (*CloudSnapshot,
 
 // GetByName returns a cloud snapshot by name.
 func (s *CloudSnapshotService) GetByName(ctx context.Context, name string) (*CloudSnapshot, error) {
-	snapshots, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	snapshots, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (s *CloudSnapshotService) Create(ctx context.Context, req *CloudSnapshotCre
 	}
 
 	// Cloud snapshots use table_actions/create endpoint
-	tableAction := map[string]interface{}{
+	tableAction := map[string]any{
 		"name": req.Name,
 	}
 	if req.Description != "" {
@@ -128,7 +128,7 @@ func (s *CloudSnapshotService) Update(ctx context.Context, id int, req *CloudSna
 	endpoint := fmt.Sprintf("/cloud_snapshots/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "CloudSnapshot", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "CloudSnapshot", ID: id}
 		}
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (s *CloudSnapshotService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/cloud_snapshots/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "CloudSnapshot", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "CloudSnapshot", ID: id}
 		}
 		return err
 	}
@@ -173,7 +173,7 @@ func (s *CloudSnapshotService) Clone(ctx context.Context, id int, opts *CloudSna
 	action := cloudSnapshotAction{
 		CloudSnapshot: id,
 		Action:        "clone",
-		Params: map[string]interface{}{
+		Params: map[string]any{
 			"name": opts.Name,
 		},
 	}
@@ -261,7 +261,7 @@ func (s *CloudSnapshotVMService) Get(ctx context.Context, id int) (*CloudSnapsho
 	endpoint := fmt.Sprintf("/cloud_snapshot_vms/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &vm); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "CloudSnapshotVM", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "CloudSnapshotVM", ID: id}
 		}
 		return nil, err
 	}
@@ -307,7 +307,7 @@ func (s *CloudSnapshotTenantService) Get(ctx context.Context, id int) (*CloudSna
 	endpoint := fmt.Sprintf("/cloud_snapshot_tenants/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &tenant); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "CloudSnapshotTenant", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "CloudSnapshotTenant", ID: id}
 		}
 		return nil, err
 	}

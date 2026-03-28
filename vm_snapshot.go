@@ -99,7 +99,7 @@ func (s *VMSnapshotService) Get(ctx context.Context, id int) (*VMSnapshot, error
 
 // GetByName returns a VM snapshot by name within a specific VM.
 func (s *VMSnapshotService) GetByName(ctx context.Context, vmID int, name string) (*VMSnapshot, error) {
-	snapshots, err := s.ListByVM(ctx, vmID, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	snapshots, err := s.ListByVM(ctx, vmID, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func (s *VMSnapshotService) Restore(ctx context.Context, id int, opts *VMSnapsho
 		return err
 	}
 
-	params := map[string]interface{}{}
+	params := map[string]any{}
 	if opts != nil {
 		params["poweron"] = opts.PowerOn
 	}
@@ -190,7 +190,7 @@ func (s *VMSnapshotService) Restore(ctx context.Context, id int, opts *VMSnapsho
 	action := struct {
 		VM     int                    `json:"vm"`
 		Action string                 `json:"action"`
-		Params map[string]interface{} `json:"params"`
+		Params map[string]any `json:"params"`
 	}{
 		VM:     int(snapshot.Machine),
 		Action: "restore",

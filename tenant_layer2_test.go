@@ -292,12 +292,9 @@ func TestTenantLayer2NetworkService_Enable(t *testing.T) {
 		},
 	}))
 
-	network, err := client.TenantLayer2Networks.Enable(context.Background(), 1)
+	err := client.TenantLayer2Networks.Enable(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("Enable failed: %v", err)
-	}
-	if !network.Enabled {
-		t.Error("expected enabled to be true")
 	}
 }
 
@@ -316,12 +313,9 @@ func TestTenantLayer2NetworkService_Disable(t *testing.T) {
 		},
 	}))
 
-	network, err := client.TenantLayer2Networks.Disable(context.Background(), 1)
+	err := client.TenantLayer2Networks.Disable(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("Disable failed: %v", err)
-	}
-	if network.Enabled {
-		t.Error("expected enabled to be false")
 	}
 }
 

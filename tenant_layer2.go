@@ -51,7 +51,7 @@ func (s *TenantLayer2NetworkService) Get(ctx context.Context, id int) (*TenantLa
 	endpoint := fmt.Sprintf("/tenant_layer2_vnets/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &network); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantLayer2Network", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "TenantLayer2Network", ID: id}
 		}
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (s *TenantLayer2NetworkService) Update(ctx context.Context, id int, req *Te
 	endpoint := fmt.Sprintf("/tenant_layer2_vnets/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantLayer2Network", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "TenantLayer2Network", ID: id}
 		}
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (s *TenantLayer2NetworkService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tenant_layer2_vnets/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "TenantLayer2Network", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "TenantLayer2Network", ID: id}
 		}
 		return err
 	}
@@ -128,15 +128,17 @@ func (s *TenantLayer2NetworkService) Delete(ctx context.Context, id int) error {
 }
 
 // Enable enables a tenant layer2 network assignment.
-func (s *TenantLayer2NetworkService) Enable(ctx context.Context, id int) (*TenantLayer2Network, error) {
+func (s *TenantLayer2NetworkService) Enable(ctx context.Context, id int) error {
 	enabled := true
-	return s.Update(ctx, id, &TenantLayer2NetworkUpdateRequest{Enabled: &enabled})
+	_, err := s.Update(ctx, id, &TenantLayer2NetworkUpdateRequest{Enabled: &enabled})
+	return err
 }
 
 // Disable disables a tenant layer2 network assignment.
-func (s *TenantLayer2NetworkService) Disable(ctx context.Context, id int) (*TenantLayer2Network, error) {
+func (s *TenantLayer2NetworkService) Disable(ctx context.Context, id int) error {
 	enabled := false
-	return s.Update(ctx, id, &TenantLayer2NetworkUpdateRequest{Enabled: &enabled})
+	_, err := s.Update(ctx, id, &TenantLayer2NetworkUpdateRequest{Enabled: &enabled})
+	return err
 }
 
 // Assign is a convenience method to assign a network to a tenant.

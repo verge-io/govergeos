@@ -168,7 +168,7 @@ func TestVNetHostService_Create(t *testing.T) {
 			if req.IP != "192.168.1.50" {
 				t.Errorf("expected IP '192.168.1.50', got %q", req.IP)
 			}
-			jsonResponse(w, 200, map[string]interface{}{"$key": 5, "status": "ok"})
+			jsonResponse(w, 200, map[string]any{"$key": 5, "status": "ok"})
 		},
 		"GET /api/v4/vnet_hosts/5": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VNetHost{Key: 5, VNet: 10, Host: "db-server", IP: "192.168.1.50", Type: "host"})

@@ -39,7 +39,7 @@ func (s *TagMemberService) ListByTag(ctx context.Context, tagID int) ([]TagMembe
 // ListByMember returns all tag members for a specific object.
 // member should be in format "object_type/object_id" (e.g., "vms/123").
 func (s *TagMemberService) ListByMember(ctx context.Context, member string) ([]TagMember, error) {
-	return s.List(ctx, WithFilter(fmt.Sprintf("member eq '%s'", member)))
+	return s.List(ctx, WithFilter(fmt.Sprintf("member eq '%s'", escapeFilterValue(member))))
 }
 
 // Get returns a single tag member by ID.
@@ -115,7 +115,7 @@ func (s *TagMemberService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tag_members/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "TagMember", ID: id}
 		}
 		return err
 	}
@@ -136,7 +136,7 @@ func (s *TagMemberService) Assign(ctx context.Context, tagID int, member string)
 func (s *TagMemberService) Unassign(ctx context.Context, tagID int, member string) error {
 	// Find the tag member
 	members, err := s.List(ctx,
-		WithFilter(fmt.Sprintf("tag eq %d and member eq '%s'", tagID, member)),
+		WithFilter(fmt.Sprintf("tag eq %d and member eq '%s'", tagID, escapeFilterValue(member))),
 	)
 	if err != nil {
 		return err

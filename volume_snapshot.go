@@ -70,7 +70,7 @@ func (s *VolumeSnapshotService) Get(ctx context.Context, id int) (*VolumeSnapsho
 
 // GetByName returns a volume snapshot by name within a specific volume.
 func (s *VolumeSnapshotService) GetByName(ctx context.Context, volumeID int, name string) (*VolumeSnapshot, error) {
-	snapshots, err := s.List(ctx, WithFilter(fmt.Sprintf("volume eq %d and name eq '%s'", volumeID, name)))
+	snapshots, err := s.List(ctx, WithFilter(fmt.Sprintf("volume eq %d and name eq '%s'", volumeID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}

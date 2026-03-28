@@ -340,7 +340,7 @@ func TestVMSnapshotService_Restore(t *testing.T) {
 			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(1), Machine: FlexInt(42), Name: "snap1"})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "restore" {
 				t.Errorf("expected action 'restore', got %v", body["action"])
@@ -348,7 +348,7 @@ func TestVMSnapshotService_Restore(t *testing.T) {
 			if int(body["vm"].(float64)) != 42 {
 				t.Errorf("expected vm 42, got %v", body["vm"])
 			}
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if int(params["snapshot"].(float64)) != 1 {
 				t.Errorf("expected snapshot param 1, got %v", params["snapshot"])
 			}
@@ -368,9 +368,9 @@ func TestVMSnapshotService_Restore_WithPowerOn(t *testing.T) {
 			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(1), Machine: FlexInt(42)})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if params["poweron"] != true {
 				t.Errorf("expected poweron true, got %v", params["poweron"])
 			}

@@ -362,7 +362,7 @@ func TestVMService_PowerOn(t *testing.T) {
 			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: running})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "poweron" {
 				t.Errorf("expected action 'poweron', got %v", body["action"])
@@ -423,7 +423,7 @@ func TestVMService_PowerOff(t *testing.T) {
 			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: running})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "kill" {
 				t.Errorf("expected action 'kill', got %v", body["action"])
@@ -445,7 +445,7 @@ func TestVMService_PowerOff(t *testing.T) {
 func TestVMService_Reset(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "reset" {
 				t.Errorf("expected action 'reset', got %v", body["action"])
@@ -483,7 +483,7 @@ func TestVMService_Reset_ServerError(t *testing.T) {
 func TestVMService_GuestReboot(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "guestreboot" {
 				t.Errorf("expected action 'guestreboot', got %v", body["action"])
@@ -521,7 +521,7 @@ func TestVMService_GuestReboot_ServerError(t *testing.T) {
 func TestVMService_GuestShutdown(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "poweroff" {
 				t.Errorf("expected action 'poweroff', got %v", body["action"])
@@ -559,7 +559,7 @@ func TestVMService_GuestShutdown_ServerError(t *testing.T) {
 func TestVMService_Clone(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "clone" {
 				t.Errorf("expected action 'clone', got %v", body["action"])
@@ -567,7 +567,7 @@ func TestVMService_Clone(t *testing.T) {
 			if int(body["vm"].(float64)) != 1 {
 				t.Errorf("expected vm 1, got %v", body["vm"])
 			}
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if params["name"] != "cloned-vm" {
 				t.Errorf("expected clone name 'cloned-vm', got %v", params["name"])
 			}
@@ -584,7 +584,7 @@ func TestVMService_Clone(t *testing.T) {
 func TestVMService_Clone_NilOpts(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "clone" {
 				t.Errorf("expected action 'clone', got %v", body["action"])
@@ -602,9 +602,9 @@ func TestVMService_Clone_NilOpts(t *testing.T) {
 func TestVMService_Clone_PreserveMACs(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if params["preserve_macs"] != true {
 				t.Errorf("expected preserve_macs true, got %v", params["preserve_macs"])
 			}
@@ -638,7 +638,7 @@ func TestVMService_Clone_ServerError(t *testing.T) {
 func TestVMService_Snapshot(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "quiesce_snapshot" {
 				t.Errorf("expected action 'quiesce_snapshot', got %v", body["action"])
@@ -646,7 +646,7 @@ func TestVMService_Snapshot(t *testing.T) {
 			if int(body["vm"].(float64)) != 2 {
 				t.Errorf("expected vm 2, got %v", body["vm"])
 			}
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if int(params["retention"].(float64)) != 3600 {
 				t.Errorf("expected retention 3600, got %v", params["retention"])
 			}
@@ -663,7 +663,7 @@ func TestVMService_Snapshot(t *testing.T) {
 func TestVMService_Snapshot_NilOpts(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "quiesce_snapshot" {
 				t.Errorf("expected action 'quiesce_snapshot', got %v", body["action"])
@@ -681,9 +681,9 @@ func TestVMService_Snapshot_NilOpts(t *testing.T) {
 func TestVMService_Snapshot_WithQuiesce(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if params["quiesce"] != true {
 				t.Errorf("expected quiesce true, got %v", params["quiesce"])
 			}
@@ -717,7 +717,7 @@ func TestVMService_Snapshot_ServerError(t *testing.T) {
 func TestVMService_Migrate(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			if body["action"] != "migrate" {
 				t.Errorf("expected action 'migrate', got %v", body["action"])
@@ -725,7 +725,7 @@ func TestVMService_Migrate(t *testing.T) {
 			if int(body["vm"].(float64)) != 1 {
 				t.Errorf("expected vm 1, got %v", body["vm"])
 			}
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if int(params["node"].(float64)) != 3 {
 				t.Errorf("expected node 3, got %v", params["node"])
 			}
@@ -745,9 +745,9 @@ func TestVMService_Migrate(t *testing.T) {
 func TestVMService_Migrate_NonLive(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]interface{}
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			params := body["params"].(map[string]interface{})
+			params := body["params"].(map[string]any)
 			if params["method"] != "auto" {
 				t.Errorf("expected method 'auto', got %v", params["method"])
 			}
