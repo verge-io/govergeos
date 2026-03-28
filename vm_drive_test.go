@@ -36,6 +36,53 @@ func TestVMDriveService_List(t *testing.T) {
 	}
 }
 
+func TestVMDriveService_ListAll(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
+			filter := r.URL.Query().Get("filter")
+			if filter != "" {
+				t.Errorf("expected no filter for ListAll, got %q", filter)
+			}
+			jsonResponse(w, 200, []VMDrive{
+				{ID: FlexInt(1), Machine: 42, Name: "disk0", SizeBytes: 10 * bytesPerGB},
+				{ID: FlexInt(2), Machine: 99, Name: "disk1", SizeBytes: 20 * bytesPerGB},
+			})
+		},
+	}))
+
+	drives, err := client.VMDrives.ListAll(context.Background())
+	if err != nil {
+		t.Fatalf("ListAll failed: %v", err)
+	}
+	if len(drives) != 2 {
+		t.Fatalf("expected 2 drives, got %d", len(drives))
+	}
+	// Verify drives span multiple VMs
+	if drives[0].Machine == drives[1].Machine {
+		t.Error("expected drives from different VMs")
+	}
+	if drives[0].SizeGB != 10 {
+		t.Errorf("expected SizeGB 10, got %d", drives[0].SizeGB)
+	}
+}
+
+func TestVMDriveService_ListAll_WithFilter(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
+			filter := r.URL.Query().Get("filter")
+			if filter != "status eq 'online'" {
+				t.Errorf("expected status filter, got %q", filter)
+			}
+			jsonResponse(w, 200, []VMDrive{})
+		},
+	}))
+
+	_, err := client.VMDrives.ListAll(context.Background(), WithFilter("status eq 'online'"))
+	if err != nil {
+		t.Fatalf("ListAll with filter failed: %v", err)
+	}
+}
+
 func TestVMDriveService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_drives/1": func(w http.ResponseWriter, r *http.Request) {

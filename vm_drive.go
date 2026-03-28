@@ -44,6 +44,27 @@ func (s *VMDriveService) List(ctx context.Context, vmID int) ([]VMDrive, error) 
 	return drives, nil
 }
 
+// ListAll returns all machine drives across all VMs.
+func (s *VMDriveService) ListAll(ctx context.Context, opts ...ListOption) ([]VMDrive, error) {
+	options := applyListOptions(opts)
+	if options.Fields == "most" {
+		options.Fields = driveListFields
+	}
+	params := options.toQueryParams()
+
+	var drives []VMDrive
+	if err := s.client.get(ctx, "/machine_drives", params, &drives); err != nil {
+		return nil, err
+	}
+
+	// Convert bytes to GB
+	for i := range drives {
+		drives[i].SizeGB = drives[i].SizeBytes / bytesPerGB
+	}
+
+	return drives, nil
+}
+
 // Get returns a single drive by ID.
 func (s *VMDriveService) Get(ctx context.Context, driveID int) (*VMDrive, error) {
 	params := url.Values{}
