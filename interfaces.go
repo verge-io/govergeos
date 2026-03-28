@@ -995,4 +995,6 @@ var (
 	_ UpdateSettingsServiceInterface          = (*UpdateSettingsService)(nil)
 	_ UpdateBranchServiceInterface            = (*UpdateBranchService)(nil)
 	_ UpdateSourcePackageServiceInterface     = (*UpdateSourcePackageService)(nil)
+	_ TenantStatusServiceInterface            = (*TenantStatusService)(nil)
+	_ TenantStatsHistoryShortServiceInterface = (*TenantStatsHistoryShortService)(nil)
 )
