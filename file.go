@@ -1,6 +1,7 @@
 package vergeos
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -294,7 +295,7 @@ func (s *FileService) uploadChunk(ctx context.Context, id int, data []byte, offs
 	req.Close = true
 
 	// Set body
-	req.Body = io.NopCloser(newBytesReader(data))
+	req.Body = io.NopCloser(bytes.NewReader(data))
 	req.ContentLength = int64(len(data))
 
 	// Execute request
@@ -315,23 +316,4 @@ func (s *FileService) uploadChunk(ctx context.Context, id int, data []byte, offs
 	}
 
 	return nil
-}
-
-// bytesReader wraps a byte slice to implement io.Reader.
-type bytesReader struct {
-	data   []byte
-	offset int
-}
-
-func newBytesReader(data []byte) *bytesReader {
-	return &bytesReader{data: data}
-}
-
-func (r *bytesReader) Read(p []byte) (n int, err error) {
-	if r.offset >= len(r.data) {
-		return 0, io.EOF
-	}
-	n = copy(p, r.data[r.offset:])
-	r.offset += n
-	return n, nil
 }
