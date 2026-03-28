@@ -25,11 +25,11 @@ type VMDriveService struct {
 	client *Client
 }
 
-// List returns all drives for a VM.
-func (s *VMDriveService) List(ctx context.Context, vmID int) ([]VMDrive, error) {
+// List returns all drives for a machine.
+func (s *VMDriveService) List(ctx context.Context, machineID int) ([]VMDrive, error) {
 	params := url.Values{}
 	params.Set("fields", driveListFields)
-	params.Set("filter", fmt.Sprintf("machine eq %d", vmID))
+	params.Set("filter", fmt.Sprintf("machine eq %d", machineID))
 
 	var drives []VMDrive
 	if err := s.client.get(ctx, "/machine_drives", params, &drives); err != nil {

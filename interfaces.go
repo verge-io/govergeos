@@ -54,7 +54,7 @@ type VMNICServiceInterface interface {
 
 // VMDriveServiceInterface defines the interface for VM Drive operations.
 type VMDriveServiceInterface interface {
-	List(ctx context.Context, vmID int) ([]VMDrive, error)
+	List(ctx context.Context, machineID int) ([]VMDrive, error)
 	ListAll(ctx context.Context, opts ...ListOption) ([]VMDrive, error)
 	Get(ctx context.Context, driveID int) (*VMDrive, error)
 	Create(ctx context.Context, vmID int, req *VMDriveCreateRequest) (*VMDrive, error)
@@ -66,7 +66,7 @@ type VMDriveServiceInterface interface {
 
 // VMDeviceServiceInterface defines the interface for VM Device operations.
 type VMDeviceServiceInterface interface {
-	List(ctx context.Context, vmID int) ([]VMDevice, error)
+	List(ctx context.Context, machineID int) ([]VMDevice, error)
 	Get(ctx context.Context, deviceID int) (*VMDevice, error)
 	Create(ctx context.Context, vmID int, req *VMDeviceCreateRequest) (*VMDevice, error)
 	Update(ctx context.Context, deviceID int, req *VMDeviceUpdateRequest) (*VMDevice, error)

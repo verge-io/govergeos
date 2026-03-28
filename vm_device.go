@@ -12,10 +12,10 @@ type VMDeviceService struct {
 }
 
 // List returns all devices for a VM.
-func (s *VMDeviceService) List(ctx context.Context, vmID int) ([]VMDevice, error) {
+func (s *VMDeviceService) List(ctx context.Context, machineID int) ([]VMDevice, error) {
 	params := url.Values{}
 	params.Set("fields", deviceListFields)
-	params.Set("filter", fmt.Sprintf("machine eq %d", vmID))
+	params.Set("filter", fmt.Sprintf("machine eq %d", machineID))
 
 	var devices []VMDevice
 	if err := s.client.get(ctx, "/machine_devices", params, &devices); err != nil {
