@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"time"
 )
 
 // CertificateService handles SSL/TLS certificate operations.
@@ -132,9 +133,8 @@ func (s *CertificateService) Renew(ctx context.Context, id int) (*Certificate, e
 
 // ListExpiring returns certificates that will expire within the specified number of days.
 func (s *CertificateService) ListExpiring(ctx context.Context, days int, opts ...ListOption) ([]Certificate, error) {
-	// Calculate Unix timestamp for 'days' from now
-	// This is a simple filter approach - exact implementation depends on API support
-	filterOpts := []ListOption{WithFilter("valid eq true")}
+	expiresBy := time.Now().Add(time.Duration(days) * 24 * time.Hour).Unix()
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("valid eq true and expires le %d", expiresBy))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }
