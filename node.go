@@ -82,23 +82,6 @@ func (s *NodeService) GetByName(ctx context.Context, name string) (*Node, error)
 	return &nodes[0], nil
 }
 
-// GetDashboard returns detailed dashboard information for a node.
-func (s *NodeService) GetDashboard(ctx context.Context, id int) (*Node, error) {
-	params := url.Values{}
-	params.Set("fields", "dashboard")
-
-	var node Node
-	endpoint := fmt.Sprintf("/nodes/%d", id)
-	if err := s.client.get(ctx, endpoint, params, &node); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Node", ID: id}
-		}
-		return nil, err
-	}
-
-	return &node, nil
-}
-
 // EnableMaintenance puts a node into maintenance mode.
 // In maintenance mode, VMs are migrated off the node and no new VMs will be scheduled to it.
 func (s *NodeService) EnableMaintenance(ctx context.Context, id int) error {

@@ -53,8 +53,9 @@ type StorageTierStats struct {
 type ClusterTier struct {
 	// Key is the unique identifier for the cluster tier record.
 	Key FlexInt `json:"$key,omitempty"`
-	// Cluster is the parent cluster ID.
-	Cluster int `json:"cluster,omitempty"`
+	// Cluster is the parent cluster ID. Uses FlexFK to handle FK expansion
+	// when callers request fields that cause the API to return an object.
+	Cluster FlexFK `json:"cluster,omitempty"`
 	// Tier is the tier number (0-5).
 	Tier int `json:"tier,omitempty"`
 	// Description is the tier description.
@@ -68,12 +69,10 @@ type ClusterTier struct {
 	// Stats contains the tier statistics.
 	Stats *ClusterTierStats `json:"stats,omitempty"`
 	// NodesOnline contains the list of node states for this tier.
-	// Only populated when the API returns these nested objects (e.g., fields=all).
-	// Note: fields=all also expands FK fields like Cluster to objects, which may
-	// require custom deserialization. Not included in default field list.
+	// Populated by default via computed field expression.
 	NodesOnline *ClusterTierNodesOnline `json:"nodes_online,omitempty"`
 	// DrivesOnline contains the list of drive states for this tier.
-	// Only populated when the API returns these nested objects (e.g., fields=all).
+	// Populated by default via computed field expression.
 	DrivesOnline []ClusterTierDriveState `json:"drives_online,omitempty"`
 }
 
@@ -371,7 +370,8 @@ const (
 	storageTierListFields = "$key,tier,description,capacity,used,allocated,used_inflated,dedupe_ratio,used_pct,modified,stats[reads,writes,read_bytes,write_bytes,rops,wops,rbps,wbps]"
 
 	// clusterTierListFields lists all fields for cluster tier queries.
-	clusterTierListFields = "$key,cluster,tier,description,cost_per_gb,price_per_gb,status[tier,status,state,capacity,used,used_pct,allocated,redundant,encrypted,working,last_walk_time_ms,last_fullwalk_time_ms,transaction,repairs,bad_drives,fullwalk,progress,index_unique,state_timestamp,cur_space_throttle_ms,transaction_start_stamp],stats[reads,writes,read_bytes,write_bytes,rops,wops,rbps,wbps]"
+	// Includes computed field expressions for online node/drive counts.
+	clusterTierListFields = "$key,cluster,tier,description,cost_per_gb,price_per_gb,status[tier,status,state,capacity,used,used_pct,allocated,redundant,encrypted,working,last_walk_time_ms,last_fullwalk_time_ms,transaction,repairs,bad_drives,fullwalk,progress,index_unique,state_timestamp,cur_space_throttle_ms,transaction_start_stamp],stats[reads,writes,read_bytes,write_bytes,rops,wops,rbps,wbps],vsan_drives[parent_drive#status#state as state] ? state eq 'online' as drives_online,cluster[nodes[machine#status#state as state] ? state eq 'online'] as nodes_online"
 
 	// machineDrivePhysListFields lists all fields for machine drive physical status queries.
 	machineDrivePhysListFields = "$key,parent_drive,path,all_paths,modified,size,model,fw,serial,temp,temp_warn,encrypted,realloc_sectors,realloc_sectors_warn,wear_level,wear_level_warn,hours,hours_warn,current_pending_sector,current_pending_sector_warn,offline_uncorrectable,offline_uncorrectable_warn,smart,vsan_driveid,vsan_tier,vsan_used,vsan_max,vsan_read_errors,vsan_write_errors,vsan_avg_latency,vsan_max_latency,vsan_repairing,vsan_repair_estimate,vsan_last_error,vsan_throttle,vsan_path,vsan_online_since,spare,swap,swap_size,boot,boot_size,ybpart,ybpart_size,encryption_key,enclosure_slot,locate_status,location,bus,parent_drive#machine#name as node_display,parent_drive#status#status as statuslist"
