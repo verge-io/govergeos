@@ -138,7 +138,6 @@ type NodeServiceInterface interface {
 	ListPhysical(ctx context.Context, opts ...ListOption) ([]Node, error)
 	Get(ctx context.Context, id int) (*Node, error)
 	GetByName(ctx context.Context, name string) (*Node, error)
-	GetDashboard(ctx context.Context, id int) (*Node, error)
 	EnableMaintenance(ctx context.Context, id int) error
 	DisableMaintenance(ctx context.Context, id int) error
 	MaintenanceReboot(ctx context.Context, id int) error
