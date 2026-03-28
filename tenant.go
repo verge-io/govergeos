@@ -422,6 +422,124 @@ type tenantNodeAction struct {
 	Params     map[string]interface{} `json:"params,omitempty"`
 }
 
+// TenantStatusService handles tenant status read operations.
+// Each tenant has exactly one status record.
+type TenantStatusService struct {
+	client *Client
+}
+
+// List returns all tenant statuses.
+func (s *TenantStatusService) List(ctx context.Context, opts ...ListOption) ([]TenantStatus, error) {
+	options := applyListOptions(opts)
+	if options.Fields == "most" {
+		options.Fields = tenantStatusListFields
+	}
+	params := options.toQueryParams()
+
+	var statuses []TenantStatus
+	if err := s.client.get(ctx, "/tenant_status", params, &statuses); err != nil {
+		return nil, err
+	}
+
+	return statuses, nil
+}
+
+// Get returns the status for a specific tenant by its tenant key.
+func (s *TenantStatusService) Get(ctx context.Context, tenantKey int) (*TenantStatus, error) {
+	params := url.Values{}
+	params.Set("fields", tenantStatusGetFields)
+	params.Set("filter", fmt.Sprintf("tenant eq %d", tenantKey))
+
+	var statuses []TenantStatus
+	if err := s.client.get(ctx, "/tenant_status", params, &statuses); err != nil {
+		return nil, err
+	}
+
+	if len(statuses) == 0 {
+		return nil, &NotFoundError{Resource: "TenantStatus", ID: tenantKey}
+	}
+
+	return &statuses[0], nil
+}
+
+// GetByKey returns the status by its direct row key.
+func (s *TenantStatusService) GetByKey(ctx context.Context, key int) (*TenantStatus, error) {
+	params := url.Values{}
+	params.Set("fields", tenantStatusGetFields)
+
+	var status TenantStatus
+	endpoint := fmt.Sprintf("/tenant_status/%d", key)
+	if err := s.client.get(ctx, endpoint, params, &status); err != nil {
+		if IsNotFoundError(err) {
+			return nil, &NotFoundError{Resource: "TenantStatus", ID: key}
+		}
+		return nil, err
+	}
+
+	return &status, nil
+}
+
+// TenantStatsHistoryShortService handles tenant short-term statistics history read operations.
+// This service provides high-resolution historical metrics for tenant monitoring.
+type TenantStatsHistoryShortService struct {
+	client *Client
+}
+
+// List returns short-term historical stats for all tenants.
+func (s *TenantStatsHistoryShortService) List(ctx context.Context, opts ...ListOption) ([]TenantStatsHistoryShort, error) {
+	options := applyListOptions(opts)
+
+	if options.Fields == "most" {
+		options.Fields = tenantStatsHistoryShortFields
+	}
+
+	params := options.toQueryParams()
+
+	var stats []TenantStatsHistoryShort
+	if err := s.client.get(ctx, "/tenant_stats_history_short", params, &stats); err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
+// ListByTenant returns short-term historical stats for a specific tenant.
+func (s *TenantStatsHistoryShortService) ListByTenant(ctx context.Context, tenantID int, opts ...ListOption) ([]TenantStatsHistoryShort, error) {
+	opts = append(opts, WithFilter(fmt.Sprintf("tenant eq %d", tenantID)))
+	return s.List(ctx, opts...)
+}
+
+// GetLatest returns the most recent short-term stats record for a tenant.
+func (s *TenantStatsHistoryShortService) GetLatest(ctx context.Context, tenantID int) (*TenantStatsHistoryShort, error) {
+	stats, err := s.ListByTenant(ctx, tenantID, WithSort("-timestamp"), WithLimit(1))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(stats) == 0 {
+		return nil, &NotFoundError{Resource: "TenantStatsHistoryShort", ID: fmt.Sprintf("tenant=%d", tenantID)}
+	}
+
+	return &stats[0], nil
+}
+
+// Get returns a single short-term stats record by ID.
+func (s *TenantStatsHistoryShortService) Get(ctx context.Context, id int) (*TenantStatsHistoryShort, error) {
+	params := url.Values{}
+	params.Set("fields", tenantStatsHistoryShortFields)
+
+	var stats TenantStatsHistoryShort
+	endpoint := fmt.Sprintf("/tenant_stats_history_short/%d", id)
+	if err := s.client.get(ctx, endpoint, params, &stats); err != nil {
+		if IsNotFoundError(err) {
+			return nil, &NotFoundError{Resource: "TenantStatsHistoryShort", ID: id}
+		}
+		return nil, err
+	}
+
+	return &stats, nil
+}
+
 // TenantStorageService handles tenant storage allocation operations.
 type TenantStorageService struct {
 	client *Client
