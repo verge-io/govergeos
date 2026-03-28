@@ -152,18 +152,27 @@ func WithAPIKey(apiKey string) ClientOption {
 	}
 }
 
+// cloneOrNewTransport returns a clone of the existing transport if it is an
+// *http.Transport, or a fresh transport with sensible defaults otherwise.
+func cloneOrNewTransport(rt http.RoundTripper) *http.Transport {
+	if t, ok := rt.(*http.Transport); ok {
+		return t.Clone()
+	}
+	return &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 20,
+		IdleConnTimeout:     90 * time.Second,
+	}
+}
+
 // WithInsecureTLS configures whether to skip TLS certificate verification.
 // This is useful for self-signed certificates.
 func WithInsecureTLS(insecure bool) ClientOption {
 	return func(c *Client) error {
 		if insecure {
-			transport := &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
-				MaxIdleConns:        100,
-				MaxIdleConnsPerHost: 20,
-				IdleConnTimeout:     90 * time.Second,
+			transport := cloneOrNewTransport(c.httpClient.Transport)
+			transport.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
 			}
 			c.httpClient.Transport = transport
 		}
@@ -249,13 +258,9 @@ func WithEnvConfig() ClientOption {
 		// Only apply if VERGEOS_VERIFY_SSL is explicitly set to false
 		verifySSL := os.Getenv("VERGEOS_VERIFY_SSL")
 		if strings.ToLower(verifySSL) == "false" || verifySSL == "0" {
-			transport := &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
-				MaxIdleConns:        100,
-				MaxIdleConnsPerHost: 20,
-				IdleConnTimeout:     90 * time.Second,
+			transport := cloneOrNewTransport(c.httpClient.Transport)
+			transport.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
 			}
 			c.httpClient.Transport = transport
 		}
