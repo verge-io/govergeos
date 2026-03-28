@@ -56,8 +56,7 @@ func (s *UserAPIKeyService) Get(ctx context.Context, id int) (*UserAPIKey, error
 // GetByName returns an API key by name within a user's keys.
 func (s *UserAPIKeyService) GetByName(ctx context.Context, userID int, name string) (*UserAPIKey, error) {
 	keys, err := s.List(ctx,
-		WithFilter(fmt.Sprintf("user eq %d", userID)),
-		WithFilter(fmt.Sprintf("name eq '%s'", name)),
+		WithFilter(fmt.Sprintf("user eq %d and name eq '%s'", userID, name)),
 	)
 	if err != nil {
 		return nil, err

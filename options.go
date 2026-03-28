@@ -30,7 +30,11 @@ type ListOption func(*ListOptions)
 //   - "name eq 'vm1' and enabled eq true"
 func WithFilter(filter string) ListOption {
 	return func(opts *ListOptions) {
-		opts.Filter = filter
+		if opts.Filter != "" {
+			opts.Filter = opts.Filter + " and " + filter
+		} else {
+			opts.Filter = filter
+		}
 	}
 }
 

@@ -48,13 +48,25 @@ func TestApplyListOptions_AllOptions(t *testing.T) {
 	}
 }
 
-func TestApplyListOptions_LastOneWins(t *testing.T) {
+func TestApplyListOptions_FilterCombination(t *testing.T) {
 	opts := applyListOptions([]ListOption{
 		WithFilter("first"),
 		WithFilter("second"),
 	})
-	if opts.Filter != "second" {
-		t.Errorf("expected last filter to win, got %q", opts.Filter)
+	if opts.Filter != "first and second" {
+		t.Errorf("expected combined filter, got %q", opts.Filter)
+	}
+}
+
+func TestApplyListOptions_TripleFilterCombination(t *testing.T) {
+	opts := applyListOptions([]ListOption{
+		WithFilter("a eq 1"),
+		WithFilter("b eq 2"),
+		WithFilter("c eq 3"),
+	})
+	expected := "a eq 1 and b eq 2 and c eq 3"
+	if opts.Filter != expected {
+		t.Errorf("expected %q, got %q", expected, opts.Filter)
 	}
 }
 
