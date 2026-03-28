@@ -202,7 +202,7 @@ func (s *NetworkService) waitForPowerState(ctx context.Context, id int, desiredS
 		}
 	}
 
-	return fmt.Errorf("vergeos: timeout waiting for network %d to become %s", id, stateDesc)
+	return &TimeoutError{Resource: "Network", ID: id, Action: "become " + stateDesc}
 }
 
 // Kill forcefully powers off a network (hard power off).

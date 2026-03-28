@@ -172,7 +172,7 @@ func (s *VMDriveService) waitForImport(ctx context.Context, driveID int, targetS
 		}
 	}
 
-	return nil, fmt.Errorf("vergeos: timeout waiting for drive %d import to complete", driveID)
+	return nil, &TimeoutError{Resource: "VMDrive", ID: driveID, Action: "complete import"}
 }
 
 // Update updates a drive and returns the updated drive.
@@ -263,7 +263,7 @@ func (s *VMDriveService) HotplugDrive(ctx context.Context, vmID, driveID int) er
 		}
 	}
 
-	return fmt.Errorf("vergeos: timeout waiting for drive %d to hotplug", driveID)
+	return &TimeoutError{Resource: "VMDrive", ID: driveID, Action: "hotplug"}
 }
 
 // HotUnplugDrive hot-unplugs a drive from a running VM.
@@ -303,7 +303,7 @@ func (s *VMDriveService) HotUnplugDrive(ctx context.Context, vmID, driveID int) 
 		}
 	}
 
-	return fmt.Errorf("vergeos: timeout waiting for drive %d to unplug", driveID)
+	return &TimeoutError{Resource: "VMDrive", ID: driveID, Action: "unplug"}
 }
 
 // hotUnplug is the internal wrapper used by Delete.

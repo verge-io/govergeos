@@ -209,7 +209,7 @@ func (s *VMService) waitForPowerState(ctx context.Context, id int, desiredState 
 		}
 	}
 
-	return fmt.Errorf("vergeos: timeout waiting for VM %d to become %s", id, stateStr)
+	return &TimeoutError{Resource: "VM", ID: id, Action: "become " + stateStr}
 }
 
 // Reset sends a reset signal to a running VM (equivalent to pressing the reset button).

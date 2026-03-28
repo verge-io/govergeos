@@ -58,6 +58,27 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("vergeos: validation error: %s", e.Message)
 }
 
+// TimeoutError is returned when a polling operation exceeds its retry limit.
+type TimeoutError struct {
+	Resource string
+	ID       int
+	Action   string
+}
+
+// Error implements the error interface.
+func (e *TimeoutError) Error() string {
+	return fmt.Sprintf("vergeos: timeout waiting for %s %d to %s", e.Resource, e.ID, e.Action)
+}
+
+// IsTimeoutError returns true if the error is a TimeoutError.
+func IsTimeoutError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var timeoutErr *TimeoutError
+	return errors.As(err, &timeoutErr)
+}
+
 // IsNotFoundError returns true if the error is a NotFoundError or a 404 API error.
 func IsNotFoundError(err error) bool {
 	if err == nil {

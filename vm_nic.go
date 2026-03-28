@@ -188,5 +188,5 @@ func (s *VMNICService) hotUnplug(ctx context.Context, vmID, nicID int) error {
 		}
 	}
 
-	return fmt.Errorf("vergeos: timeout waiting for NIC %d to unplug", nicID)
+	return &TimeoutError{Resource: "VMNIC", ID: nicID, Action: "unplug"}
 }
