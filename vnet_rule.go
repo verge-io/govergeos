@@ -47,7 +47,7 @@ func (s *VNetRuleService) Get(ctx context.Context, id int) (*VNetRule, error) {
 	endpoint := fmt.Sprintf("/vnet_rules/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &rule); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetRule", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetRule", ID: id}
 		}
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (s *VNetRuleService) Update(ctx context.Context, id int, req *VNetRuleUpdat
 	endpoint := fmt.Sprintf("/vnet_rules/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetRule", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetRule", ID: id}
 		}
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (s *VNetRuleService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_rules/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "VNetRule", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "VNetRule", ID: id}
 		}
 		return err
 	}
@@ -208,7 +208,7 @@ func (s *VNetRuleAliasService) Get(ctx context.Context, id int) (*VNetRuleAlias,
 	endpoint := fmt.Sprintf("/vnet_rule_aliases/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &alias); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetRuleAlias", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetRuleAlias", ID: id}
 		}
 		return nil, err
 	}
@@ -265,7 +265,7 @@ func (s *VNetRuleAliasService) Update(ctx context.Context, id int, req *VNetRule
 	endpoint := fmt.Sprintf("/vnet_rule_aliases/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetRuleAlias", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetRuleAlias", ID: id}
 		}
 		return nil, err
 	}
@@ -279,7 +279,7 @@ func (s *VNetRuleAliasService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_rule_aliases/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "VNetRuleAlias", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "VNetRuleAlias", ID: id}
 		}
 		return err
 	}

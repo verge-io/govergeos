@@ -51,7 +51,7 @@ func (s *TenantLayer2NetworkService) Get(ctx context.Context, id int) (*TenantLa
 	endpoint := fmt.Sprintf("/tenant_layer2_vnets/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &network); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantLayer2Network", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "TenantLayer2Network", ID: id}
 		}
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (s *TenantLayer2NetworkService) Update(ctx context.Context, id int, req *Te
 	endpoint := fmt.Sprintf("/tenant_layer2_vnets/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantLayer2Network", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "TenantLayer2Network", ID: id}
 		}
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (s *TenantLayer2NetworkService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tenant_layer2_vnets/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "TenantLayer2Network", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "TenantLayer2Network", ID: id}
 		}
 		return err
 	}

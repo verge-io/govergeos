@@ -84,7 +84,7 @@ func (s *LogService) Get(ctx context.Context, id int) (*Log, error) {
 	endpoint := fmt.Sprintf("/logs/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &log); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Log", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "Log", ID: id}
 		}
 		return nil, err
 	}

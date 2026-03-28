@@ -45,7 +45,7 @@ func (s *UserAPIKeyService) Get(ctx context.Context, id int) (*UserAPIKey, error
 	endpoint := fmt.Sprintf("/user_api_keys/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &key); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "UserAPIKey", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "UserAPIKey", ID: id}
 		}
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *UserAPIKeyService) Update(ctx context.Context, id int, req *UserAPIKeyU
 	endpoint := fmt.Sprintf("/user_api_keys/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "UserAPIKey", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "UserAPIKey", ID: id}
 		}
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (s *UserAPIKeyService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/user_api_keys/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "UserAPIKey", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "UserAPIKey", ID: id}
 		}
 		return err
 	}

@@ -46,7 +46,7 @@ func (s *VNetHostService) Get(ctx context.Context, id int) (*VNetHost, error) {
 	endpoint := fmt.Sprintf("/vnet_hosts/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &host); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetHost", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetHost", ID: id}
 		}
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *VNetHostService) Update(ctx context.Context, id int, req *VNetHostUpdat
 	endpoint := fmt.Sprintf("/vnet_hosts/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetHost", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetHost", ID: id}
 		}
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (s *VNetHostService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_hosts/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "VNetHost", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "VNetHost", ID: id}
 		}
 		return err
 	}

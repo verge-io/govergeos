@@ -39,7 +39,7 @@ func (s *TenantService) Get(ctx context.Context, id int) (*Tenant, error) {
 	endpoint := fmt.Sprintf("/tenants/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &tenant); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Tenant", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "Tenant", ID: id}
 		}
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (s *TenantService) Update(ctx context.Context, id int, req *TenantUpdateReq
 	endpoint := fmt.Sprintf("/tenants/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Tenant", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "Tenant", ID: id}
 		}
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (s *TenantService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tenants/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "Tenant", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "Tenant", ID: id}
 		}
 		return err
 	}
@@ -264,7 +264,7 @@ func (s *TenantNodeService) Get(ctx context.Context, id int) (*TenantNode, error
 	endpoint := fmt.Sprintf("/tenant_nodes/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &node); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantNode", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "TenantNode", ID: id}
 		}
 		return nil, err
 	}
@@ -324,7 +324,7 @@ func (s *TenantNodeService) Update(ctx context.Context, id int, req *TenantNodeU
 	endpoint := fmt.Sprintf("/tenant_nodes/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantNode", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "TenantNode", ID: id}
 		}
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func (s *TenantNodeService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tenant_nodes/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "TenantNode", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "TenantNode", ID: id}
 		}
 		return err
 	}
@@ -581,7 +581,7 @@ func (s *TenantStorageService) Get(ctx context.Context, id int) (*TenantStorage,
 	endpoint := fmt.Sprintf("/tenant_storage/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &storage); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantStorage", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "TenantStorage", ID: id}
 		}
 		return nil, err
 	}
@@ -628,7 +628,7 @@ func (s *TenantStorageService) Update(ctx context.Context, id int, req *TenantSt
 	endpoint := fmt.Sprintf("/tenant_storage/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantStorage", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "TenantStorage", ID: id}
 		}
 		return nil, err
 	}
@@ -642,7 +642,7 @@ func (s *TenantStorageService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tenant_storage/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "TenantStorage", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "TenantStorage", ID: id}
 		}
 		return err
 	}

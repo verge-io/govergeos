@@ -69,7 +69,7 @@ func (s *AlarmService) Get(ctx context.Context, id int) (*Alarm, error) {
 	endpoint := fmt.Sprintf("/alarms/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &alarm); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Alarm", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "Alarm", ID: id}
 		}
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *AlarmService) Update(ctx context.Context, id int, req *AlarmUpdateReque
 	endpoint := fmt.Sprintf("/alarms/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Alarm", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "Alarm", ID: id}
 		}
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (s *AlarmService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/alarms/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "Alarm", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "Alarm", ID: id}
 		}
 		return err
 	}

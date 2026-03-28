@@ -45,7 +45,7 @@ func (s *VNetWireGuardService) Get(ctx context.Context, id int) (*VNetWireGuard,
 	endpoint := fmt.Sprintf("/vnet_wireguards/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &wg); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetWireGuard", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetWireGuard", ID: id}
 		}
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (s *VNetWireGuardService) Update(ctx context.Context, id int, req *VNetWire
 	endpoint := fmt.Sprintf("/vnet_wireguards/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetWireGuard", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetWireGuard", ID: id}
 		}
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *VNetWireGuardService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_wireguards/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "VNetWireGuard", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "VNetWireGuard", ID: id}
 		}
 		return err
 	}
@@ -161,7 +161,7 @@ func (s *VNetWireGuardPeerService) Get(ctx context.Context, id int) (*VNetWireGu
 	endpoint := fmt.Sprintf("/vnet_wireguard_peers/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &peer); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetWireGuardPeer", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetWireGuardPeer", ID: id}
 		}
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (s *VNetWireGuardPeerService) Update(ctx context.Context, id int, req *VNet
 	endpoint := fmt.Sprintf("/vnet_wireguard_peers/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetWireGuardPeer", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetWireGuardPeer", ID: id}
 		}
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (s *VNetWireGuardPeerService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_wireguard_peers/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "VNetWireGuardPeer", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "VNetWireGuardPeer", ID: id}
 		}
 		return err
 	}
@@ -256,7 +256,7 @@ func (s *VNetWireGuardPeerService) GetConfig(ctx context.Context, id int) (strin
 	endpoint := fmt.Sprintf("/vnet_wireguard_peers/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &result); err != nil {
 		if IsNotFoundError(err) {
-			return "", &NotFoundError{Resource: "VNetWireGuardPeer", ID: fmt.Sprintf("%d", id)}
+			return "", &NotFoundError{Resource: "VNetWireGuardPeer", ID: id}
 		}
 		return "", err
 	}
@@ -296,7 +296,7 @@ func (s *VNetWireGuardPeerStatusService) Get(ctx context.Context, id int) (*VNet
 	endpoint := fmt.Sprintf("/vnet_wireguard_peer_status/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &status); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetWireGuardPeerStatus", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetWireGuardPeerStatus", ID: id}
 		}
 		return nil, err
 	}
