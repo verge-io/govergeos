@@ -62,6 +62,9 @@ func (s *GroupService) GetByName(ctx context.Context, name string) (*Group, erro
 
 // Create creates a new group and returns it.
 func (s *GroupService) Create(ctx context.Context, req *GroupCreateRequest) (*Group, error) {
+	if req == nil {
+		return nil, &ValidationError{Message: "create request is required"}
+	}
 	var result struct {
 		Key FlexInt `json:"$key"`
 	}
