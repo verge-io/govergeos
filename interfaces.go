@@ -822,8 +822,8 @@ type TenantLayer2NetworkServiceInterface interface {
 	Create(ctx context.Context, req *TenantLayer2NetworkCreateRequest) (*TenantLayer2Network, error)
 	Update(ctx context.Context, id int, req *TenantLayer2NetworkUpdateRequest) (*TenantLayer2Network, error)
 	Delete(ctx context.Context, id int) error
-	Enable(ctx context.Context, id int) (*TenantLayer2Network, error)
-	Disable(ctx context.Context, id int) (*TenantLayer2Network, error)
+	Enable(ctx context.Context, id int) error
+	Disable(ctx context.Context, id int) error
 	Assign(ctx context.Context, tenantID, vnetID int) (*TenantLayer2Network, error)
 	Unassign(ctx context.Context, tenantID, vnetID int) error
 }

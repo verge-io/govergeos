@@ -128,15 +128,17 @@ func (s *TenantLayer2NetworkService) Delete(ctx context.Context, id int) error {
 }
 
 // Enable enables a tenant layer2 network assignment.
-func (s *TenantLayer2NetworkService) Enable(ctx context.Context, id int) (*TenantLayer2Network, error) {
+func (s *TenantLayer2NetworkService) Enable(ctx context.Context, id int) error {
 	enabled := true
-	return s.Update(ctx, id, &TenantLayer2NetworkUpdateRequest{Enabled: &enabled})
+	_, err := s.Update(ctx, id, &TenantLayer2NetworkUpdateRequest{Enabled: &enabled})
+	return err
 }
 
 // Disable disables a tenant layer2 network assignment.
-func (s *TenantLayer2NetworkService) Disable(ctx context.Context, id int) (*TenantLayer2Network, error) {
+func (s *TenantLayer2NetworkService) Disable(ctx context.Context, id int) error {
 	enabled := false
-	return s.Update(ctx, id, &TenantLayer2NetworkUpdateRequest{Enabled: &enabled})
+	_, err := s.Update(ctx, id, &TenantLayer2NetworkUpdateRequest{Enabled: &enabled})
+	return err
 }
 
 // Assign is a convenience method to assign a network to a tenant.
