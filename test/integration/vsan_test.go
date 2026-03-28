@@ -72,7 +72,7 @@ func TestClusterTiers(t *testing.T) {
 
 		first := tiers[0]
 		t.Logf("First cluster tier: Key=%d, Cluster=%d, Tier=%d",
-			int(first.Key), first.Cluster, first.Tier)
+			first.Key.Int(), first.Cluster.Int(), first.Tier)
 
 		if first.Status != nil {
 			t.Logf("Cluster tier status: Status=%q, State=%q, Redundant=%v, Encrypted=%v",
@@ -81,6 +81,25 @@ func TestClusterTiers(t *testing.T) {
 				first.Status.Capacity, first.Status.Used, first.Status.UsedPct,
 				first.Status.Transaction, first.Status.Repairs)
 		}
+
+		// Validate nodes_online and drives_online are populated
+		onlineNodes := first.CountOnlineNodes()
+		onlineDrives := first.CountOnlineDrives()
+		t.Logf("Online counts: Nodes=%d, Drives=%d", onlineNodes, onlineDrives)
+
+		if first.NodesOnline == nil {
+			t.Error("NodesOnline is nil — computed field expression may not be working")
+		}
+		if len(first.DrivesOnline) == 0 {
+			t.Error("DrivesOnline is empty — computed field expression may not be working")
+		}
+		if onlineNodes == 0 {
+			t.Error("CountOnlineNodes returned 0 — expected at least 1 online node")
+		}
+		if onlineDrives == 0 {
+			t.Error("CountOnlineDrives returned 0 — expected at least 1 online drive")
+		}
+
 		prettyPrint(t, "Sample ClusterTier", first)
 	})
 
@@ -105,15 +124,15 @@ func TestClusterTiers(t *testing.T) {
 		}
 
 		first := tiers[0]
-		if first.Cluster == 0 {
+		if first.Cluster.Int() == 0 {
 			t.Skip("Cluster tier has no cluster reference")
 		}
 
-		clusterTiers, err := client.ClusterTiers.ListByCluster(ctx, first.Cluster)
+		clusterTiers, err := client.ClusterTiers.ListByCluster(ctx, first.Cluster.Int())
 		if err != nil {
-			t.Fatalf("ClusterTiers.ListByCluster(%d) failed: %v", first.Cluster, err)
+			t.Fatalf("ClusterTiers.ListByCluster(%d) failed: %v", first.Cluster.Int(), err)
 		}
-		t.Logf("Found %d tiers for cluster %d", len(clusterTiers), first.Cluster)
+		t.Logf("Found %d tiers for cluster %d", len(clusterTiers), first.Cluster.Int())
 	})
 
 	t.Run("GetByClusterAndTier", func(t *testing.T) {
@@ -123,13 +142,13 @@ func TestClusterTiers(t *testing.T) {
 		}
 
 		first := tiers[0]
-		if first.Cluster == 0 {
+		if first.Cluster.Int() == 0 {
 			t.Skip("Cluster tier has no cluster reference")
 		}
 
-		byClusterAndTier, err := client.ClusterTiers.GetByClusterAndTier(ctx, first.Cluster, first.Tier)
+		byClusterAndTier, err := client.ClusterTiers.GetByClusterAndTier(ctx, first.Cluster.Int(), first.Tier)
 		if err != nil {
-			t.Fatalf("ClusterTiers.GetByClusterAndTier(%d, %d) failed: %v", first.Cluster, first.Tier, err)
+			t.Fatalf("ClusterTiers.GetByClusterAndTier(%d, %d) failed: %v", first.Cluster.Int(), first.Tier, err)
 		}
 		t.Logf("ClusterTiers.GetByClusterAndTier succeeded: Key=%d", int(byClusterAndTier.Key))
 	})
@@ -344,13 +363,13 @@ func TestVSANMonitoringMetrics(t *testing.T) {
 		for _, tier := range tiers {
 			if tier.Status != nil {
 				t.Logf("vergeos_cluster_tier_redundant{cluster=\"%d\",tier=\"%d\"} %d",
-					tier.Cluster, tier.Tier, boolToInt(tier.Status.Redundant))
+					tier.Cluster.Int(), tier.Tier, boolToInt(tier.Status.Redundant))
 				t.Logf("vergeos_cluster_tier_encrypted{cluster=\"%d\",tier=\"%d\"} %d",
-					tier.Cluster, tier.Tier, boolToInt(tier.Status.Encrypted))
+					tier.Cluster.Int(), tier.Tier, boolToInt(tier.Status.Encrypted))
 				t.Logf("vergeos_cluster_tier_transaction{cluster=\"%d\",tier=\"%d\"} %d",
-					tier.Cluster, tier.Tier, tier.Status.Transaction)
+					tier.Cluster.Int(), tier.Tier, tier.Status.Transaction)
 				t.Logf("vergeos_cluster_tier_repairs{cluster=\"%d\",tier=\"%d\"} %d",
-					tier.Cluster, tier.Tier, tier.Status.Repairs)
+					tier.Cluster.Int(), tier.Tier, tier.Status.Repairs)
 			}
 		}
 	})
