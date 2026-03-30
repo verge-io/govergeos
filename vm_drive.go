@@ -25,11 +25,32 @@ type VMDriveService struct {
 	client *Client
 }
 
-// List returns all drives for a VM.
-func (s *VMDriveService) List(ctx context.Context, vmID int) ([]VMDrive, error) {
+// List returns all drives for a machine.
+func (s *VMDriveService) List(ctx context.Context, machineID int) ([]VMDrive, error) {
 	params := url.Values{}
 	params.Set("fields", driveListFields)
-	params.Set("filter", fmt.Sprintf("machine eq %d", vmID))
+	params.Set("filter", fmt.Sprintf("machine eq %d", machineID))
+
+	var drives []VMDrive
+	if err := s.client.get(ctx, "/machine_drives", params, &drives); err != nil {
+		return nil, err
+	}
+
+	// Convert bytes to GB
+	for i := range drives {
+		drives[i].SizeGB = drives[i].SizeBytes / bytesPerGB
+	}
+
+	return drives, nil
+}
+
+// ListAll returns all machine drives across all VMs.
+func (s *VMDriveService) ListAll(ctx context.Context, opts ...ListOption) ([]VMDrive, error) {
+	options := applyListOptions(opts)
+	if options.Fields == "most" {
+		options.Fields = driveListFields
+	}
+	params := options.toQueryParams()
 
 	var drives []VMDrive
 	if err := s.client.get(ctx, "/machine_drives", params, &drives); err != nil {
@@ -118,8 +139,12 @@ func (s *VMDriveService) Create(ctx context.Context, vmID int, req *VMDriveCreat
 
 // waitForImport waits for a drive import to complete and handles resizing if needed.
 func (s *VMDriveService) waitForImport(ctx context.Context, driveID int, targetSizeGB int64) (*VMDrive, error) {
-	// Initial wait
-	time.Sleep(5 * time.Second)
+	// Initial wait before first poll
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-time.After(5 * time.Second):
+	}
 
 	for i := 0; i < importMaxRetries; i++ {
 		drive, err := s.Get(ctx, driveID)
@@ -147,7 +172,7 @@ func (s *VMDriveService) waitForImport(ctx context.Context, driveID int, targetS
 		}
 	}
 
-	return nil, fmt.Errorf("vergeos: timeout waiting for drive %d import to complete", driveID)
+	return nil, &TimeoutError{Resource: "VMDrive", ID: driveID, Action: "complete import"}
 }
 
 // Update updates a drive and returns the updated drive.
@@ -181,7 +206,7 @@ func (s *VMDriveService) Delete(ctx context.Context, driveID int) error {
 	drive, err := s.Get(ctx, driveID)
 	if err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "VMDrive", ID: driveID}
 		}
 		return err
 	}
@@ -196,7 +221,7 @@ func (s *VMDriveService) Delete(ctx context.Context, driveID int) error {
 	endpoint := fmt.Sprintf("/machine_drives/%d", driveID)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "VMDrive", ID: driveID}
 		}
 		return err
 	}
@@ -238,7 +263,7 @@ func (s *VMDriveService) HotplugDrive(ctx context.Context, vmID, driveID int) er
 		}
 	}
 
-	return fmt.Errorf("vergeos: timeout waiting for drive %d to hotplug", driveID)
+	return &TimeoutError{Resource: "VMDrive", ID: driveID, Action: "hotplug"}
 }
 
 // HotUnplugDrive hot-unplugs a drive from a running VM.
@@ -278,7 +303,7 @@ func (s *VMDriveService) HotUnplugDrive(ctx context.Context, vmID, driveID int) 
 		}
 	}
 
-	return fmt.Errorf("vergeos: timeout waiting for drive %d to unplug", driveID)
+	return &TimeoutError{Resource: "VMDrive", ID: driveID, Action: "unplug"}
 }
 
 // hotUnplug is the internal wrapper used by Delete.

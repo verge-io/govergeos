@@ -3,6 +3,7 @@
 package integration
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -48,7 +49,7 @@ func TestVersionEnforcement(t *testing.T) {
 		t.Log("NewClient succeeded - server version check passed (v26 confirmed)")
 
 		// Verify client is functional by making a simple API call
-		version, err := client.System.GetVersion(nil)
+		version, err := client.System.GetVersion(context.Background())
 		if err != nil {
 			t.Fatalf("System.GetVersion failed after successful client creation: %v", err)
 		}

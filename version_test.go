@@ -7,23 +7,33 @@ import (
 
 func TestParseVersion(t *testing.T) {
 	tests := []struct {
-		input string
-		major int
+		input   string
+		major   int
+		wantErr bool
 	}{
-		{"26.0.0", 26},
-		{"v26.1.2", 26},
-		{"26.0.0-beta1", 26},
-		{"4.2.0", 4},
-		{"4", 4},
-		{"", 0},
-		{"v4.2.0", 4},
-		{"26.1.3-rc1", 26},
-		{"v", 0},
-		{"abc", 0},
+		{"26.0.0", 26, false},
+		{"v26.1.2", 26, false},
+		{"26.0.0-beta1", 26, false},
+		{"4.2.0", 4, false},
+		{"4", 4, false},
+		{"v4.2.0", 4, false},
+		{"26.1.3-rc1", 26, false},
+		{"", 0, true},
+		{"v", 0, true},
+		{"abc", 0, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			major := parseVersion(tt.input)
+			major, err := parseVersion(tt.input)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("parseVersion(%q) expected error, got %d", tt.input, major)
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("parseVersion(%q) unexpected error: %v", tt.input, err)
+			}
 			if major != tt.major {
 				t.Errorf("parseVersion(%q) = %d, want %d", tt.input, major, tt.major)
 			}

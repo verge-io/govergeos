@@ -38,7 +38,7 @@ func (s *SiteService) Get(ctx context.Context, id int) (*Site, error) {
 	endpoint := fmt.Sprintf("/sites/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &site); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Site", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "Site", ID: id}
 		}
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (s *SiteService) Get(ctx context.Context, id int) (*Site, error) {
 
 // GetByName returns a site by name.
 func (s *SiteService) GetByName(ctx context.Context, name string) (*Site, error) {
-	sites, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	sites, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (s *SiteService) GetByName(ctx context.Context, name string) (*Site, error)
 
 // GetBySiteID returns a site by its 40-character SHA1 site ID.
 func (s *SiteService) GetBySiteID(ctx context.Context, siteID string) (*Site, error) {
-	sites, err := s.List(ctx, WithFilter(fmt.Sprintf("id eq '%s'", siteID)))
+	sites, err := s.List(ctx, WithFilter(fmt.Sprintf("id eq '%s'", escapeFilterValue(siteID))))
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (s *SiteService) Update(ctx context.Context, id int, req *SiteUpdateRequest
 	endpoint := fmt.Sprintf("/sites/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Site", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "Site", ID: id}
 		}
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (s *SiteService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/sites/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "Site", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "Site", ID: id}
 		}
 		return err
 	}
@@ -224,7 +224,7 @@ func (s *SiteSyncIncomingService) Get(ctx context.Context, id int) (*SiteSyncInc
 	endpoint := fmt.Sprintf("/site_syncs_incoming/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &sync); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "SiteSyncIncoming", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "SiteSyncIncoming", ID: id}
 		}
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func (s *SiteSyncIncomingService) Get(ctx context.Context, id int) (*SiteSyncInc
 // GetByName returns an incoming sync by name within a site.
 func (s *SiteSyncIncomingService) GetByName(ctx context.Context, siteID int, name string) (*SiteSyncIncoming, error) {
 	syncs, err := s.List(ctx,
-		WithFilter(fmt.Sprintf("site eq %d and name eq '%s'", siteID, name)),
+		WithFilter(fmt.Sprintf("site eq %d and name eq '%s'", siteID, escapeFilterValue(name))),
 	)
 	if err != nil {
 		return nil, err
@@ -248,7 +248,7 @@ func (s *SiteSyncIncomingService) GetByName(ctx context.Context, siteID int, nam
 
 // GetBySyncID returns an incoming sync by its 40-character sync ID.
 func (s *SiteSyncIncomingService) GetBySyncID(ctx context.Context, syncID string) (*SiteSyncIncoming, error) {
-	syncs, err := s.List(ctx, WithFilter(fmt.Sprintf("sync_id eq '%s'", syncID)))
+	syncs, err := s.List(ctx, WithFilter(fmt.Sprintf("sync_id eq '%s'", escapeFilterValue(syncID))))
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +292,7 @@ func (s *SiteSyncIncomingService) Update(ctx context.Context, id int, req *SiteS
 	endpoint := fmt.Sprintf("/site_syncs_incoming/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "SiteSyncIncoming", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "SiteSyncIncoming", ID: id}
 		}
 		return nil, err
 	}
@@ -305,7 +305,7 @@ func (s *SiteSyncIncomingService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/site_syncs_incoming/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "SiteSyncIncoming", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "SiteSyncIncoming", ID: id}
 		}
 		return err
 	}
@@ -376,7 +376,7 @@ func (s *SiteSyncOutgoingService) Get(ctx context.Context, id int) (*SiteSyncOut
 	endpoint := fmt.Sprintf("/site_syncs_outgoing/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &sync); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "SiteSyncOutgoing", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "SiteSyncOutgoing", ID: id}
 		}
 		return nil, err
 	}
@@ -387,7 +387,7 @@ func (s *SiteSyncOutgoingService) Get(ctx context.Context, id int) (*SiteSyncOut
 // GetByName returns an outgoing sync by name within a site.
 func (s *SiteSyncOutgoingService) GetByName(ctx context.Context, siteID int, name string) (*SiteSyncOutgoing, error) {
 	syncs, err := s.List(ctx,
-		WithFilter(fmt.Sprintf("site eq %d and name eq '%s'", siteID, name)),
+		WithFilter(fmt.Sprintf("site eq %d and name eq '%s'", siteID, escapeFilterValue(name))),
 	)
 	if err != nil {
 		return nil, err
@@ -432,7 +432,7 @@ func (s *SiteSyncOutgoingService) Update(ctx context.Context, id int, req *SiteS
 	endpoint := fmt.Sprintf("/site_syncs_outgoing/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "SiteSyncOutgoing", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "SiteSyncOutgoing", ID: id}
 		}
 		return nil, err
 	}
@@ -445,7 +445,7 @@ func (s *SiteSyncOutgoingService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/site_syncs_outgoing/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "SiteSyncOutgoing", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "SiteSyncOutgoing", ID: id}
 		}
 		return err
 	}
@@ -484,7 +484,7 @@ func (s *SiteSyncOutgoingService) Throttle(ctx context.Context, id int, throttle
 	action := siteSyncOutgoingAction{
 		SiteSyncOutgoing: id,
 		Action:           "throttle",
-		Params: map[string]interface{}{
+		Params: map[string]any{
 			"throttle": throttle,
 		},
 	}
@@ -560,7 +560,7 @@ func (s *SiteSyncProfilePeriodService) Get(ctx context.Context, id int) (*SiteSy
 	endpoint := fmt.Sprintf("/site_syncs_outgoing_profile_periods/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &period); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: id}
 		}
 		return nil, err
 	}
@@ -605,7 +605,7 @@ func (s *SiteSyncProfilePeriodService) Update(ctx context.Context, id int, req *
 	endpoint := fmt.Sprintf("/site_syncs_outgoing_profile_periods/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: id}
 		}
 		return nil, err
 	}
@@ -618,7 +618,7 @@ func (s *SiteSyncProfilePeriodService) Delete(ctx context.Context, id int) error
 	endpoint := fmt.Sprintf("/site_syncs_outgoing_profile_periods/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: id}
 		}
 		return err
 	}

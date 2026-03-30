@@ -102,7 +102,7 @@ type SiteUpdateRequest struct {
 type siteAction struct {
 	Site   int                    `json:"site"`
 	Action string                 `json:"action"`
-	Params map[string]interface{} `json:"params,omitempty"`
+	Params map[string]any `json:"params,omitempty"`
 }
 
 // Site configuration options for sync direction
@@ -194,7 +194,7 @@ type SiteSyncIncomingUpdateRequest struct {
 type siteSyncIncomingAction struct {
 	SiteSyncIncoming int                    `json:"site_syncs_incoming"`
 	Action           string                 `json:"action"`
-	Params           map[string]interface{} `json:"params,omitempty"`
+	Params           map[string]any `json:"params,omitempty"`
 }
 
 // Incoming sync status values
@@ -291,7 +291,7 @@ type SiteSyncOutgoingUpdateRequest struct {
 type siteSyncOutgoingAction struct {
 	SiteSyncOutgoing int                    `json:"site_syncs_outgoing"`
 	Action           string                 `json:"action"`
-	Params           map[string]interface{} `json:"params,omitempty"`
+	Params           map[string]any `json:"params,omitempty"`
 }
 
 // Outgoing sync status values

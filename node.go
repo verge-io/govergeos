@@ -18,7 +18,7 @@ const (
 type nodeAction struct {
 	Node   int         `json:"node"`
 	Action string      `json:"action"`
-	Params interface{} `json:"params"`
+	Params any `json:"params"`
 }
 
 // NodeService handles node read operations.
@@ -70,7 +70,7 @@ func (s *NodeService) Get(ctx context.Context, id int) (*Node, error) {
 
 // GetByName returns a node by name.
 func (s *NodeService) GetByName(ctx context.Context, name string) (*Node, error) {
-	nodes, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	nodes, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -80,23 +80,6 @@ func (s *NodeService) GetByName(ctx context.Context, name string) (*Node, error)
 	}
 
 	return &nodes[0], nil
-}
-
-// GetDashboard returns detailed dashboard information for a node.
-func (s *NodeService) GetDashboard(ctx context.Context, id int) (*Node, error) {
-	params := url.Values{}
-	params.Set("fields", "dashboard")
-
-	var node Node
-	endpoint := fmt.Sprintf("/nodes/%d", id)
-	if err := s.client.get(ctx, endpoint, params, &node); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Node", ID: id}
-		}
-		return nil, err
-	}
-
-	return &node, nil
 }
 
 // EnableMaintenance puts a node into maintenance mode.

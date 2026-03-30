@@ -51,7 +51,7 @@ func (s *TenantSnapshotService) Get(ctx context.Context, id int) (*TenantSnapsho
 	endpoint := fmt.Sprintf("/tenant_snapshots/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &snapshot); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantSnapshot", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "TenantSnapshot", ID: id}
 		}
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (s *TenantSnapshotService) Get(ctx context.Context, id int) (*TenantSnapsho
 // GetByName returns a tenant snapshot by name within a specific tenant.
 func (s *TenantSnapshotService) GetByName(ctx context.Context, tenantID int, name string) (*TenantSnapshot, error) {
 	snapshots, err := s.List(ctx,
-		WithFilter(fmt.Sprintf("tenant eq %d and name eq '%s'", tenantID, name)),
+		WithFilter(fmt.Sprintf("tenant eq %d and name eq '%s'", tenantID, escapeFilterValue(name))),
 	)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (s *TenantSnapshotService) Update(ctx context.Context, id int, req *TenantS
 	endpoint := fmt.Sprintf("/tenant_snapshots/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantSnapshot", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "TenantSnapshot", ID: id}
 		}
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (s *TenantSnapshotService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tenant_snapshots/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "TenantSnapshot", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "TenantSnapshot", ID: id}
 		}
 		return err
 	}
@@ -131,5 +131,5 @@ func (s *TenantSnapshotService) SetExpires(ctx context.Context, id int, expires 
 type tenantSnapshotAction struct {
 	Tenant int                    `json:"tenant"`
 	Action string                 `json:"action"`
-	Params map[string]interface{} `json:"params,omitempty"`
+	Params map[string]any `json:"params,omitempty"`
 }

@@ -1,6 +1,7 @@
 package vergeos
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -56,7 +57,7 @@ func (s *FileService) Get(ctx context.Context, id int) (*File, error) {
 
 // GetByName returns a file by name.
 func (s *FileService) GetByName(ctx context.Context, name string) (*File, error) {
-	files, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", name)))
+	files, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +107,13 @@ func (s *FileService) Update(ctx context.Context, id int, req *FileUpdateRequest
 // Files that are referenced by VM drives cannot be deleted until the reference is removed.
 func (s *FileService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/files/%d", id)
-	return s.client.delete(ctx, endpoint)
+	if err := s.client.delete(ctx, endpoint); err != nil {
+		if IsNotFoundError(err) {
+			return &NotFoundError{Resource: "File", ID: id}
+		}
+		return err
+	}
+	return nil
 }
 
 // Download downloads a file from VergeOS and returns an io.ReadCloser.
@@ -288,7 +295,7 @@ func (s *FileService) uploadChunk(ctx context.Context, id int, data []byte, offs
 	req.Close = true
 
 	// Set body
-	req.Body = io.NopCloser(newBytesReader(data))
+	req.Body = io.NopCloser(bytes.NewReader(data))
 	req.ContentLength = int64(len(data))
 
 	// Execute request
@@ -309,23 +316,4 @@ func (s *FileService) uploadChunk(ctx context.Context, id int, data []byte, offs
 	}
 
 	return nil
-}
-
-// bytesReader wraps a byte slice to implement io.Reader.
-type bytesReader struct {
-	data   []byte
-	offset int
-}
-
-func newBytesReader(data []byte) *bytesReader {
-	return &bytesReader{data: data}
-}
-
-func (r *bytesReader) Read(p []byte) (n int, err error) {
-	if r.offset >= len(r.data) {
-		return 0, io.EOF
-	}
-	n = copy(p, r.data[r.offset:])
-	r.offset += n
-	return n, nil
 }

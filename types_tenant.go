@@ -252,3 +252,146 @@ const tenantStorageListFields = "$key,tenant,tier,provisioned,used,allocated,use
 
 // tenantStorageGetFields are the fields to request when getting a single storage allocation.
 const tenantStorageGetFields = tenantStorageListFields
+
+// TenantStatus contains tenant runtime status information.
+// Each tenant has exactly one status record, accessed via the /tenant_status endpoint.
+type TenantStatus struct {
+	// Key is the status row key.
+	Key FlexInt `json:"$key,omitempty"`
+	// Tenant is the parent tenant ID.
+	Tenant int `json:"tenant,omitempty"`
+	// Running indicates whether the tenant is currently running.
+	Running bool `json:"running"`
+	// Starting indicates whether the tenant is currently starting.
+	Starting bool `json:"starting"`
+	// Stopping indicates whether the tenant is currently stopping.
+	Stopping bool `json:"stopping"`
+	// Migrating indicates whether the tenant is currently migrating.
+	Migrating bool `json:"migrating"`
+	// Started is the timestamp when the tenant was started (Unix epoch).
+	Started int64 `json:"started,omitempty"`
+	// Stopped is the timestamp when the tenant was stopped (Unix epoch).
+	Stopped int64 `json:"stopped,omitempty"`
+	// Status is the tenant status string.
+	// Valid values: "online", "starting", "migrating", "errormigrating", "reduced",
+	// "error", "nodesoffline", "stopping", "offline", "provisioning", "restarting"
+	Status string `json:"status,omitempty"`
+	// State is the simplified state (online, offline, warning, error).
+	State string `json:"state,omitempty"`
+	// LastUpdate is the timestamp of the last status update (Unix epoch).
+	LastUpdate int64 `json:"last_update,omitempty"`
+}
+
+// tenantStatusListFields are the fields to request when listing tenant statuses.
+const tenantStatusListFields = "$key,tenant,running,starting,stopping,migrating,started,stopped,status,state,last_update"
+
+// tenantStatusGetFields are the fields to request when getting a single tenant status.
+const tenantStatusGetFields = tenantStatusListFields
+
+// TenantStatsHistoryShort contains short-term historical statistics for a tenant.
+// These are high-resolution time-series records that auto-expire based on system settings.
+type TenantStatsHistoryShort struct {
+	// Key is the unique identifier for this record.
+	Key FlexInt `json:"$key,omitempty"`
+	// Tenant is the parent tenant ID.
+	Tenant int `json:"tenant,omitempty"`
+	// Timestamp is the record timestamp (Unix epoch).
+	Timestamp uint32 `json:"timestamp,omitempty"`
+
+	// RAM metrics
+	// RAMUsed is the RAM currently used in MB.
+	RAMUsed uint32 `json:"ram_used,omitempty"`
+	// VRAMUsed is the virtual RAM currently used in MB.
+	VRAMUsed uint32 `json:"vram_used,omitempty"`
+	// RAMAllocated is the RAM allocated in MB.
+	RAMAllocated uint32 `json:"ram_allocated,omitempty"`
+	// RAMPct is the RAM usage percentage.
+	RAMPct uint32 `json:"ram_pct,omitempty"`
+
+	// CPU metrics
+	// TotalCPU is the total CPU usage.
+	TotalCPU uint32 `json:"total_cpu,omitempty"`
+	// CoreCount is the number of CPU cores.
+	CoreCount uint32 `json:"core_count,omitempty"`
+
+	// Network metrics
+	// IPCount is the number of IP addresses.
+	IPCount uint32 `json:"ip_count,omitempty"`
+
+	// Storage tier 0 metrics
+	// Tier0Provisioned is the provisioned storage for tier 0 in bytes.
+	Tier0Provisioned uint64 `json:"tier0_provisioned,omitempty"`
+	// Tier0Used is the used storage for tier 0 in bytes.
+	Tier0Used uint64 `json:"tier0_used,omitempty"`
+	// Tier0Pct is the tier 0 usage percentage.
+	Tier0Pct uint32 `json:"tier0_pct,omitempty"`
+	// Tier0Allocated is the allocated storage for tier 0 in bytes.
+	Tier0Allocated uint64 `json:"tier0_allocated,omitempty"`
+
+	// Storage tier 1 metrics
+	// Tier1Provisioned is the provisioned storage for tier 1 in bytes.
+	Tier1Provisioned uint64 `json:"tier1_provisioned,omitempty"`
+	// Tier1Used is the used storage for tier 1 in bytes.
+	Tier1Used uint64 `json:"tier1_used,omitempty"`
+	// Tier1Pct is the tier 1 usage percentage.
+	Tier1Pct uint32 `json:"tier1_pct,omitempty"`
+	// Tier1Allocated is the allocated storage for tier 1 in bytes.
+	Tier1Allocated uint64 `json:"tier1_allocated,omitempty"`
+
+	// Storage tier 2 metrics
+	// Tier2Provisioned is the provisioned storage for tier 2 in bytes.
+	Tier2Provisioned uint64 `json:"tier2_provisioned,omitempty"`
+	// Tier2Used is the used storage for tier 2 in bytes.
+	Tier2Used uint64 `json:"tier2_used,omitempty"`
+	// Tier2Pct is the tier 2 usage percentage.
+	Tier2Pct uint32 `json:"tier2_pct,omitempty"`
+	// Tier2Allocated is the allocated storage for tier 2 in bytes.
+	Tier2Allocated uint64 `json:"tier2_allocated,omitempty"`
+
+	// Storage tier 3 metrics
+	// Tier3Provisioned is the provisioned storage for tier 3 in bytes.
+	Tier3Provisioned uint64 `json:"tier3_provisioned,omitempty"`
+	// Tier3Used is the used storage for tier 3 in bytes.
+	Tier3Used uint64 `json:"tier3_used,omitempty"`
+	// Tier3Pct is the tier 3 usage percentage.
+	Tier3Pct uint32 `json:"tier3_pct,omitempty"`
+	// Tier3Allocated is the allocated storage for tier 3 in bytes.
+	Tier3Allocated uint64 `json:"tier3_allocated,omitempty"`
+
+	// Storage tier 4 metrics
+	// Tier4Provisioned is the provisioned storage for tier 4 in bytes.
+	Tier4Provisioned uint64 `json:"tier4_provisioned,omitempty"`
+	// Tier4Used is the used storage for tier 4 in bytes.
+	Tier4Used uint64 `json:"tier4_used,omitempty"`
+	// Tier4Pct is the tier 4 usage percentage.
+	Tier4Pct uint32 `json:"tier4_pct,omitempty"`
+	// Tier4Allocated is the allocated storage for tier 4 in bytes.
+	Tier4Allocated uint64 `json:"tier4_allocated,omitempty"`
+
+	// Storage tier 5 metrics
+	// Tier5Provisioned is the provisioned storage for tier 5 in bytes.
+	Tier5Provisioned uint64 `json:"tier5_provisioned,omitempty"`
+	// Tier5Used is the used storage for tier 5 in bytes.
+	Tier5Used uint64 `json:"tier5_used,omitempty"`
+	// Tier5Pct is the tier 5 usage percentage.
+	Tier5Pct uint32 `json:"tier5_pct,omitempty"`
+	// Tier5Allocated is the allocated storage for tier 5 in bytes.
+	Tier5Allocated uint64 `json:"tier5_allocated,omitempty"`
+
+	// GPU metrics
+	// VGPUsUsed is the number of vGPUs in use.
+	VGPUsUsed uint16 `json:"vgpus_used,omitempty"`
+	// GPUsUsed is the number of physical GPUs in use.
+	GPUsUsed uint16 `json:"gpus_used,omitempty"`
+	// VGPUsTotal is the total number of vGPUs available.
+	VGPUsTotal uint16 `json:"vgpus_total,omitempty"`
+	// GPUsTotal is the total number of physical GPUs available.
+	GPUsTotal uint16 `json:"gpus_total,omitempty"`
+	// VGPUsPct is the vGPU usage percentage.
+	VGPUsPct uint16 `json:"vgpus_pct,omitempty"`
+	// GPUsPct is the GPU usage percentage.
+	GPUsPct uint16 `json:"gpus_pct,omitempty"`
+}
+
+// tenantStatsHistoryShortFields lists all fields for tenant stats history short queries.
+const tenantStatsHistoryShortFields = "$key,tenant,timestamp,ram_used,vram_used,total_cpu,core_count,ip_count,ram_allocated,ram_pct,tier0_provisioned,tier0_used,tier0_pct,tier0_allocated,tier1_provisioned,tier1_used,tier1_pct,tier1_allocated,tier2_provisioned,tier2_used,tier2_pct,tier2_allocated,tier3_provisioned,tier3_used,tier3_pct,tier3_allocated,tier4_provisioned,tier4_used,tier4_pct,tier4_allocated,tier5_provisioned,tier5_used,tier5_pct,tier5_allocated,vgpus_used,gpus_used,vgpus_total,gpus_total,vgpus_pct,gpus_pct"

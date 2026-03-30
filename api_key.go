@@ -45,7 +45,7 @@ func (s *UserAPIKeyService) Get(ctx context.Context, id int) (*UserAPIKey, error
 	endpoint := fmt.Sprintf("/user_api_keys/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &key); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "UserAPIKey", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "UserAPIKey", ID: id}
 		}
 		return nil, err
 	}
@@ -56,8 +56,7 @@ func (s *UserAPIKeyService) Get(ctx context.Context, id int) (*UserAPIKey, error
 // GetByName returns an API key by name within a user's keys.
 func (s *UserAPIKeyService) GetByName(ctx context.Context, userID int, name string) (*UserAPIKey, error) {
 	keys, err := s.List(ctx,
-		WithFilter(fmt.Sprintf("user eq %d", userID)),
-		WithFilter(fmt.Sprintf("name eq '%s'", name)),
+		WithFilter(fmt.Sprintf("user eq %d and name eq '%s'", userID, escapeFilterValue(name))),
 	)
 	if err != nil {
 		return nil, err
@@ -93,7 +92,7 @@ func (s *UserAPIKeyService) Create(ctx context.Context, req *UserAPIKeyCreateReq
 
 	// Extract token from response if available
 	var token string
-	if respMap, ok := resp.Response.(map[string]interface{}); ok {
+	if respMap, ok := resp.Response.(map[string]any); ok {
 		if t, ok := respMap["token"].(string); ok {
 			token = t
 		}
@@ -116,7 +115,7 @@ func (s *UserAPIKeyService) Update(ctx context.Context, id int, req *UserAPIKeyU
 	endpoint := fmt.Sprintf("/user_api_keys/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "UserAPIKey", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "UserAPIKey", ID: id}
 		}
 		return nil, err
 	}
@@ -129,7 +128,7 @@ func (s *UserAPIKeyService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/user_api_keys/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "UserAPIKey", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "UserAPIKey", ID: id}
 		}
 		return err
 	}

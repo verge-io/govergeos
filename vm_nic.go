@@ -89,14 +89,16 @@ func (s *VMNICService) Create(ctx context.Context, vmID int, req *VMNICCreateReq
 		return nil, err
 	}
 
-	// Assign IP address if requested (non-fatal: NIC was created but IP assignment may fail)
+	// Assign IP address if requested
 	if req.AssignIPAddress && req.VNET > 0 && nic.MAC != "" {
 		addrReq := vnetAddressRequest{
 			VNET: req.VNET,
 			MAC:  nic.MAC,
 			Type: "static",
 		}
-		_ = s.client.post(ctx, "/vnet_addresses", addrReq, nil)
+		if err := s.client.post(ctx, "/vnet_addresses", addrReq, nil); err != nil {
+			return nil, fmt.Errorf("vergeos: NIC created (ID %d) but IP assignment failed: %w", id, err)
+		}
 	}
 
 	return nic, nil
@@ -127,7 +129,7 @@ func (s *VMNICService) Delete(ctx context.Context, nicID int) error {
 	nic, err := s.Get(ctx, nicID)
 	if err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "VMNIC", ID: nicID}
 		}
 		return err
 	}
@@ -142,7 +144,7 @@ func (s *VMNICService) Delete(ctx context.Context, nicID int) error {
 	endpoint := fmt.Sprintf("/machine_nics/%d", nicID)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "VMNIC", ID: nicID}
 		}
 		return err
 	}
@@ -186,5 +188,5 @@ func (s *VMNICService) hotUnplug(ctx context.Context, vmID, nicID int) error {
 		}
 	}
 
-	return fmt.Errorf("vergeos: timeout waiting for NIC %d to unplug", nicID)
+	return &TimeoutError{Resource: "VMNIC", ID: nicID, Action: "unplug"}
 }

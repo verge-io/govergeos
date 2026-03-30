@@ -41,21 +41,21 @@ func (s *AlarmService) ListActive(ctx context.Context, opts ...ListOption) ([]Al
 // ListByOwner returns all alarms for a specific owner resource.
 // owner should be a resource path like "vms/123" or "nodes/1".
 func (s *AlarmService) ListByOwner(ctx context.Context, owner string, opts ...ListOption) ([]Alarm, error) {
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("owner eq '%s'", owner))}
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("owner eq '%s'", escapeFilterValue(owner)))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }
 
 // ListByLevel returns all alarms with a specific severity level.
 func (s *AlarmService) ListByLevel(ctx context.Context, level string, opts ...ListOption) ([]Alarm, error) {
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("level eq '%s'", level))}
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("level eq '%s'", escapeFilterValue(level)))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }
 
 // ListByAlarmType returns all alarms of a specific alarm type.
 func (s *AlarmService) ListByAlarmType(ctx context.Context, alarmTypeKey string, opts ...ListOption) ([]Alarm, error) {
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("alarm_type eq '%s'", alarmTypeKey))}
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("alarm_type eq '%s'", escapeFilterValue(alarmTypeKey)))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }
@@ -69,7 +69,7 @@ func (s *AlarmService) Get(ctx context.Context, id int) (*Alarm, error) {
 	endpoint := fmt.Sprintf("/alarms/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &alarm); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Alarm", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "Alarm", ID: id}
 		}
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *AlarmService) Update(ctx context.Context, id int, req *AlarmUpdateReque
 	endpoint := fmt.Sprintf("/alarms/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Alarm", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "Alarm", ID: id}
 		}
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (s *AlarmService) Unsnooze(ctx context.Context, id int) error {
 // Resolve resolves an alarm if it is resolvable.
 func (s *AlarmService) Resolve(ctx context.Context, id int) error {
 	endpoint := "/alarm_actions"
-	body := map[string]interface{}{
+	body := map[string]any{
 		"alarm":  id,
 		"action": "resolve",
 	}
@@ -123,7 +123,7 @@ func (s *AlarmService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/alarms/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "Alarm", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "Alarm", ID: id}
 		}
 		return err
 	}
@@ -175,7 +175,7 @@ func (s *AlarmTypeService) Get(ctx context.Context, key string) (*AlarmType, err
 
 // ListByLevel returns all alarm types with a specific default severity level.
 func (s *AlarmTypeService) ListByLevel(ctx context.Context, level string, opts ...ListOption) ([]AlarmType, error) {
-	filterOpts := []ListOption{WithFilter(fmt.Sprintf("level eq '%s'", level))}
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("level eq '%s'", escapeFilterValue(level)))}
 	filterOpts = append(filterOpts, opts...)
 	return s.List(ctx, filterOpts...)
 }

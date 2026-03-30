@@ -54,7 +54,8 @@ type VMNICServiceInterface interface {
 
 // VMDriveServiceInterface defines the interface for VM Drive operations.
 type VMDriveServiceInterface interface {
-	List(ctx context.Context, vmID int) ([]VMDrive, error)
+	List(ctx context.Context, machineID int) ([]VMDrive, error)
+	ListAll(ctx context.Context, opts ...ListOption) ([]VMDrive, error)
 	Get(ctx context.Context, driveID int) (*VMDrive, error)
 	Create(ctx context.Context, vmID int, req *VMDriveCreateRequest) (*VMDrive, error)
 	Update(ctx context.Context, driveID int, req *VMDriveUpdateRequest) (*VMDrive, error)
@@ -65,7 +66,7 @@ type VMDriveServiceInterface interface {
 
 // VMDeviceServiceInterface defines the interface for VM Device operations.
 type VMDeviceServiceInterface interface {
-	List(ctx context.Context, vmID int) ([]VMDevice, error)
+	List(ctx context.Context, machineID int) ([]VMDevice, error)
 	Get(ctx context.Context, deviceID int) (*VMDevice, error)
 	Create(ctx context.Context, vmID int, req *VMDeviceCreateRequest) (*VMDevice, error)
 	Update(ctx context.Context, deviceID int, req *VMDeviceUpdateRequest) (*VMDevice, error)
@@ -138,7 +139,6 @@ type NodeServiceInterface interface {
 	ListPhysical(ctx context.Context, opts ...ListOption) ([]Node, error)
 	Get(ctx context.Context, id int) (*Node, error)
 	GetByName(ctx context.Context, name string) (*Node, error)
-	GetDashboard(ctx context.Context, id int) (*Node, error)
 	EnableMaintenance(ctx context.Context, id int) error
 	DisableMaintenance(ctx context.Context, id int) error
 	MaintenanceReboot(ctx context.Context, id int) error
@@ -325,6 +325,22 @@ type TenantStorageServiceInterface interface {
 	Create(ctx context.Context, req *TenantStorageCreateRequest) (*TenantStorage, error)
 	Update(ctx context.Context, id int, req *TenantStorageUpdateRequest) (*TenantStorage, error)
 	Delete(ctx context.Context, id int) error
+}
+
+// TenantStatusServiceInterface defines the interface for tenant status operations (read-only).
+type TenantStatusServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantStatus, error)
+	Get(ctx context.Context, tenantKey int) (*TenantStatus, error)
+	GetByKey(ctx context.Context, key int) (*TenantStatus, error)
+}
+
+// TenantStatsHistoryShortServiceInterface defines the interface for tenant short-term statistics history operations (read-only).
+// This provides high-resolution historical metrics for tenant monitoring.
+type TenantStatsHistoryShortServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantStatsHistoryShort, error)
+	ListByTenant(ctx context.Context, tenantID int, opts ...ListOption) ([]TenantStatsHistoryShort, error)
+	GetLatest(ctx context.Context, tenantID int) (*TenantStatsHistoryShort, error)
+	Get(ctx context.Context, id int) (*TenantStatsHistoryShort, error)
 }
 
 // SnapshotProfileServiceInterface defines the interface for SnapshotProfile operations.
@@ -806,8 +822,8 @@ type TenantLayer2NetworkServiceInterface interface {
 	Create(ctx context.Context, req *TenantLayer2NetworkCreateRequest) (*TenantLayer2Network, error)
 	Update(ctx context.Context, id int, req *TenantLayer2NetworkUpdateRequest) (*TenantLayer2Network, error)
 	Delete(ctx context.Context, id int) error
-	Enable(ctx context.Context, id int) (*TenantLayer2Network, error)
-	Disable(ctx context.Context, id int) (*TenantLayer2Network, error)
+	Enable(ctx context.Context, id int) error
+	Disable(ctx context.Context, id int) error
 	Assign(ctx context.Context, tenantID, vnetID int) (*TenantLayer2Network, error)
 	Unassign(ctx context.Context, tenantID, vnetID int) error
 }
@@ -980,4 +996,6 @@ var (
 	_ UpdateSettingsServiceInterface          = (*UpdateSettingsService)(nil)
 	_ UpdateBranchServiceInterface            = (*UpdateBranchService)(nil)
 	_ UpdateSourcePackageServiceInterface     = (*UpdateSourcePackageService)(nil)
+	_ TenantStatusServiceInterface            = (*TenantStatusService)(nil)
+	_ TenantStatsHistoryShortServiceInterface = (*TenantStatsHistoryShortService)(nil)
 )

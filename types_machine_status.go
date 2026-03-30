@@ -1,6 +1,7 @@
 package vergeos
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -73,6 +74,13 @@ type GuestInfo struct {
 // UnmarshalJSON handles the VergeOS API inconsistency where network and fsinfo
 // can be either a JSON array or a JSON object (map keyed by string).
 func (g *GuestInfo) UnmarshalJSON(data []byte) error {
+	// The API sends [] (empty array) instead of an object or null when no
+	// guest agent is running. Detect that case and return a zero-value.
+	trimmed := bytes.TrimSpace(data)
+	if len(trimmed) == 0 || trimmed[0] == '[' {
+		return nil
+	}
+
 	// Use an alias to avoid infinite recursion.
 	type guestInfoRaw struct {
 		OSInfo      *GuestOSInfo    `json:"osinfo,omitempty"`

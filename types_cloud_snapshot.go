@@ -47,7 +47,7 @@ type CloudSnapshotUpdateRequest struct {
 type cloudSnapshotAction struct {
 	CloudSnapshot int                    `json:"cloud_snapshot"`
 	Action        string                 `json:"action"`
-	Params        map[string]interface{} `json:"params,omitempty"`
+	Params        map[string]any `json:"params,omitempty"`
 }
 
 // CloudSnapshotCloneOptions specifies options for cloning a cloud snapshot.

@@ -77,7 +77,7 @@ type TaskUpdateRequest struct {
 // TaskExecuteOptions are options for executing a task.
 type TaskExecuteOptions struct {
 	// Params are optional parameters to pass to the task action.
-	Params map[string]interface{} `json:"params,omitempty"`
+	Params map[string]any `json:"params,omitempty"`
 }
 
 // taskListFields are the fields to request when listing tasks.

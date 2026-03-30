@@ -115,7 +115,7 @@ func (s *NetworkService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnets/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return nil // Already deleted
+			return &NotFoundError{Resource: "Network", ID: id}
 		}
 		return err
 	}
@@ -186,12 +186,6 @@ func (s *NetworkService) waitForPowerState(ctx context.Context, id int, desiredS
 	}
 
 	for i := 0; i < networkPowerStateMaxRetries; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(networkPowerStatePollInterval):
-		}
-
 		network, err := s.Get(ctx, id)
 		if err != nil {
 			return err
@@ -200,9 +194,15 @@ func (s *NetworkService) waitForPowerState(ctx context.Context, id int, desiredS
 		if network.PowerState == desiredState {
 			return nil
 		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(networkPowerStatePollInterval):
+		}
 	}
 
-	return fmt.Errorf("vergeos: timeout waiting for network %d to become %s", id, stateDesc)
+	return &TimeoutError{Resource: "Network", ID: id, Action: "become " + stateDesc}
 }
 
 // Kill forcefully powers off a network (hard power off).
@@ -345,7 +345,7 @@ func (s *NetworkService) Ping(ctx context.Context, networkID int, target string,
 	if count <= 0 {
 		count = 4
 	}
-	params := map[string]interface{}{
+	params := map[string]any{
 		"address": target,
 		"count":   count,
 	}
@@ -358,7 +358,7 @@ func (s *NetworkService) Ping(ctx context.Context, networkID int, target string,
 
 // Traceroute runs a traceroute diagnostic on a network.
 func (s *NetworkService) Traceroute(ctx context.Context, networkID int, target string) (*NetworkQuery, error) {
-	params := map[string]interface{}{
+	params := map[string]any{
 		"address": target,
 	}
 	return s.RunQueryWait(ctx, &NetworkQueryRequest{
@@ -370,7 +370,7 @@ func (s *NetworkService) Traceroute(ctx context.Context, networkID int, target s
 
 // DNSLookup runs a DNS lookup diagnostic on a network.
 func (s *NetworkService) DNSLookup(ctx context.Context, networkID int, hostname string) (*NetworkQuery, error) {
-	params := map[string]interface{}{
+	params := map[string]any{
 		"hostname": hostname,
 	}
 	return s.RunQueryWait(ctx, &NetworkQueryRequest{

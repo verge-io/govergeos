@@ -241,6 +241,21 @@ type Node struct {
 	// Notes
 	// Note is a free-form note about the node.
 	Note string `json:"note,omitempty"`
+
+	// VMStatsTotals contains per-node aggregate of running VM cores and RAM.
+	// Computed server-side from running VMs on the node.
+	VMStatsTotals *NodeVMStatsTotals `json:"vm_stats_totals,omitempty"`
+}
+
+// NodeVMStatsTotals contains aggregated VM resource usage for a node.
+// Computed server-side from running VMs via:
+//
+//	running_machines[sum(running_cores),sum(running_ram)] as vm_stats_totals
+type NodeVMStatsTotals struct {
+	// RunningCores is the total CPU cores allocated to running VMs on this node.
+	RunningCores int `json:"running_cores,omitempty"`
+	// RunningRAM is the total RAM in MB allocated to running VMs on this node.
+	RunningRAM int `json:"running_ram,omitempty"`
 }
 
 // NodeStatus contains node status information.
@@ -558,7 +573,7 @@ type ClusterUpdateRequest struct {
 const (
 	clusterListFields       = "$key,id,system,name,description,enabled,created,storage,compute,kvm_nested,allow_nested_virt_migration,allow_vgpu_migration,enable_split_lock_detection,recommended_cpu_type,default_cpu,disable_cpu_security_mitigations,spec_store_bypass_disable,disable_smt,disable_sleep,enable_nvme_power_management,x86_energy_perf_policy,scaling_governor,ram_per_unit,cores_per_unit,cost_per_unit,price_per_unit,max_ram_per_vm,max_cores_per_vm,storage_cachesize,storage_buffersize,storage_hugepages,target_ram_pct,ram_overcommit_pct,swap_tier,swap_per_drive,log_filter,max_core_temp,max_core_temp_warn_perc,critical_core_temp"
 	clusterStatusFields     = "cluster,status,status_info,state,last_update,total_nodes,online_nodes,running_machines,total_ram,online_ram,used_ram,total_cores,online_cores,used_cores,phys_ram_used,phys_vram_used,phys_total_cpu"
-	nodeListFields          = "id,name,description,physical,cluster,machine,model,asset_tag,cpu,cpu_speed,cores,iommu,ram,overcommit,vm_ram,failover_ram,yb_version,os_version,kernel_version,appserver_version,vsan_version,qemu_version,vsan_nodeid,vsan_connected,maintenance,need_restart,restart_reason,ipmi_address,ipmi_user,ipmi_status,ipmi_status_info,max_core_temp,max_core_temp_warn_perc,critical_core_temp,pxe_vnet,capture_logs,lldp,note"
+	nodeListFields          = "id,name,description,physical,cluster,machine,model,asset_tag,cpu,cpu_speed,cores,iommu,ram,overcommit,vm_ram,failover_ram,yb_version,os_version,kernel_version,appserver_version,vsan_version,qemu_version,vsan_nodeid,vsan_connected,maintenance,need_restart,restart_reason,ipmi_address,ipmi_user,ipmi_status,ipmi_status_info,max_core_temp,max_core_temp_warn_perc,critical_core_temp,pxe_vnet,capture_logs,lldp,note,running_machines[sum(running_cores),sum(running_ram)] as vm_stats_totals"
 	groupListFields         = "$key,name,description,enabled,type,email,system_group,auth_source,created,creator"
 	fileListFields          = "$key,name,description,type,owner,allocated_bytes,used_bytes,filesize,modified,preferred_tier,url,creator"
 	resourceGroupListFields = "$key,name,description,type,enabled"

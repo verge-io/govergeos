@@ -46,7 +46,7 @@ func (s *VNetHostService) Get(ctx context.Context, id int) (*VNetHost, error) {
 	endpoint := fmt.Sprintf("/vnet_hosts/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &host); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetHost", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetHost", ID: id}
 		}
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (s *VNetHostService) Get(ctx context.Context, id int) (*VNetHost, error) {
 
 // GetByHost returns a host override by hostname within a specific network.
 func (s *VNetHostService) GetByHost(ctx context.Context, vnetID int, hostname string) (*VNetHost, error) {
-	hosts, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and host eq '%s'", vnetID, hostname)))
+	hosts, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and host eq '%s'", vnetID, escapeFilterValue(hostname))))
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *VNetHostService) GetByHost(ctx context.Context, vnetID int, hostname st
 
 // GetByIP returns a host override by IP address within a specific network.
 func (s *VNetHostService) GetByIP(ctx context.Context, vnetID int, ip string) (*VNetHost, error) {
-	hosts, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and ip eq '%s'", vnetID, ip)))
+	hosts, err := s.List(ctx, WithFilter(fmt.Sprintf("vnet eq %d and ip eq '%s'", vnetID, escapeFilterValue(ip))))
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *VNetHostService) Update(ctx context.Context, id int, req *VNetHostUpdat
 	endpoint := fmt.Sprintf("/vnet_hosts/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
 		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetHost", ID: fmt.Sprintf("%d", id)}
+			return nil, &NotFoundError{Resource: "VNetHost", ID: id}
 		}
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (s *VNetHostService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_hosts/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
 		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: "VNetHost", ID: fmt.Sprintf("%d", id)}
+			return &NotFoundError{Resource: "VNetHost", ID: id}
 		}
 		return err
 	}

@@ -35,17 +35,21 @@ type versionResponse struct {
 
 // parseVersion extracts major version from version string.
 // Handles formats: "26.0.0", "v26.0.0", "26.0.0-beta1"
-func parseVersion(v string) (major int) {
+func parseVersion(v string) (int, error) {
 	v = strings.TrimPrefix(v, "v")
 	// Handle dash-suffixed versions like "26.0.0-beta1"
 	if idx := strings.Index(v, "-"); idx != -1 {
 		v = v[:idx]
 	}
 	parts := strings.Split(v, ".")
-	if len(parts) >= 1 {
-		major, _ = strconv.Atoi(parts[0])
+	if len(parts) == 0 || parts[0] == "" {
+		return 0, fmt.Errorf("empty version string")
 	}
-	return
+	major, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, fmt.Errorf("invalid major version %q: %w", parts[0], err)
+	}
+	return major, nil
 }
 
 // checkServerVersion fetches /version.json and validates the server is v26.
@@ -56,7 +60,10 @@ func (c *Client) checkServerVersion(ctx context.Context) error {
 		return fmt.Errorf("failed to check server version: %w", err)
 	}
 
-	major := parseVersion(resp.Version)
+	major, err := parseVersion(resp.Version)
+	if err != nil {
+		return fmt.Errorf("failed to parse server version %q: %w", resp.Version, err)
+	}
 	if major != RequiredMajorVersion {
 		return &UnsupportedVersionError{
 			ServerVersion: resp.Version,

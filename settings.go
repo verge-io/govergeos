@@ -48,7 +48,7 @@ func (s *SettingsService) Get(ctx context.Context, id int) (*Setting, error) {
 
 // GetByKey returns a setting by key name.
 func (s *SettingsService) GetByKey(ctx context.Context, key string) (*Setting, error) {
-	settings, err := s.List(ctx, WithFilter(fmt.Sprintf("key eq '%s'", key)))
+	settings, err := s.List(ctx, WithFilter(fmt.Sprintf("key eq '%s'", escapeFilterValue(key))))
 	if err != nil {
 		return nil, err
 	}
