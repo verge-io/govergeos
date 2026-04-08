@@ -25,6 +25,16 @@ type VMServiceInterface interface {
 	Snapshot(ctx context.Context, id int, opts *VMSnapshotOptions) error
 	Migrate(ctx context.Context, id int, opts *VMMigrateOptions) error
 	GetConsoleURL(ctx context.Context, id int) (string, error)
+	Refresh(ctx context.Context, id int) error
+	Hibernate(ctx context.Context, id int) error
+	ChangeCD(ctx context.Context, id int, opts *VMChangeCDOptions) error
+	ChangeNet(ctx context.Context, id int, opts *VMChangeNetOptions) error
+	Paste(ctx context.Context, id int, opts *VMPasteOptions) error
+	Restore(ctx context.Context, id int, opts *VMRestoreOptions) error
+	RecoverCloudSnapshot(ctx context.Context, id int) error
+	Execute(ctx context.Context, id int, opts *VMExecuteOptions) error
+	FSyncStrict(ctx context.Context, id int) error
+	EraseDrive(ctx context.Context, id int, opts *VMEraseDriveOptions) error
 }
 
 // VMSnapshotServiceInterface defines the interface for VM Snapshot operations.

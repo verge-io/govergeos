@@ -850,3 +850,263 @@ func TestVMService_GetConsoleURL_NotFound(t *testing.T) {
 		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Refresh
+// ---------------------------------------------------------------------------
+
+func TestVMService_Refresh(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "refresh" {
+				t.Errorf("expected action 'refresh', got %v", body["action"])
+			}
+			if int(body["vm"].(float64)) != 1 {
+				t.Errorf("expected vm 1, got %v", body["vm"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.Refresh(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("Refresh failed: %v", err)
+	}
+}
+
+func TestVMService_Refresh_ServerError(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 500, map[string]string{"err": "internal error"})
+		},
+	}))
+
+	err := client.VMs.Refresh(context.Background(), 1)
+	if err == nil {
+		t.Fatal("expected error for server error")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Hibernate
+// ---------------------------------------------------------------------------
+
+func TestVMService_Hibernate(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "hibernate" {
+				t.Errorf("expected action 'hibernate', got %v", body["action"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.Hibernate(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("Hibernate failed: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// ChangeCD
+// ---------------------------------------------------------------------------
+
+func TestVMService_ChangeCD(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "changecd" {
+				t.Errorf("expected action 'changecd', got %v", body["action"])
+			}
+			params := body["params"].(map[string]any)
+			if params["media"] != "/iso/test.iso" {
+				t.Errorf("expected media '/iso/test.iso', got %v", params["media"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.ChangeCD(context.Background(), 1, &VMChangeCDOptions{Media: "/iso/test.iso"})
+	if err != nil {
+		t.Fatalf("ChangeCD failed: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// ChangeNet
+// ---------------------------------------------------------------------------
+
+func TestVMService_ChangeNet(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "changenet" {
+				t.Errorf("expected action 'changenet', got %v", body["action"])
+			}
+			params := body["params"].(map[string]any)
+			if int(params["network"].(float64)) != 5 {
+				t.Errorf("expected network 5, got %v", params["network"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.ChangeNet(context.Background(), 1, &VMChangeNetOptions{Network: 5})
+	if err != nil {
+		t.Fatalf("ChangeNet failed: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Paste
+// ---------------------------------------------------------------------------
+
+func TestVMService_Paste(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "paste" {
+				t.Errorf("expected action 'paste', got %v", body["action"])
+			}
+			params := body["params"].(map[string]any)
+			if params["text"] != "hello world" {
+				t.Errorf("expected text 'hello world', got %v", params["text"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.Paste(context.Background(), 1, &VMPasteOptions{Text: "hello world"})
+	if err != nil {
+		t.Fatalf("Paste failed: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Restore
+// ---------------------------------------------------------------------------
+
+func TestVMService_Restore(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "restore" {
+				t.Errorf("expected action 'restore', got %v", body["action"])
+			}
+			params := body["params"].(map[string]any)
+			if params["name"] != "restored-vm" {
+				t.Errorf("expected name 'restored-vm', got %v", params["name"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.Restore(context.Background(), 1, &VMRestoreOptions{Name: "restored-vm"})
+	if err != nil {
+		t.Fatalf("Restore failed: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// RecoverCloudSnapshot
+// ---------------------------------------------------------------------------
+
+func TestVMService_RecoverCloudSnapshot(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "recover_cloudsnapshot" {
+				t.Errorf("expected action 'recover_cloudsnapshot', got %v", body["action"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.RecoverCloudSnapshot(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("RecoverCloudSnapshot failed: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Execute
+// ---------------------------------------------------------------------------
+
+func TestVMService_Execute(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "execute" {
+				t.Errorf("expected action 'execute', got %v", body["action"])
+			}
+			params := body["params"].(map[string]any)
+			if params["command"] != "ls" {
+				t.Errorf("expected command 'ls', got %v", params["command"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.Execute(context.Background(), 1, &VMExecuteOptions{Command: "ls", Args: []string{"-la"}})
+	if err != nil {
+		t.Fatalf("Execute failed: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// FSyncStrict
+// ---------------------------------------------------------------------------
+
+func TestVMService_FSyncStrict(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "fsync_strict" {
+				t.Errorf("expected action 'fsync_strict', got %v", body["action"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.FSyncStrict(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("FSyncStrict failed: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// EraseDrive
+// ---------------------------------------------------------------------------
+
+func TestVMService_EraseDrive(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "erase_drive" {
+				t.Errorf("expected action 'erase_drive', got %v", body["action"])
+			}
+			params := body["params"].(map[string]any)
+			if params["drive"] != "drive0" {
+				t.Errorf("expected drive 'drive0', got %v", params["drive"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.EraseDrive(context.Background(), 1, &VMEraseDriveOptions{Drive: "drive0"})
+	if err != nil {
+		t.Fatalf("EraseDrive failed: %v", err)
+	}
+}
