@@ -388,6 +388,46 @@ type vmActionParams struct {
 	Unplug bool   `json:"unplug,omitempty"`
 }
 
+// VMGuestAgentInfo contains guest agent information reported by a running VM,
+// parsed from the dashboard view's machine.status.agent_guest_info field.
+// Fields beyond Network (osinfo, fsinfo, hostname, timezone, last_refresh) are
+// currently not exposed.
+type VMGuestAgentInfo struct {
+	// Network is the list of network interfaces reported by the guest agent.
+	Network []VMGuestNetwork `json:"network,omitempty"`
+}
+
+// VMGuestNetwork represents a network interface reported by the guest agent.
+type VMGuestNetwork struct {
+	// Name is the interface name inside the guest (e.g., "lo", "ens1").
+	Name string `json:"name,omitempty"`
+	// HardwareAddress is the interface MAC address.
+	HardwareAddress string `json:"hardware-address,omitempty"`
+	// IPAddresses is the list of IP addresses assigned to the interface.
+	// Interfaces without an IP (e.g., unconfigured) will have an empty list.
+	IPAddresses []VMGuestIPAddress `json:"ip-addresses,omitempty"`
+}
+
+// VMGuestIPAddress represents an IP address reported by the guest agent.
+type VMGuestIPAddress struct {
+	// IPAddressType is the address family: "ipv4" or "ipv6".
+	IPAddressType string `json:"ip-address-type,omitempty"`
+	// IPAddress is the address in standard string form.
+	IPAddress string `json:"ip-address,omitempty"`
+	// Prefix is the CIDR prefix length.
+	Prefix int `json:"prefix,omitempty"`
+}
+
+// vmDashboardResponse is the internal response structure for the dashboard
+// view, narrowed to the fields we parse for GetGuestAgentInfo.
+type vmDashboardResponse struct {
+	Machine struct {
+		Status struct {
+			AgentGuestInfo *VMGuestAgentInfo `json:"agent_guest_info,omitempty"`
+		} `json:"status,omitempty"`
+	} `json:"machine,omitempty"`
+}
+
 // vmListFields are the fields to request when listing VMs.
 const vmListFields = "$key,uuid,machine,name,description,enabled,created,modified,is_snapshot,owner,owner_user,creator,cluster,cluster_failover,cpu_cores,cpu_type,ram,machine_type,iommu,usb_legacy,uefi,secure_boot,boot_order,boot_delay,console,video,sound,serial_port,os_family,os_description,rtc_base,allow_hotplug,guest_agent,nested_virtualization,disable_hypervisor,allow_export,cloudinit_datasource,preferred_node,ha_group,snapshot_profile,on_power_loss,migration_method,power_cycle_timeout,need_restart,created_from,imported,machine#status#running as powerstate"
 

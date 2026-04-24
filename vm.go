@@ -367,6 +367,27 @@ func (s *VMService) Migrate(ctx context.Context, id int, opts *VMMigrateOptions)
 	return nil
 }
 
+// GetGuestAgentInfo returns guest agent information for a VM, including
+// network interfaces and IP addresses reported by the in-guest qemu-guest-agent.
+// Returns nil (with a nil error) when the guest agent has not reported — for
+// example, when the VM is powered off, the agent is not installed, or the
+// agent has not yet delivered an update.
+func (s *VMService) GetGuestAgentInfo(ctx context.Context, id int) (*VMGuestAgentInfo, error) {
+	params := url.Values{}
+	params.Set("fields", "dashboard")
+
+	var resp vmDashboardResponse
+	endpoint := fmt.Sprintf("/vms/%d", id)
+	if err := s.client.get(ctx, endpoint, params, &resp); err != nil {
+		if IsNotFoundError(err) {
+			return nil, &NotFoundError{Resource: "VM", ID: id}
+		}
+		return nil, err
+	}
+
+	return resp.Machine.Status.AgentGuestInfo, nil
+}
+
 // GetConsoleURL returns the console URL for a VM.
 func (s *VMService) GetConsoleURL(ctx context.Context, id int) (string, error) {
 	vm, err := s.Get(ctx, id)
