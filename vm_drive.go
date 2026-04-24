@@ -85,6 +85,21 @@ func (s *VMDriveService) Get(ctx context.Context, driveID int) (*VMDrive, error)
 	return &drive, nil
 }
 
+// GetByName returns a drive by name within a specific VM.
+// Drive names are scoped to a VM (every VM can have a "disk0"), so vmID is required.
+// Returns NotFoundError if no drive with the given name exists on the VM.
+func (s *VMDriveService) GetByName(ctx context.Context, vmID int, name string) (*VMDrive, error) {
+	drives, err := s.ListAll(ctx, WithFilter(fmt.Sprintf("machine eq %d and name eq '%s'", vmID, escapeFilterValue(name))))
+	if err != nil {
+		return nil, err
+	}
+	if len(drives) == 0 {
+		return nil, &NotFoundError{Resource: "VMDrive", ID: name}
+	}
+	// Fetch full details (Get returns additional fields like power state and status).
+	return s.Get(ctx, drives[0].ID.Int())
+}
+
 // Create creates a new drive and returns the created drive.
 // For import media, this method waits for the import to complete.
 func (s *VMDriveService) Create(ctx context.Context, vmID int, req *VMDriveCreateRequest) (*VMDrive, error) {

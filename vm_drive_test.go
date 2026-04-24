@@ -108,6 +108,81 @@ func TestVMDriveService_Get(t *testing.T) {
 	}
 }
 
+func TestVMDriveService_GetByName(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
+			filter := r.URL.Query().Get("filter")
+			expected := "machine eq 42 and name eq 'disk0'"
+			if filter != expected {
+				t.Errorf("expected filter %q, got %q", expected, filter)
+			}
+			jsonResponse(w, 200, []VMDrive{
+				{ID: FlexInt(7), Machine: 42, Name: "disk0", SizeBytes: 10 * bytesPerGB},
+			})
+		},
+		"GET /api/v4/machine_drives/7": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VMDrive{
+				ID:        FlexInt(7),
+				Machine:   42,
+				Name:      "disk0",
+				SizeBytes: 10 * bytesPerGB,
+				Interface: "virtio-scsi",
+			})
+		},
+	}))
+
+	drive, err := client.VMDrives.GetByName(context.Background(), 42, "disk0")
+	if err != nil {
+		t.Fatalf("GetByName failed: %v", err)
+	}
+	if drive.Name != "disk0" {
+		t.Errorf("expected name 'disk0', got %q", drive.Name)
+	}
+	if drive.ID.Int() != 7 {
+		t.Errorf("expected ID 7, got %d", drive.ID.Int())
+	}
+	if drive.SizeGB != 10 {
+		t.Errorf("expected SizeGB 10, got %d", drive.SizeGB)
+	}
+}
+
+func TestVMDriveService_GetByName_NotFound(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, []VMDrive{})
+		},
+	}))
+
+	_, err := client.VMDrives.GetByName(context.Background(), 42, "nonexistent")
+	if err == nil {
+		t.Fatal("expected error for not found")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	}
+}
+
+func TestVMDriveService_GetByName_EscapesName(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
+			filter := r.URL.Query().Get("filter")
+			expected := "machine eq 42 and name eq 'o''malley'"
+			if filter != expected {
+				t.Errorf("expected filter %q, got %q", expected, filter)
+			}
+			jsonResponse(w, 200, []VMDrive{})
+		},
+	}))
+
+	_, err := client.VMDrives.GetByName(context.Background(), 42, "o'malley")
+	if err == nil {
+		t.Fatal("expected NotFoundError")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	}
+}
+
 func TestVMDriveService_Get_NotFound(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_drives/999": func(w http.ResponseWriter, r *http.Request) {
