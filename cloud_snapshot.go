@@ -4,7 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"time"
 )
+
+// cloudSnapshotDefaultExpirySeconds matches the VergeOS server-side default
+// (expires = $now + 259200) for cloud_snapshots.expires.
+const cloudSnapshotDefaultExpirySeconds = 259200
 
 // CloudSnapshotService handles cloud snapshot (system snapshot) operations.
 type CloudSnapshotService struct {
@@ -93,9 +98,24 @@ func (s *CloudSnapshotService) Create(ctx context.Context, req *CloudSnapshotCre
 	if req.Description != "" {
 		tableAction["description"] = req.Description
 	}
-	if req.Retention != nil {
-		tableAction["retention"] = *req.Retention
+
+	// Expiry fields: VergeOS ignores "retention" on create and instead reads
+	// "expires" (absolute Unix timestamp) together with "expires_type" ("never"
+	// or "date"). Translate the caller-facing Retention / NeverExpire knobs into
+	// those wire fields so snapshots honor the requested lifetime instead of
+	// silently falling back to the server default.
+	switch {
+	case req.NeverExpire:
+		tableAction["expires"] = 0
+		tableAction["expires_type"] = "never"
+	case req.Retention != nil:
+		tableAction["expires"] = time.Now().Unix() + int64(*req.Retention)
+		tableAction["expires_type"] = "date"
+	default:
+		tableAction["expires"] = time.Now().Unix() + cloudSnapshotDefaultExpirySeconds
+		tableAction["expires_type"] = "date"
 	}
+
 	if req.MinSnapshots != nil {
 		tableAction["min_snapshots"] = *req.MinSnapshots
 	}
