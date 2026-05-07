@@ -24,11 +24,16 @@ type CloudSnapshot struct {
 }
 
 // CloudSnapshotCreateRequest represents the request body for creating a cloud snapshot.
-// Note: Cloud snapshots are typically created via table_actions/create, which uses different field names.
+// Note: Cloud snapshots are created via the table_actions/create endpoint. The VergeOS
+// API does not accept a "retention" field directly — the Create service translates
+// Retention/NeverExpire into the wire-level "expires" (absolute Unix timestamp) and
+// "expires_type" ("never" or "date") fields. When both Retention and NeverExpire are
+// unset, Create applies the VergeOS default of 3 days (259200 seconds).
 type CloudSnapshotCreateRequest struct {
 	Name         string `json:"name"` // Required: snapshot name (supports date format like "Snapshot_%Y%m%d_%H%M")
 	Description  string `json:"description,omitempty"`
-	Retention    *int   `json:"retention,omitempty"`     // Seconds until expiration (default 259200 = 3 days)
+	Retention    *int   `json:"-"`                       // Seconds until expiration (default 259200 = 3 days). Translated to expires/expires_type.
+	NeverExpire  bool   `json:"-"`                       // When true, snapshot never expires. Overrides Retention.
 	MinSnapshots *int   `json:"min_snapshots,omitempty"` // Minimum snapshots to retain (default 1)
 	Immutable    *bool  `json:"immutable,omitempty"`     // Lock snapshot
 	Private      *bool  `json:"private,omitempty"`       // Hide from tenants
