@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 // TestVolumesList tests the Volumes service list and get operations.

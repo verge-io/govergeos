@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 // TestTagCategories tests the TagCategory service against a live VergeOS API.

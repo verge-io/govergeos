@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 // TestVersionEnforcement tests the mandatory version check in NewClient (ADR-016).

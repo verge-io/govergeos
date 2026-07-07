@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 // TestWireGuardList tests the VNetWireGuards service.

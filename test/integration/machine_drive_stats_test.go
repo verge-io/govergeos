@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 // TestMachineDriveStats tests the MachineDriveStats service against a live VergeOS API.

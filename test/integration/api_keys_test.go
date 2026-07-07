@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 // TestUserAPIKeysList tests listing user API keys.

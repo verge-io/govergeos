@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 // TestFiles tests the Files service against a live VergeOS API.

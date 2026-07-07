@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"os"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 var (

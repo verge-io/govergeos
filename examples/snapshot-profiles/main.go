@@ -17,7 +17,7 @@ import (
 	"log"
 	"os"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 // ptr returns a pointer to the given value

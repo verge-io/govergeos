@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 // TestUpdateSettings tests the UpdateSettings service against a live VergeOS API.

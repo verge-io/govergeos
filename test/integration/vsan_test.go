@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 // TestStorageTiers tests the StorageTiers service against a live VergeOS API.

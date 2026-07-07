@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 // TestPermissions tests the Permissions service against a live VergeOS API.

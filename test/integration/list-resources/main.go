@@ -16,7 +16,7 @@ import (
 	"log"
 	"os"
 
-	vergeos "github.com/verge-io/govergeos"
+	vergeos "github.com/macstadium/govergeos"
 )
 
 func main() {
