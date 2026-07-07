@@ -6,6 +6,8 @@ import "strings"
 type Network struct {
 	// ID is the unique identifier for the network.
 	ID FlexInt `json:"$key,omitempty"`
+	// Machine is the underlying machine row ID of the vnet appliance (readonly).
+	Machine FlexInt `json:"machine,omitempty"`
 	// Name is the network name.
 	Name string `json:"name"`
 	// Description is an optional description of the network.
@@ -430,7 +432,7 @@ type vnetAction struct {
 }
 
 // networkListFields are the fields to request when listing networks.
-const networkListFields = "$key,name,description,enabled,creator,ipaddress,dmz_ipaddress,macaddress,network,gateway,ipaddress_type,hostname,dns,domain,dnslist,override_dhcp_dns,network_dns,dhcp_enabled,dhcp_dynamic,dhcp_sequential,dhcp_start,dhcp_stop,type,layer2_type,layer2_id,vxlan_multicast,mtu,interface_vnet,physical_bridged,on_power_loss,powerstate,cluster,cluster_failover,preferred_node,ha_group,enable_bonding,port_mirroring,port_mirroring_vnet,statistics,dmz_statistics,trace,mirror_logs,need_restart,need_fw_apply,need_dns_apply,need_proxy_apply,rate_limit,rate_limit_type,rate_limit_burst,bgp_asn,ipsec_enabled,proxy_enabled,proxy_listen_address,pxe,tftp_server,monitor_gateway,monitor_ip,monitor_interval_ms,note"
+const networkListFields = "$key,machine,name,description,enabled,creator,ipaddress,dmz_ipaddress,macaddress,network,gateway,ipaddress_type,hostname,dns,domain,dnslist,override_dhcp_dns,network_dns,dhcp_enabled,dhcp_dynamic,dhcp_sequential,dhcp_start,dhcp_stop,type,layer2_type,layer2_id,vxlan_multicast,mtu,interface_vnet,physical_bridged,on_power_loss,powerstate,cluster,cluster_failover,preferred_node,ha_group,enable_bonding,port_mirroring,port_mirroring_vnet,statistics,dmz_statistics,trace,mirror_logs,need_restart,need_fw_apply,need_dns_apply,need_proxy_apply,rate_limit,rate_limit_type,rate_limit_burst,bgp_asn,ipsec_enabled,proxy_enabled,proxy_listen_address,pxe,tftp_server,monitor_gateway,monitor_ip,monitor_interval_ms,note"
 
 // networkGetFields are the fields to request when getting a single network.
 const networkGetFields = networkListFields + ",vnet_default_gateway,bond_interfaces_args"

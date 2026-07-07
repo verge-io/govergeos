@@ -6,6 +6,8 @@ type MachineNIC struct {
 	Key FlexInt `json:"$key,omitempty"`
 	// Machine is the parent machine ID.
 	Machine int `json:"machine,omitempty"`
+	// Vnet is the virtual network (vnet) ID this NIC is attached to, if any.
+	Vnet FlexInt `json:"vnet,omitempty"`
 	// Name is the interface name (e.g., "eno1", "eth0").
 	Name string `json:"name,omitempty"`
 	// Stats contains the NIC traffic statistics (populated via stats[all] expansion).
@@ -40,5 +42,5 @@ type MachineNICStatus struct {
 
 // Field list constants for machine NICs
 const (
-	machineNICListFields = "$key,machine,name,stats[all],status[all]"
+	machineNICListFields = "$key,machine,name,vnet,stats[all],status[all]"
 )
