@@ -11,7 +11,7 @@ const (
 	// Network action constants
 	networkActionPowerOn  = "poweron"
 	networkActionPowerOff = "poweroff"
-	networkActionKill     = "killpower"
+	networkActionKill     = "kill"
 	networkActionReset    = "reset"
 	networkActionApply    = "refresh"
 	networkActionApplyDNS = "applydns"
@@ -131,18 +131,17 @@ func (s *NetworkService) PowerOn(ctx context.Context, id int) error {
 	}
 
 	// Already running
-	if network.PowerState {
+	if network.Running {
 		return nil
 	}
 
-	// Power on is typically done by enabling the network
-	enabled := true
-	updateReq := &NetworkUpdateRequest{
-		Enabled: &enabled,
+	action := vnetAction{
+		VNet:   id,
+		Action: networkActionPowerOn,
+		Params: struct{}{},
 	}
 
-	_, err = s.Update(ctx, id, updateReq)
-	if err != nil {
+	if err := s.client.post(ctx, "/vnet_actions", action, nil); err != nil {
 		return fmt.Errorf("vergeos: failed to power on network %d: %w", id, err)
 	}
 
@@ -159,14 +158,14 @@ func (s *NetworkService) PowerOff(ctx context.Context, id int) error {
 	}
 
 	// Already stopped
-	if !network.PowerState {
+	if !network.Running {
 		return nil
 	}
 
-	// Send kill action
+	// Graceful ACPI shutdown; use Kill for immediate termination
 	action := vnetAction{
 		VNet:   id,
-		Action: networkActionKill,
+		Action: networkActionPowerOff,
 		Params: struct{}{},
 	}
 
@@ -191,7 +190,7 @@ func (s *NetworkService) waitForPowerState(ctx context.Context, id int, desiredS
 			return err
 		}
 
-		if network.PowerState == desiredState {
+		if network.Running == desiredState {
 			return nil
 		}
 
