@@ -13,7 +13,7 @@ const (
 	networkActionPowerOff = "poweroff"
 	networkActionKill     = "kill"
 	networkActionReset    = "reset"
-	networkActionApply = "refresh"
+	networkActionApply    = "refresh"
 
 	// Network power state polling
 	networkPowerStateMaxRetries   = 30

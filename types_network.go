@@ -437,9 +437,9 @@ type NetworkUpdateRequest struct {
 
 // vnetAction represents a network action request.
 type vnetAction struct {
-	VNet   int         `json:"vnet"`
-	Action string      `json:"action"`
-	Params any `json:"params"`
+	VNet   int    `json:"vnet"`
+	Action string `json:"action"`
+	Params any    `json:"params"`
 }
 
 // networkListFields are the fields to request when listing networks.
