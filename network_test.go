@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -64,6 +65,33 @@ func TestNetworkService_List_Empty(t *testing.T) {
 	}
 	if len(networks) != 0 {
 		t.Fatalf("expected 0 networks, got %d", len(networks))
+	}
+}
+
+func TestNetworkService_List_MachineStatus(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
+			for _, f := range []string{"machine", "nic", "nic_dmz", "machine#status#running as running", "machine#status#status as status"} {
+				if !strings.Contains(r.URL.Query().Get("fields"), f) {
+					t.Errorf("expected fields to contain %q", f)
+				}
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			w.Write([]byte(`[{"$key":1,"name":"internal","powerstate":false,"machine":42,"nic":7,"nic_dmz":8,"running":true,"status":"running"}]`))
+		},
+	}))
+
+	networks, err := client.Networks.List(context.Background())
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	n := networks[0]
+	if n.Machine != 42 || n.NIC != 7 || n.NICDMZ != 8 {
+		t.Errorf("expected machine=42 nic=7 nic_dmz=8, got %d/%d/%d", n.Machine, n.NIC, n.NICDMZ)
+	}
+	if !n.Running || n.Status != "running" {
+		t.Errorf("expected running=true status=running, got %v/%q", n.Running, n.Status)
 	}
 }
 

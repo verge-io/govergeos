@@ -77,7 +77,20 @@ type Network struct {
 	// OnPowerLoss is the behavior on power loss (power_on, last_state, leave_off).
 	OnPowerLoss string `json:"on_power_loss,omitempty"`
 	// PowerState indicates whether the network is running.
+	// Note: this DB field is not maintained by the platform and may read
+	// false for running networks. Use Running/Status (derived from the
+	// router machine status) for the true state.
 	PowerState bool `json:"powerstate,omitempty"`
+	// Machine is the router machine ID (FK to machines).
+	Machine FlexInt `json:"machine,omitempty"`
+	// NIC is the router NIC ID (FK to machine_nics).
+	NIC FlexInt `json:"nic,omitempty"`
+	// NICDMZ is the router DMZ NIC ID (FK to machine_nics).
+	NICDMZ FlexInt `json:"nic_dmz,omitempty"`
+	// Running indicates whether the router machine is running (machine#status#running).
+	Running bool `json:"running,omitempty"`
+	// Status is the router machine status (machine#status#status), e.g. "running".
+	Status string `json:"status,omitempty"`
 	// Cluster is the cluster ID for this network.
 	Cluster FlexInt `json:"cluster,omitempty"`
 	// ClusterFailover is the failover cluster ID (0 = none).
@@ -430,7 +443,7 @@ type vnetAction struct {
 }
 
 // networkListFields are the fields to request when listing networks.
-const networkListFields = "$key,name,description,enabled,creator,ipaddress,dmz_ipaddress,macaddress,network,gateway,ipaddress_type,hostname,dns,domain,dnslist,override_dhcp_dns,network_dns,dhcp_enabled,dhcp_dynamic,dhcp_sequential,dhcp_start,dhcp_stop,type,layer2_type,layer2_id,vxlan_multicast,mtu,interface_vnet,physical_bridged,on_power_loss,powerstate,cluster,cluster_failover,preferred_node,ha_group,enable_bonding,port_mirroring,port_mirroring_vnet,statistics,dmz_statistics,trace,mirror_logs,need_restart,need_fw_apply,need_dns_apply,need_proxy_apply,rate_limit,rate_limit_type,rate_limit_burst,bgp_asn,ipsec_enabled,proxy_enabled,proxy_listen_address,pxe,tftp_server,monitor_gateway,monitor_ip,monitor_interval_ms,note"
+const networkListFields = "$key,name,description,enabled,creator,ipaddress,dmz_ipaddress,macaddress,network,gateway,ipaddress_type,hostname,dns,domain,dnslist,override_dhcp_dns,network_dns,dhcp_enabled,dhcp_dynamic,dhcp_sequential,dhcp_start,dhcp_stop,type,layer2_type,layer2_id,vxlan_multicast,mtu,interface_vnet,physical_bridged,on_power_loss,powerstate,machine,nic,nic_dmz,machine#status#running as running,machine#status#status as status,cluster,cluster_failover,preferred_node,ha_group,enable_bonding,port_mirroring,port_mirroring_vnet,statistics,dmz_statistics,trace,mirror_logs,need_restart,need_fw_apply,need_dns_apply,need_proxy_apply,rate_limit,rate_limit_type,rate_limit_burst,bgp_asn,ipsec_enabled,proxy_enabled,proxy_listen_address,pxe,tftp_server,monitor_gateway,monitor_ip,monitor_interval_ms,note"
 
 // networkGetFields are the fields to request when getting a single network.
 const networkGetFields = networkListFields + ",vnet_default_gateway,bond_interfaces_args"
