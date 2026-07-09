@@ -385,13 +385,17 @@ func TestNetworkService_ApplyRules(t *testing.T) {
 func TestNetworkService_ApplyDNS(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vnet_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body vnetAction
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			if body.VNet != 7 {
-				t.Errorf("expected vnet 7, got %d", body.VNet)
+			if body["vnet"] != float64(7) {
+				t.Errorf("expected vnet 7, got %v", body["vnet"])
 			}
-			if body.Action != "applydns" {
-				t.Errorf("expected action 'applydns', got %q", body.Action)
+			if body["action"] != "refresh" {
+				t.Errorf("expected action 'refresh', got %v", body["action"])
+			}
+			params, _ := body["params"].(map[string]any)
+			if params["target"] != "dnsonly" {
+				t.Errorf("expected params.target 'dnsonly', got %v", params["target"])
 			}
 			w.WriteHeader(200)
 		},

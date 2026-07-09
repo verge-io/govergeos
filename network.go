@@ -13,8 +13,7 @@ const (
 	networkActionPowerOff = "poweroff"
 	networkActionKill     = "kill"
 	networkActionReset    = "reset"
-	networkActionApply    = "refresh"
-	networkActionApplyDNS = "applydns"
+	networkActionApply = "refresh"
 
 	// Network power state polling
 	networkPowerStateMaxRetries   = 30
@@ -257,10 +256,14 @@ func (s *NetworkService) ApplyRules(ctx context.Context, id int) error {
 
 // ApplyDNS applies DNS configuration to a running network.
 func (s *NetworkService) ApplyDNS(ctx context.Context, id int) error {
+	// DNS-only apply is a refresh scoped to target=dnsonly (there is no
+	// applydns value in the vnet_actions enum).
 	action := vnetAction{
 		VNet:   id,
-		Action: networkActionApplyDNS,
-		Params: struct{}{},
+		Action: networkActionApply,
+		Params: struct {
+			Target string `json:"target"`
+		}{Target: "dnsonly"},
 	}
 
 	if err := s.client.post(ctx, "/vnet_actions", action, nil); err != nil {
