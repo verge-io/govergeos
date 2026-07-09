@@ -850,3 +850,185 @@ func TestVMService_GetConsoleURL_NotFound(t *testing.T) {
 		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }
+
+// ---------------------------------------------------------------------------
+// GetGuestAgentInfo
+// ---------------------------------------------------------------------------
+
+func TestVMService_GetGuestAgentInfo(t *testing.T) {
+	const body = `{
+		"machine": {
+			"status": {
+				"agent_guest_info": {
+					"network": [
+						{
+							"name": "lo",
+							"ip-addresses": [
+								{"ip-address-type": "ipv4", "ip-address": "127.0.0.1"}
+							]
+						},
+						{
+							"name": "ens1",
+							"ip-addresses": [
+								{"ip-address-type": "ipv4", "ip-address": "10.0.0.42"},
+								{"ip-address-type": "ipv6", "ip-address": "fe80::1"}
+							]
+						}
+					]
+				}
+			}
+		}
+	}`
+
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/45": func(w http.ResponseWriter, r *http.Request) {
+			if got := r.URL.Query().Get("fields"); got != "dashboard" {
+				t.Errorf("expected fields=dashboard, got %q", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			w.Write([]byte(body))
+		},
+	}))
+
+	info, err := client.VMs.GetGuestAgentInfo(context.Background(), 45)
+	if err != nil {
+		t.Fatalf("GetGuestAgentInfo failed: %v", err)
+	}
+	if info == nil {
+		t.Fatal("expected non-nil info")
+	}
+	if len(info.Network) != 2 {
+		t.Fatalf("expected 2 network interfaces, got %d", len(info.Network))
+	}
+	if info.Network[1].Name != "ens1" {
+		t.Errorf("expected interface name 'ens1', got %q", info.Network[1].Name)
+	}
+	if len(info.Network[1].IPAddresses) != 2 {
+		t.Fatalf("expected 2 IPs on ens1, got %d", len(info.Network[1].IPAddresses))
+	}
+	if info.Network[1].IPAddresses[0].Address != "10.0.0.42" {
+		t.Errorf("expected IP '10.0.0.42', got %q", info.Network[1].IPAddresses[0].Address)
+	}
+	if info.Network[1].IPAddresses[0].Type != "ipv4" {
+		t.Errorf("expected type 'ipv4', got %q", info.Network[1].IPAddresses[0].Type)
+	}
+}
+
+func TestVMService_GetGuestAgentInfo_NetworkAsObject(t *testing.T) {
+	// Some guest agent versions report network as an object keyed by interface
+	// name instead of an array.
+	const body = `{
+		"machine": {
+			"status": {
+				"agent_guest_info": {
+					"network": {
+						"ens1": {
+							"name": "ens1",
+							"ip-addresses": [
+								{"ip-address-type": "ipv4", "ip-address": "10.0.0.42"}
+							]
+						}
+					}
+				}
+			}
+		}
+	}`
+
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/45": func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			w.Write([]byte(body))
+		},
+	}))
+
+	info, err := client.VMs.GetGuestAgentInfo(context.Background(), 45)
+	if err != nil {
+		t.Fatalf("GetGuestAgentInfo failed: %v", err)
+	}
+	if info == nil {
+		t.Fatal("expected non-nil info")
+	}
+	if len(info.Network) != 1 {
+		t.Fatalf("expected 1 network interface, got %d", len(info.Network))
+	}
+	if info.Network[0].Name != "ens1" {
+		t.Errorf("expected interface name 'ens1', got %q", info.Network[0].Name)
+	}
+	if info.Network[0].IPAddresses[0].Address != "10.0.0.42" {
+		t.Errorf("expected IP '10.0.0.42', got %q", info.Network[0].IPAddresses[0].Address)
+	}
+}
+
+func TestVMService_GetGuestAgentInfo_NotReported(t *testing.T) {
+	// Two "not reported" wire shapes: agent_guest_info absent entirely, and
+	// the API's agent_guest_info: [] placeholder. Both must yield nil.
+	for name, body := range map[string]string{
+		"absent":     `{"machine": {"status": {"status": "running"}}}`,
+		"emptyArray": `{"machine": {"status": {"status": "running", "agent_guest_info": []}}}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+				"GET /api/v4/vms/45": func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(200)
+					w.Write([]byte(body))
+				},
+			}))
+
+			info, err := client.VMs.GetGuestAgentInfo(context.Background(), 45)
+			if err != nil {
+				t.Fatalf("GetGuestAgentInfo failed: %v", err)
+			}
+			if info != nil {
+				t.Errorf("expected nil info when guest agent has not reported, got %+v", info)
+			}
+		})
+	}
+}
+
+func TestGuestInfo_IPsForMAC(t *testing.T) {
+	info := &GuestInfo{
+		Network: []GuestNetworkInterface{
+			{Name: "lo", HardwareAddress: "00:00:00:00:00:00", IPAddresses: []GuestIPAddress{{Type: "ipv4", Address: "127.0.0.1"}}},
+			{Name: "docker0", HardwareAddress: "86:8f:54:f5:b9:00", IPAddresses: []GuestIPAddress{{Type: "ipv4", Address: "172.17.0.1"}}},
+			{Name: "Ethernet 2", HardwareAddress: "F0:DB:30:BD:95:0E", IPAddresses: []GuestIPAddress{
+				{Type: "ipv6", Address: "fe80::1%14"},
+				{Type: "ipv4", Address: "192.168.10.176"},
+			}},
+		},
+	}
+
+	ips := info.IPsForMAC("f0:db:30:bd:95:0e")
+	if len(ips) != 2 {
+		t.Fatalf("expected 2 IPs (case-insensitive match), got %d", len(ips))
+	}
+	if ips[1].Address != "192.168.10.176" {
+		t.Errorf("expected '192.168.10.176', got %q", ips[1].Address)
+	}
+
+	if got := info.IPsForMAC("aa:bb:cc:dd:ee:ff"); got != nil {
+		t.Errorf("expected nil for unknown MAC, got %v", got)
+	}
+	var nilInfo *GuestInfo
+	if got := nilInfo.IPsForMAC("f0:db:30:bd:95:0e"); got != nil {
+		t.Errorf("expected nil for nil GuestInfo, got %v", got)
+	}
+}
+
+func TestVMService_GetGuestAgentInfo_NotFound(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/999": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 404, map[string]string{"err": "not found"})
+		},
+	}))
+
+	_, err := client.VMs.GetGuestAgentInfo(context.Background(), 999)
+	if err == nil {
+		t.Fatal("expected error for not found")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	}
+}

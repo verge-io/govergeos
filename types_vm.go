@@ -388,6 +388,18 @@ type vmActionParams struct {
 	Unplug bool   `json:"unplug,omitempty"`
 }
 
+// vmDashboardResponse is the internal response structure for the dashboard
+// view, narrowed to the fields we parse for GetGuestAgentInfo. GuestInfo
+// (types_machine_status.go) handles the API's wire-shape quirks: [] when the
+// agent has not reported, and network/fsinfo as either array or object.
+type vmDashboardResponse struct {
+	Machine struct {
+		Status struct {
+			AgentGuestInfo *GuestInfo `json:"agent_guest_info,omitempty"`
+		} `json:"status,omitempty"`
+	} `json:"machine,omitempty"`
+}
+
 // vmListFields are the fields to request when listing VMs.
 const vmListFields = "$key,uuid,machine,name,description,enabled,created,modified,is_snapshot,owner,owner_user,creator,cluster,cluster_failover,cpu_cores,cpu_type,ram,machine_type,iommu,usb_legacy,uefi,secure_boot,boot_order,boot_delay,console,video,sound,serial_port,os_family,os_description,rtc_base,allow_hotplug,guest_agent,nested_virtualization,disable_hypervisor,allow_export,cloudinit_datasource,preferred_node,ha_group,snapshot_profile,on_power_loss,migration_method,power_cycle_timeout,need_restart,created_from,imported,machine#status#running as powerstate"
 

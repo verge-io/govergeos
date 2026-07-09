@@ -11,10 +11,9 @@ const (
 	// Network action constants
 	networkActionPowerOn  = "poweron"
 	networkActionPowerOff = "poweroff"
-	networkActionKill     = "killpower"
+	networkActionKill     = "kill"
 	networkActionReset    = "reset"
 	networkActionApply    = "refresh"
-	networkActionApplyDNS = "applydns"
 
 	// Network power state polling
 	networkPowerStateMaxRetries   = 30
@@ -131,18 +130,17 @@ func (s *NetworkService) PowerOn(ctx context.Context, id int) error {
 	}
 
 	// Already running
-	if network.PowerState {
+	if network.Running {
 		return nil
 	}
 
-	// Power on is typically done by enabling the network
-	enabled := true
-	updateReq := &NetworkUpdateRequest{
-		Enabled: &enabled,
+	action := vnetAction{
+		VNet:   id,
+		Action: networkActionPowerOn,
+		Params: struct{}{},
 	}
 
-	_, err = s.Update(ctx, id, updateReq)
-	if err != nil {
+	if err := s.client.post(ctx, "/vnet_actions", action, nil); err != nil {
 		return fmt.Errorf("vergeos: failed to power on network %d: %w", id, err)
 	}
 
@@ -159,14 +157,14 @@ func (s *NetworkService) PowerOff(ctx context.Context, id int) error {
 	}
 
 	// Already stopped
-	if !network.PowerState {
+	if !network.Running {
 		return nil
 	}
 
-	// Send kill action
+	// Graceful ACPI shutdown; use Kill for immediate termination
 	action := vnetAction{
 		VNet:   id,
-		Action: networkActionKill,
+		Action: networkActionPowerOff,
 		Params: struct{}{},
 	}
 
@@ -191,7 +189,7 @@ func (s *NetworkService) waitForPowerState(ctx context.Context, id int, desiredS
 			return err
 		}
 
-		if network.PowerState == desiredState {
+		if network.Running == desiredState {
 			return nil
 		}
 
@@ -258,10 +256,14 @@ func (s *NetworkService) ApplyRules(ctx context.Context, id int) error {
 
 // ApplyDNS applies DNS configuration to a running network.
 func (s *NetworkService) ApplyDNS(ctx context.Context, id int) error {
+	// DNS-only apply is a refresh scoped to target=dnsonly (there is no
+	// applydns value in the vnet_actions enum).
 	action := vnetAction{
 		VNet:   id,
-		Action: networkActionApplyDNS,
-		Params: struct{}{},
+		Action: networkActionApply,
+		Params: struct {
+			Target string `json:"target"`
+		}{Target: "dnsonly"},
 	}
 
 	if err := s.client.post(ctx, "/vnet_actions", action, nil); err != nil {
