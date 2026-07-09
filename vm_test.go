@@ -988,6 +988,35 @@ func TestVMService_GetGuestAgentInfo_NotReported(t *testing.T) {
 	}
 }
 
+func TestGuestInfo_IPsForMAC(t *testing.T) {
+	info := &GuestInfo{
+		Network: []GuestNetworkInterface{
+			{Name: "lo", HardwareAddress: "00:00:00:00:00:00", IPAddresses: []GuestIPAddress{{Type: "ipv4", Address: "127.0.0.1"}}},
+			{Name: "docker0", HardwareAddress: "86:8f:54:f5:b9:00", IPAddresses: []GuestIPAddress{{Type: "ipv4", Address: "172.17.0.1"}}},
+			{Name: "Ethernet 2", HardwareAddress: "F0:DB:30:BD:95:0E", IPAddresses: []GuestIPAddress{
+				{Type: "ipv6", Address: "fe80::1%14"},
+				{Type: "ipv4", Address: "192.168.10.176"},
+			}},
+		},
+	}
+
+	ips := info.IPsForMAC("f0:db:30:bd:95:0e")
+	if len(ips) != 2 {
+		t.Fatalf("expected 2 IPs (case-insensitive match), got %d", len(ips))
+	}
+	if ips[1].Address != "192.168.10.176" {
+		t.Errorf("expected '192.168.10.176', got %q", ips[1].Address)
+	}
+
+	if got := info.IPsForMAC("aa:bb:cc:dd:ee:ff"); got != nil {
+		t.Errorf("expected nil for unknown MAC, got %v", got)
+	}
+	var nilInfo *GuestInfo
+	if got := nilInfo.IPsForMAC("f0:db:30:bd:95:0e"); got != nil {
+		t.Errorf("expected nil for nil GuestInfo, got %v", got)
+	}
+}
+
 func TestVMService_GetGuestAgentInfo_NotFound(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/999": func(w http.ResponseWriter, r *http.Request) {
