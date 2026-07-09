@@ -372,7 +372,7 @@ func (s *VMService) Migrate(ctx context.Context, id int, opts *VMMigrateOptions)
 // Returns nil (with a nil error) when the guest agent has not reported — for
 // example, when the VM is powered off, the agent is not installed, or the
 // agent has not yet delivered an update.
-func (s *VMService) GetGuestAgentInfo(ctx context.Context, id int) (*VMGuestAgentInfo, error) {
+func (s *VMService) GetGuestAgentInfo(ctx context.Context, id int) (*GuestInfo, error) {
 	params := url.Values{}
 	params.Set("fields", "dashboard")
 
@@ -385,7 +385,15 @@ func (s *VMService) GetGuestAgentInfo(ctx context.Context, id int) (*VMGuestAgen
 		return nil, err
 	}
 
-	return resp.Machine.Status.AgentGuestInfo, nil
+	info := resp.Machine.Status.AgentGuestInfo
+	// The API sends agent_guest_info: [] when the agent has not reported;
+	// GuestInfo.UnmarshalJSON decodes that to a zero value. Normalize to nil
+	// so callers get a single "not reported" signal.
+	if info != nil && info.OSInfo == nil && info.Network == nil && info.FSInfo == nil &&
+		info.MemInfo == nil && info.Hostname == "" && info.LastRefresh == 0 {
+		return nil, nil
+	}
+	return info, nil
 }
 
 // GetConsoleURL returns the console URL for a VM.
