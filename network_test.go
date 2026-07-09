@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -64,6 +65,33 @@ func TestNetworkService_List_Empty(t *testing.T) {
 	}
 	if len(networks) != 0 {
 		t.Fatalf("expected 0 networks, got %d", len(networks))
+	}
+}
+
+func TestNetworkService_List_MachineStatus(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
+			for _, f := range []string{"machine", "nic", "nic_dmz", "machine#status#running as running", "machine#status#status as status"} {
+				if !strings.Contains(r.URL.Query().Get("fields"), f) {
+					t.Errorf("expected fields to contain %q", f)
+				}
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			w.Write([]byte(`[{"$key":1,"name":"internal","powerstate":false,"machine":42,"nic":7,"nic_dmz":8,"running":true,"status":"running"}]`))
+		},
+	}))
+
+	networks, err := client.Networks.List(context.Background())
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	n := networks[0]
+	if n.Machine != 42 || n.NIC != 7 || n.NICDMZ != 8 {
+		t.Errorf("expected machine=42 nic=7 nic_dmz=8, got %d/%d/%d", n.Machine, n.NIC, n.NICDMZ)
+	}
+	if !n.Running || n.Status != "running" {
+		t.Errorf("expected running=true status=running, got %v/%q", n.Running, n.Status)
 	}
 }
 
@@ -270,8 +298,8 @@ func TestNetworkService_Kill(t *testing.T) {
 			if body.VNet != 5 {
 				t.Errorf("expected vnet 5, got %d", body.VNet)
 			}
-			if body.Action != "killpower" {
-				t.Errorf("expected action 'killpower', got %q", body.Action)
+			if body.Action != "kill" {
+				t.Errorf("expected action 'kill', got %q", body.Action)
 			}
 			w.WriteHeader(200)
 		},
@@ -357,13 +385,17 @@ func TestNetworkService_ApplyRules(t *testing.T) {
 func TestNetworkService_ApplyDNS(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/vnet_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body vnetAction
+			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			if body.VNet != 7 {
-				t.Errorf("expected vnet 7, got %d", body.VNet)
+			if body["vnet"] != float64(7) {
+				t.Errorf("expected vnet 7, got %v", body["vnet"])
 			}
-			if body.Action != "applydns" {
-				t.Errorf("expected action 'applydns', got %q", body.Action)
+			if body["action"] != "refresh" {
+				t.Errorf("expected action 'refresh', got %v", body["action"])
+			}
+			params, _ := body["params"].(map[string]any)
+			if params["target"] != "dnsonly" {
+				t.Errorf("expected params.target 'dnsonly', got %v", params["target"])
 			}
 			w.WriteHeader(200)
 		},
@@ -736,7 +768,7 @@ func TestNetworkService_GetLatestStatistics_Empty(t *testing.T) {
 func TestNetworkService_PowerOn_AlreadyRunning(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 1, Name: "net", PowerState: true})
+			jsonResponse(w, 200, Network{ID: 1, Name: "net", Running: true})
 		},
 	}))
 
@@ -747,12 +779,62 @@ func TestNetworkService_PowerOn_AlreadyRunning(t *testing.T) {
 	}
 }
 
+func TestNetworkService_PowerOn(t *testing.T) {
+	powered := false
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, Network{ID: 1, Name: "net", Running: powered})
+		},
+		"POST /api/v4/vnet_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body vnetAction
+			json.NewDecoder(r.Body).Decode(&body)
+			if body.Action != "poweron" {
+				t.Errorf("expected action 'poweron', got %q", body.Action)
+			}
+			powered = true
+			w.WriteHeader(200)
+		},
+	}))
+
+	if err := client.Networks.PowerOn(context.Background(), 1); err != nil {
+		t.Fatalf("PowerOn failed: %v", err)
+	}
+	if !powered {
+		t.Error("expected poweron action to be posted")
+	}
+}
+
 // --- PowerOff ---
+
+func TestNetworkService_PowerOff(t *testing.T) {
+	powered := true
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, Network{ID: 1, Name: "net", Running: powered})
+		},
+		"POST /api/v4/vnet_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body vnetAction
+			json.NewDecoder(r.Body).Decode(&body)
+			if body.Action != "poweroff" {
+				t.Errorf("expected action 'poweroff', got %q", body.Action)
+			}
+			powered = false
+			w.WriteHeader(200)
+		},
+	}))
+
+	if err := client.Networks.PowerOff(context.Background(), 1); err != nil {
+		t.Fatalf("PowerOff failed: %v", err)
+	}
+	if powered {
+		t.Error("expected poweroff action to be posted")
+	}
+}
 
 func TestNetworkService_PowerOff_AlreadyStopped(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 1, Name: "net", PowerState: false})
+			jsonResponse(w, 200, Network{ID: 1, Name: "net", Running: false})
 		},
 	}))
 
