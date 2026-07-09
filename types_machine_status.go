@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // MachineStatus represents the runtime status of a VergeOS machine (VM).
@@ -141,6 +142,25 @@ func unmarshalFlexList[T any](data json.RawMessage) ([]T, error) {
 	}
 
 	return nil, fmt.Errorf("expected JSON array or object, got: %.50s", data)
+}
+
+// IPsForMAC returns the IP addresses of the guest interfaces whose hardware
+// address matches mac (case-insensitive). This is the reliable way to find a
+// VM's real IP: match on the MAC of a known VM NIC rather than interface
+// names, which are OS-dependent ("eth0", "ens1", "Ethernet 2") and drowned
+// out by container bridges and veths on busy guests. Returns nil when the
+// MAC is not found or g is nil.
+func (g *GuestInfo) IPsForMAC(mac string) []GuestIPAddress {
+	if g == nil {
+		return nil
+	}
+	var ips []GuestIPAddress
+	for _, nic := range g.Network {
+		if strings.EqualFold(nic.HardwareAddress, mac) {
+			ips = append(ips, nic.IPAddresses...)
+		}
+	}
+	return ips
 }
 
 // GuestOSInfo contains operating system information from the guest agent.

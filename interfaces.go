@@ -25,6 +25,7 @@ type VMServiceInterface interface {
 	Snapshot(ctx context.Context, id int, opts *VMSnapshotOptions) error
 	Migrate(ctx context.Context, id int, opts *VMMigrateOptions) error
 	GetConsoleURL(ctx context.Context, id int) (string, error)
+	GetGuestAgentInfo(ctx context.Context, id int) (*GuestInfo, error)
 }
 
 // VMSnapshotServiceInterface defines the interface for VM Snapshot operations.
@@ -57,6 +58,7 @@ type VMDriveServiceInterface interface {
 	List(ctx context.Context, machineID int) ([]VMDrive, error)
 	ListAll(ctx context.Context, opts ...ListOption) ([]VMDrive, error)
 	Get(ctx context.Context, driveID int) (*VMDrive, error)
+	GetByName(ctx context.Context, vmID int, name string) (*VMDrive, error)
 	Create(ctx context.Context, vmID int, req *VMDriveCreateRequest) (*VMDrive, error)
 	Update(ctx context.Context, driveID int, req *VMDriveUpdateRequest) (*VMDrive, error)
 	Delete(ctx context.Context, driveID int) error

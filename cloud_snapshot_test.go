@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 )
 
 // ---------------------------------------------------------------------------
@@ -183,6 +184,118 @@ func TestCloudSnapshotService_Create(t *testing.T) {
 	}
 	if snap.Name != "manual-snap" {
 		t.Errorf("expected name 'manual-snap', got %q", snap.Name)
+	}
+}
+
+func TestCloudSnapshotService_Create_NeverExpire(t *testing.T) {
+	var captured map[string]any
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/cloud_snapshots": func(w http.ResponseWriter, r *http.Request) {
+			json.NewDecoder(r.Body).Decode(&captured)
+			jsonResponse(w, 200, map[string]any{"$key": 1})
+		},
+		"GET /api/v4/cloud_snapshots/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, CloudSnapshot{Key: 1, Name: "immortal", Expires: 0})
+		},
+	}))
+
+	_, err := client.CloudSnapshots.Create(context.Background(), &CloudSnapshotCreateRequest{
+		Name:        "immortal",
+		NeverExpire: true,
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	if _, has := captured["retention"]; has {
+		t.Error("request body must not include 'retention' (API ignores it)")
+	}
+	if captured["expires_type"] != "never" {
+		t.Errorf("expected expires_type 'never', got %v", captured["expires_type"])
+	}
+	// JSON numbers decode to float64 in map[string]any
+	expires, ok := captured["expires"].(float64)
+	if !ok || expires != 0 {
+		t.Errorf("expected expires 0, got %v", captured["expires"])
+	}
+}
+
+func TestCloudSnapshotService_Create_WithRetention(t *testing.T) {
+	var captured map[string]any
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/cloud_snapshots": func(w http.ResponseWriter, r *http.Request) {
+			json.NewDecoder(r.Body).Decode(&captured)
+			jsonResponse(w, 200, map[string]any{"$key": 1})
+		},
+		"GET /api/v4/cloud_snapshots/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, CloudSnapshot{Key: 1, Name: "week-snap"})
+		},
+	}))
+
+	retention := 7 * 24 * 60 * 60 // 7 days
+	before := time.Now().Unix()
+	_, err := client.CloudSnapshots.Create(context.Background(), &CloudSnapshotCreateRequest{
+		Name:      "week-snap",
+		Retention: &retention,
+	})
+	after := time.Now().Unix()
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	if _, has := captured["retention"]; has {
+		t.Error("request body must not include 'retention' (API ignores it)")
+	}
+	if captured["expires_type"] != "date" {
+		t.Errorf("expected expires_type 'date', got %v", captured["expires_type"])
+	}
+	expires, ok := captured["expires"].(float64)
+	if !ok {
+		t.Fatalf("expected numeric expires, got %T", captured["expires"])
+	}
+	minExpires := float64(before + int64(retention))
+	maxExpires := float64(after + int64(retention))
+	if expires < minExpires || expires > maxExpires {
+		t.Errorf("expires %v outside expected window [%v, %v]", expires, minExpires, maxExpires)
+	}
+}
+
+func TestCloudSnapshotService_Create_DefaultExpiry(t *testing.T) {
+	var captured map[string]any
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/cloud_snapshots": func(w http.ResponseWriter, r *http.Request) {
+			json.NewDecoder(r.Body).Decode(&captured)
+			jsonResponse(w, 200, map[string]any{"$key": 1})
+		},
+		"GET /api/v4/cloud_snapshots/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, CloudSnapshot{Key: 1, Name: "default-snap"})
+		},
+	}))
+
+	before := time.Now().Unix()
+	_, err := client.CloudSnapshots.Create(context.Background(), &CloudSnapshotCreateRequest{
+		Name: "default-snap",
+	})
+	after := time.Now().Unix()
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	if _, has := captured["retention"]; has {
+		t.Error("request body must not include 'retention' (API ignores it)")
+	}
+	if captured["expires_type"] != "date" {
+		t.Errorf("expected expires_type 'date', got %v", captured["expires_type"])
+	}
+	expires, ok := captured["expires"].(float64)
+	if !ok {
+		t.Fatalf("expected numeric expires, got %T", captured["expires"])
+	}
+	// Default must match VergeOS server default of now + 259200s (3 days).
+	minExpires := float64(before + cloudSnapshotDefaultExpirySeconds)
+	maxExpires := float64(after + cloudSnapshotDefaultExpirySeconds)
+	if expires < minExpires || expires > maxExpires {
+		t.Errorf("default expires %v outside [%v, %v]", expires, minExpires, maxExpires)
 	}
 }
 
