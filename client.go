@@ -21,7 +21,7 @@ const (
 	// apiBasePath is the base path for the VergeOS API.
 	apiBasePath = "/api/v4"
 	// defaultUserAgent is the default User-Agent header.
-	defaultUserAgent = "govergeos/1.0"
+	defaultUserAgent = "govergeos/0.3.1"
 	// maxResponseSize is the maximum response body size (100 MB).
 	maxResponseSize = 100 << 20
 )
@@ -40,6 +40,8 @@ type Client struct {
 	httpClient *http.Client
 	// userAgent is the User-Agent header sent with requests.
 	userAgent string
+	// serverVersion is the version reported by /version.json during client initialization.
+	serverVersion string
 
 	// Services for interacting with different API resources.
 	// All services implement their corresponding interfaces for mock testing.

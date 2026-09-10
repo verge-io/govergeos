@@ -52,6 +52,41 @@ func parseVersion(v string) (int, error) {
 	return major, nil
 }
 
+// isVersionAtLeast reports whether a VergeOS version meets a minimum version.
+// Missing minor or patch components are treated as zero.
+func isVersionAtLeast(v string, requiredMajor, requiredMinor, requiredPatch int) bool {
+	v = strings.TrimPrefix(v, "v")
+	if idx := strings.Index(v, "+"); idx != -1 {
+		v = v[:idx]
+	}
+	prerelease := false
+	if idx := strings.Index(v, "-"); idx != -1 {
+		v = v[:idx]
+		prerelease = true
+	}
+
+	parts := strings.Split(v, ".")
+	current := [3]int{}
+	for i := 0; i < len(current) && i < len(parts); i++ {
+		if parts[i] == "" {
+			return false
+		}
+		value, err := strconv.Atoi(parts[i])
+		if err != nil {
+			return false
+		}
+		current[i] = value
+	}
+
+	required := [3]int{requiredMajor, requiredMinor, requiredPatch}
+	for i := range current {
+		if current[i] != required[i] {
+			return current[i] > required[i]
+		}
+	}
+	return !prerelease
+}
+
 // checkServerVersion fetches /version.json and validates the server is v26.
 // Called during NewClient() - returns error if version check fails.
 func (c *Client) checkServerVersion(ctx context.Context) error {
@@ -70,5 +105,6 @@ func (c *Client) checkServerVersion(ctx context.Context) error {
 			Required:      RequiredMajorVersion,
 		}
 	}
+	c.serverVersion = resp.Version
 	return nil
 }

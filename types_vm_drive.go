@@ -50,6 +50,8 @@ type VMDrive struct {
 	Asset string `json:"asset,omitempty"`
 	// PreserveDriveFormat indicates whether to preserve the drive format.
 	PreserveDriveFormat bool `json:"preserve_drive_format,omitempty"`
+	// MS2023KEKApplied indicates whether the Microsoft 2023 Secure Boot KEK has been applied (read-only).
+	MS2023KEKApplied bool `json:"ms_2023_kek_applied"`
 	// PowerState is the drive power state ("online" or "offline").
 	PowerState string `json:"powerState,omitempty"`
 	// Status is the drive status (e.g., "importing").
@@ -136,8 +138,11 @@ type VMDriveUpdateRequest struct {
 	PreserveDriveFormat *bool `json:"preserve_drive_format,omitempty"`
 }
 
-// driveListFields are the fields to request when listing drives.
+// driveListFields are the fields available on every supported VergeOS release.
 const driveListFields = "$key,machine,orderid,name,description,disksize,used_bytes,interface,media,media_source,preferred_tier,enabled,readonly,optimize,serial,fsync,discard,advanced,preserve_drive_format,asset"
+
+// driveMS2023KEKField is available on VergeOS 26.1.5 and later.
+const driveMS2023KEKField = "ms_2023_kek_applied"
 
 // driveGetFields are the fields to request when getting a single drive (includes power state and status).
 const driveGetFields = driveListFields + ",status#status as powerState,status#status_info as status"

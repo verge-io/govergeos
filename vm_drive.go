@@ -8,6 +8,11 @@ import (
 )
 
 const (
+	// Microsoft 2023 Secure Boot KEK support was introduced in VergeOS 26.1.5.
+	ms2023KEKMinimumMajor = 26
+	ms2023KEKMinimumMinor = 1
+	ms2023KEKMinimumPatch = 5
+
 	// Drive hotplug action
 	vmActionHotplugDrive = "hotplugdrive"
 
@@ -25,10 +30,26 @@ type VMDriveService struct {
 	client *Client
 }
 
+func (s *VMDriveService) listFields() string {
+	fields := driveListFields
+	if isVersionAtLeast(s.client.serverVersion, ms2023KEKMinimumMajor, ms2023KEKMinimumMinor, ms2023KEKMinimumPatch) {
+		fields += "," + driveMS2023KEKField
+	}
+	return fields
+}
+
+func (s *VMDriveService) getFields() string {
+	fields := driveGetFields
+	if isVersionAtLeast(s.client.serverVersion, ms2023KEKMinimumMajor, ms2023KEKMinimumMinor, ms2023KEKMinimumPatch) {
+		fields += "," + driveMS2023KEKField
+	}
+	return fields
+}
+
 // List returns all drives for a machine.
 func (s *VMDriveService) List(ctx context.Context, machineID int) ([]VMDrive, error) {
 	params := url.Values{}
-	params.Set("fields", driveListFields)
+	params.Set("fields", s.listFields())
 	params.Set("filter", fmt.Sprintf("machine eq %d", machineID))
 
 	var drives []VMDrive
@@ -48,7 +69,7 @@ func (s *VMDriveService) List(ctx context.Context, machineID int) ([]VMDrive, er
 func (s *VMDriveService) ListAll(ctx context.Context, opts ...ListOption) ([]VMDrive, error) {
 	options := applyListOptions(opts)
 	if options.Fields == "most" {
-		options.Fields = driveListFields
+		options.Fields = s.listFields()
 	}
 	params := options.toQueryParams()
 
@@ -68,7 +89,7 @@ func (s *VMDriveService) ListAll(ctx context.Context, opts ...ListOption) ([]VMD
 // Get returns a single drive by ID.
 func (s *VMDriveService) Get(ctx context.Context, driveID int) (*VMDrive, error) {
 	params := url.Values{}
-	params.Set("fields", driveGetFields)
+	params.Set("fields", s.getFields())
 
 	var drive VMDrive
 	endpoint := fmt.Sprintf("/machine_drives/%d", driveID)
@@ -212,6 +233,13 @@ func (s *VMDriveService) Update(ctx context.Context, driveID int, req *VMDriveUp
 
 	// Read back the updated drive
 	return s.Get(ctx, driveID)
+}
+
+// ApplyUniversalVars applies the Microsoft 2023 Secure Boot keys to an EFI drive.
+// VergeOS requires the drive to belong to an offline secure-boot VM.
+func (s *VMDriveService) ApplyUniversalVars(ctx context.Context, driveID int) error {
+	endpoint := fmt.Sprintf("/machine_drives/%d/apply_universal_vars", driveID)
+	return s.client.post(ctx, endpoint, struct{}{}, nil)
 }
 
 // Delete deletes a drive.

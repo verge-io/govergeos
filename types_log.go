@@ -56,6 +56,8 @@ const (
 	LogObjectTypeSnapshotProfile   string = "snapshot_profile"
 	LogObjectTypeImportExport      string = "import_export"
 	LogObjectTypeTask              string = "task"
+	LogObjectTypeTag               string = "tag"
+	LogObjectTypeTagCategory       string = "tag_category"
 )
 
 // logListFields defines the default fields for listing logs.

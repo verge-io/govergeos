@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+func TestDefaultUserAgentMatchesRelease(t *testing.T) {
+	if defaultUserAgent != "govergeos/0.3.1" {
+		t.Fatalf("defaultUserAgent = %q, want govergeos/0.3.1", defaultUserAgent)
+	}
+}
+
 // clearEnvVars clears all VERGEOS_* environment variables
 func clearEnvVars() {
 	_ = os.Unsetenv("VERGEOS_HOST")
