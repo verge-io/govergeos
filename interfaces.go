@@ -61,6 +61,7 @@ type VMDriveServiceInterface interface {
 	GetByName(ctx context.Context, vmID int, name string) (*VMDrive, error)
 	Create(ctx context.Context, vmID int, req *VMDriveCreateRequest) (*VMDrive, error)
 	Update(ctx context.Context, driveID int, req *VMDriveUpdateRequest) (*VMDrive, error)
+	ApplyUniversalVars(ctx context.Context, driveID int) error
 	Delete(ctx context.Context, driveID int) error
 	HotplugDrive(ctx context.Context, vmID, driveID int) error
 	HotUnplugDrive(ctx context.Context, vmID, driveID int) error

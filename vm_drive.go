@@ -214,6 +214,13 @@ func (s *VMDriveService) Update(ctx context.Context, driveID int, req *VMDriveUp
 	return s.Get(ctx, driveID)
 }
 
+// ApplyUniversalVars applies the Microsoft 2023 Secure Boot keys to an EFI drive.
+// VergeOS requires the drive to belong to an offline secure-boot VM.
+func (s *VMDriveService) ApplyUniversalVars(ctx context.Context, driveID int) error {
+	endpoint := fmt.Sprintf("/machine_drives/%d/apply_universal_vars", driveID)
+	return s.client.post(ctx, endpoint, struct{}{}, nil)
+}
+
 // Delete deletes a drive.
 // If the drive is currently attached (VM running), it will be hot-unplugged first.
 func (s *VMDriveService) Delete(ctx context.Context, driveID int) error {

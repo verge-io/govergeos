@@ -4,18 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 )
 
 func TestVMDriveService_List(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
+			if fields := r.URL.Query().Get("fields"); !strings.Contains(fields, "ms_2023_kek_applied") {
+				t.Errorf("fields missing ms_2023_kek_applied: %s", fields)
+			}
 			filter := r.URL.Query().Get("filter")
 			if filter != "machine eq 42" {
 				t.Errorf("unexpected filter: %s", filter)
 			}
 			jsonResponse(w, 200, []VMDrive{
-				{ID: FlexInt(1), Machine: 42, Name: "disk0", SizeBytes: 10 * bytesPerGB},
+				{ID: FlexInt(1), Machine: 42, Name: "disk0", SizeBytes: 10 * bytesPerGB, MS2023KEKApplied: true},
 				{ID: FlexInt(2), Machine: 42, Name: "disk1", SizeBytes: 20 * bytesPerGB},
 			})
 		},
@@ -31,8 +35,46 @@ func TestVMDriveService_List(t *testing.T) {
 	if drives[0].SizeGB != 10 {
 		t.Errorf("expected SizeGB 10, got %d", drives[0].SizeGB)
 	}
+	if !drives[0].MS2023KEKApplied {
+		t.Error("expected MS2023KEKApplied to be true")
+	}
 	if drives[1].SizeGB != 20 {
 		t.Errorf("expected SizeGB 20, got %d", drives[1].SizeGB)
+	}
+}
+
+func TestVMDriveService_ApplyUniversalVars(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/machine_drives/7/apply_universal_vars": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			if len(body) != 0 {
+				t.Errorf("expected empty request body, got %#v", body)
+			}
+			jsonResponse(w, http.StatusOK, map[string]any{})
+		},
+	}))
+
+	if err := client.VMDrives.ApplyUniversalVars(context.Background(), 7); err != nil {
+		t.Fatalf("ApplyUniversalVars failed: %v", err)
+	}
+}
+
+func TestVMDriveService_ApplyUniversalVars_Error(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/machine_drives/7/apply_universal_vars": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, http.StatusForbidden, map[string]string{"err": "machine must be offline"})
+		},
+	}))
+
+	err := client.VMDrives.ApplyUniversalVars(context.Background(), 7)
+	if err == nil {
+		t.Fatal("expected ApplyUniversalVars to return an error")
+	}
+	if !IsAuthError(err) {
+		t.Fatalf("expected 403 AuthError, got %T: %v", err, err)
 	}
 }
 

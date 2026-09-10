@@ -21,7 +21,7 @@ const (
 	// apiBasePath is the base path for the VergeOS API.
 	apiBasePath = "/api/v4"
 	// defaultUserAgent is the default User-Agent header.
-	defaultUserAgent = "govergeos/1.0"
+	defaultUserAgent = "govergeos/0.3.1"
 	// maxResponseSize is the maximum response body size (100 MB).
 	maxResponseSize = 100 << 20
 )
