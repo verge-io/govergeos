@@ -40,6 +40,8 @@ type Client struct {
 	httpClient *http.Client
 	// userAgent is the User-Agent header sent with requests.
 	userAgent string
+	// serverVersion is the version reported by /version.json during client initialization.
+	serverVersion string
 
 	// Services for interacting with different API resources.
 	// All services implement their corresponding interfaces for mock testing.

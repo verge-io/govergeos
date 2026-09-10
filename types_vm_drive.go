@@ -138,8 +138,11 @@ type VMDriveUpdateRequest struct {
 	PreserveDriveFormat *bool `json:"preserve_drive_format,omitempty"`
 }
 
-// driveListFields are the fields to request when listing drives.
-const driveListFields = "$key,machine,orderid,name,description,disksize,used_bytes,interface,media,media_source,preferred_tier,enabled,readonly,optimize,serial,fsync,discard,advanced,preserve_drive_format,asset,ms_2023_kek_applied"
+// driveListFields are the fields available on every supported VergeOS release.
+const driveListFields = "$key,machine,orderid,name,description,disksize,used_bytes,interface,media,media_source,preferred_tier,enabled,readonly,optimize,serial,fsync,discard,advanced,preserve_drive_format,asset"
+
+// driveMS2023KEKField is available on VergeOS 26.1.5 and later.
+const driveMS2023KEKField = "ms_2023_kek_applied"
 
 // driveGetFields are the fields to request when getting a single drive (includes power state and status).
 const driveGetFields = driveListFields + ",status#status as powerState,status#status_info as status"

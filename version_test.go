@@ -1,7 +1,9 @@
 package vergeos
 
 import (
+	"context"
 	"errors"
+	"net/http"
 	"testing"
 )
 
@@ -38,6 +40,48 @@ func TestParseVersion(t *testing.T) {
 				t.Errorf("parseVersion(%q) = %d, want %d", tt.input, major, tt.major)
 			}
 		})
+	}
+}
+
+func TestIsVersionAtLeast(t *testing.T) {
+	tests := []struct {
+		version string
+		want    bool
+	}{
+		{version: "26.0.2.2", want: false},
+		{version: "26.1.4", want: false},
+		{version: "26.1.5", want: true},
+		{version: "v26.1.5", want: true},
+		{version: "26.1.5-beta1", want: false},
+		{version: "26.1.5+build", want: true},
+		{version: "26.2.0-dev", want: true},
+		{version: "26.2", want: true},
+		{version: "27", want: true},
+		{version: "invalid", want: false},
+		{version: "", want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.version, func(t *testing.T) {
+			if got := isVersionAtLeast(tt.version, 26, 1, 5); got != tt.want {
+				t.Errorf("isVersionAtLeast(%q, 26, 1, 5) = %v, want %v", tt.version, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCheckServerVersionRecordsVersion(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /version.json": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, http.StatusOK, versionResponse{Version: "26.1.5"})
+		},
+	}))
+
+	if err := client.checkServerVersion(context.Background()); err != nil {
+		t.Fatalf("checkServerVersion failed: %v", err)
+	}
+	if client.serverVersion != "26.1.5" {
+		t.Fatalf("serverVersion = %q, want 26.1.5", client.serverVersion)
 	}
 }
 

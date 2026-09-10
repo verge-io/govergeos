@@ -24,6 +24,7 @@ func TestVMDriveService_List(t *testing.T) {
 			})
 		},
 	}))
+	client.serverVersion = "26.1.5"
 
 	drives, err := client.VMDrives.List(context.Background(), 42)
 	if err != nil {
@@ -40,6 +41,33 @@ func TestVMDriveService_List(t *testing.T) {
 	}
 	if drives[1].SizeGB != 20 {
 		t.Errorf("expected SizeGB 20, got %d", drives[1].SizeGB)
+	}
+}
+
+func TestVMDriveService_FieldsByServerVersion(t *testing.T) {
+	tests := []struct {
+		version   string
+		wantField bool
+	}{
+		{version: "26.0.2.2", wantField: false},
+		{version: "26.1.4", wantField: false},
+		{version: "26.1.5", wantField: true},
+		{version: "26.1.8", wantField: true},
+		{version: "26.2.0", wantField: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.version, func(t *testing.T) {
+			service := &VMDriveService{client: &Client{serverVersion: tt.version}}
+			for name, fields := range map[string]string{
+				"list": service.listFields(),
+				"get":  service.getFields(),
+			} {
+				if got := strings.Contains(fields, driveMS2023KEKField); got != tt.wantField {
+					t.Errorf("%s fields contain %q = %v, want %v", name, driveMS2023KEKField, got, tt.wantField)
+				}
+			}
+		})
 	}
 }
 
