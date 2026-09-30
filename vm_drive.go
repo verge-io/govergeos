@@ -129,8 +129,18 @@ func (s *VMDriveService) GetByName(ctx context.Context, vmID int, name string) (
 	if len(drives) == 0 {
 		return nil, &NotFoundError{Resource: "VMDrive", ID: name}
 	}
+	if err := requireExactName("VMDrive", name, drives[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Fetch full details (Get returns additional fields like power state and status).
-	return s.Get(ctx, drives[0].ID.Int())
+	got, err := s.Get(ctx, drives[0].ID.Int())
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VMDrive", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new drive and returns the created drive.

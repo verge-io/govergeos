@@ -243,7 +243,7 @@ func TestVMDriveService_GetByName_EscapesName(t *testing.T) {
 		"GET /api/v4/vms/42": stubVM(42, 42),
 		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
 			filter := r.URL.Query().Get("filter")
-			expected := "machine eq 42 and name eq 'o''malley'"
+			expected := "machine eq 42 and name eq 'o\\'malley'"
 			if filter != expected {
 				t.Errorf("expected filter %q, got %q", expected, filter)
 			}

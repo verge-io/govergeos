@@ -64,7 +64,17 @@ func (s *UserAPIKeyService) GetByName(ctx context.Context, userID int, name stri
 	if len(keys) == 0 {
 		return nil, &NotFoundError{Resource: "UserAPIKey", ID: name}
 	}
-	return s.Get(ctx, int(keys[0].Key))
+	if err := requireExactName("UserAPIKey", name, keys[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(keys[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("UserAPIKey", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new API key and returns the created key with its token.

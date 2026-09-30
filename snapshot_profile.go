@@ -56,8 +56,18 @@ func (s *SnapshotProfileService) GetByName(ctx context.Context, name string) (*S
 	if len(profiles) == 0 {
 		return nil, &NotFoundError{Resource: "SnapshotProfile", ID: name}
 	}
+	if err := requireExactName("SnapshotProfile", name, profiles[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, int(profiles[0].Key))
+	got, err := s.Get(ctx, int(profiles[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("SnapshotProfile", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new snapshot profile and returns the created profile.
@@ -172,8 +182,18 @@ func (s *SnapshotProfilePeriodService) GetByName(ctx context.Context, profileID 
 	if len(periods) == 0 {
 		return nil, &NotFoundError{Resource: "SnapshotProfilePeriod", ID: name}
 	}
+	if err := requireExactName("SnapshotProfilePeriod", name, periods[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, int(periods[0].Key))
+	got, err := s.Get(ctx, int(periods[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("SnapshotProfilePeriod", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new snapshot profile period and returns the created period.

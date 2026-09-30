@@ -62,7 +62,17 @@ func (s *VNetWireGuardService) GetByName(ctx context.Context, vnetID int, name s
 	if len(wgs) == 0 {
 		return nil, &NotFoundError{Resource: "VNetWireGuard", ID: name}
 	}
-	return s.Get(ctx, int(wgs[0].Key))
+	if err := requireExactName("VNetWireGuard", name, wgs[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(wgs[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VNetWireGuard", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new WireGuard interface and returns the created interface.
@@ -178,7 +188,17 @@ func (s *VNetWireGuardPeerService) GetByName(ctx context.Context, wireguardID in
 	if len(peers) == 0 {
 		return nil, &NotFoundError{Resource: "VNetWireGuardPeer", ID: name}
 	}
-	return s.Get(ctx, int(peers[0].Key))
+	if err := requireExactName("VNetWireGuardPeer", name, peers[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(peers[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VNetWireGuardPeer", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new WireGuard peer and returns the created peer.

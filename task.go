@@ -91,8 +91,18 @@ func (s *TaskService) GetByName(ctx context.Context, owner, name string) (*Task,
 	if len(tasks) == 0 {
 		return nil, &NotFoundError{Resource: "Task", ID: name}
 	}
+	if err := requireExactName("Task", name, tasks[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, int(tasks[0].Key))
+	got, err := s.Get(ctx, int(tasks[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("Task", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new task and returns the created task.

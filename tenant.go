@@ -56,8 +56,18 @@ func (s *TenantService) GetByName(ctx context.Context, name string) (*Tenant, er
 	if len(tenants) == 0 {
 		return nil, &NotFoundError{Resource: "Tenant", ID: name}
 	}
+	if err := requireExactName("Tenant", name, tenants[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, int(tenants[0].Key))
+	got, err := s.Get(ctx, int(tenants[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("Tenant", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new tenant and returns the created tenant.
@@ -218,8 +228,8 @@ func (s *TenantService) IsolateOff(ctx context.Context, id int) error {
 
 // tenantAction represents a tenant action request.
 type tenantAction struct {
-	Tenant int                    `json:"tenant"`
-	Action string                 `json:"action"`
+	Tenant int            `json:"tenant"`
+	Action string         `json:"action"`
 	Params map[string]any `json:"params,omitempty"`
 }
 
@@ -281,8 +291,18 @@ func (s *TenantNodeService) GetByName(ctx context.Context, tenantID int, name st
 	if len(nodes) == 0 {
 		return nil, &NotFoundError{Resource: "TenantNode", ID: name}
 	}
+	if err := requireExactName("TenantNode", name, nodes[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, int(nodes[0].Key))
+	got, err := s.Get(ctx, int(nodes[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("TenantNode", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new tenant node and returns the created node.
@@ -417,8 +437,8 @@ func (s *TenantNodeService) Migrate(ctx context.Context, id int, targetNode int)
 
 // tenantNodeAction represents a tenant node action request.
 type tenantNodeAction struct {
-	TenantNode int                    `json:"tenant_node"`
-	Action     string                 `json:"action"`
+	TenantNode int            `json:"tenant_node"`
+	Action     string         `json:"action"`
 	Params     map[string]any `json:"params,omitempty"`
 }
 

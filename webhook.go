@@ -55,7 +55,17 @@ func (s *WebhookURLService) GetByName(ctx context.Context, name string) (*Webhoo
 	if len(webhooks) == 0 {
 		return nil, &NotFoundError{Resource: "WebhookURL", ID: name}
 	}
-	return s.Get(ctx, int(webhooks[0].Key))
+	if err := requireExactName("WebhookURL", name, webhooks[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(webhooks[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("WebhookURL", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new webhook URL and returns the created webhook URL.

@@ -70,8 +70,18 @@ func (s *NASServiceService) GetByName(ctx context.Context, name string) (*NASSer
 	if len(services) == 0 {
 		return nil, &NotFoundError{Resource: "NASService", ID: name}
 	}
+	if err := requireExactName("NASService", name, services[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, int(services[0].Key))
+	got, err := s.Get(ctx, int(services[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("NASService", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new NAS service and returns the created service.
@@ -180,8 +190,18 @@ func (s *NASServiceUserService) GetByName(ctx context.Context, serviceID int, na
 	if len(users) == 0 {
 		return nil, &NotFoundError{Resource: "NASServiceUser", ID: name}
 	}
+	if err := requireExactName("NASServiceUser", name, users[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, users[0].ID)
+	got, err := s.Get(ctx, users[0].ID)
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("NASServiceUser", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new NAS service user and returns the created user.

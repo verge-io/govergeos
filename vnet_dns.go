@@ -62,7 +62,17 @@ func (s *VNetDNSViewService) GetByName(ctx context.Context, vnetID int, name str
 	if len(views) == 0 {
 		return nil, &NotFoundError{Resource: "VNetDNSView", ID: name}
 	}
-	return s.Get(ctx, int(views[0].Key))
+	if err := requireExactName("VNetDNSView", name, views[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(views[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VNetDNSView", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new DNS view and returns the created view.

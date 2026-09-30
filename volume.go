@@ -62,8 +62,18 @@ func (s *VolumeService) GetByName(ctx context.Context, serviceID int, name strin
 	if len(volumes) == 0 {
 		return nil, &NotFoundError{Resource: "Volume", ID: name}
 	}
+	if err := requireExactName("Volume", name, volumes[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, volumes[0].ID)
+	got, err := s.Get(ctx, volumes[0].ID)
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("Volume", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new volume and returns the created volume.
@@ -173,8 +183,8 @@ func (s *VolumeService) Reset(ctx context.Context, id string) error {
 
 // volumeAction represents a volume action request.
 type volumeAction struct {
-	Volume string                 `json:"volume"`
-	Action string                 `json:"action"`
+	Volume string         `json:"volume"`
+	Action string         `json:"action"`
 	Params map[string]any `json:"params"`
 }
 

@@ -178,16 +178,45 @@ func TestEscapeFilterValue(t *testing.T) {
 		want  string
 	}{
 		{"normal", "normal"},
-		{"it's", "it''s"},
-		{"can't won't", "can''t won''t"},
 		{"no quotes", "no quotes"},
 		{"", ""},
-		{"'", "''"},
+		// Apostrophe terminates a literal. Backslash-escape it; do not double it.
+		{"it's", `it\'s`},
+		{"can't won't", `can\'t won\'t`},
+		{"'", `\'`},
+		{"o'brien", `o\'brien`},
+		// A balanced {...} is consumed unless { is escaped. } is not reserved.
+		{"zzgo-grp{x}", `zzgo-grp\{x}`},
+		{"{lead", `\{lead`},
+		{"trail}", "trail}"},
+		{"br{x}ace", `br\{x}ace`},
+		// Backslash is the escape character and must be escaped first.
+		{`back\slash`, `back\\slash`},
+		{`trailing\`, `trailing\\`},
+		{`\{`, `\\\{`},
+		// Combinations, with \ escaped before ' and {.
+		{`o'brien{x}\z`, `o\'brien\{x}\\z`},
+		{`C:\O'Brien\{share}`, `C:\\O\'Brien\\\{share}`},
 	}
 	for _, tt := range tests {
 		got := escapeFilterValue(tt.input)
 		if got != tt.want {
 			t.Errorf("escapeFilterValue(%q) = %q, want %q", tt.input, got, tt.want)
 		}
+	}
+}
+
+func TestRequireExactName(t *testing.T) {
+	if err := requireExactName("Group", "zzgo-grp{x}", "zzgo-grp{x}", "zzgo-grp{x}"); err != nil {
+		t.Fatalf("exact name rejected: %v", err)
+	}
+
+	err := requireExactName("Group", "zzgo-grp{x}", "zzgo-grp", "zzgo-grp{x}")
+	notFound, ok := err.(*NotFoundError)
+	if !ok {
+		t.Fatalf("expected *NotFoundError, got %T: %v", err, err)
+	}
+	if notFound.Resource != "Group" || notFound.ID != "zzgo-grp{x}" {
+		t.Fatalf("unexpected not-found details: %+v", notFound)
 	}
 }

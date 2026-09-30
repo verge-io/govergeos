@@ -165,7 +165,17 @@ func (s *VNetIPSecPhase1Service) GetByName(ctx context.Context, ipsecID int, nam
 	if len(phase1s) == 0 {
 		return nil, &NotFoundError{Resource: "VNetIPSecPhase1", ID: name}
 	}
-	return s.Get(ctx, int(phase1s[0].Key))
+	if err := requireExactName("VNetIPSecPhase1", name, phase1s[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(phase1s[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VNetIPSecPhase1", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new Phase 1 configuration and returns it.
@@ -281,7 +291,17 @@ func (s *VNetIPSecPhase2Service) GetByName(ctx context.Context, phase1ID int, na
 	if len(phase2s) == 0 {
 		return nil, &NotFoundError{Resource: "VNetIPSecPhase2", ID: name}
 	}
-	return s.Get(ctx, int(phase2s[0].Key))
+	if err := requireExactName("VNetIPSecPhase2", name, phase2s[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(phase2s[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VNetIPSecPhase2", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new Phase 2 configuration and returns it.
