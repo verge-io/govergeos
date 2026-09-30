@@ -77,94 +77,105 @@ type Client struct {
 
 	// Services for interacting with different API resources.
 	// All services implement their corresponding interfaces for mock testing.
-	VMs                     VMServiceInterface
-	VMSnapshots             VMSnapshotServiceInterface
-	VMNICs                  VMNICServiceInterface
-	VMDrives                VMDriveServiceInterface
-	VMDevices               VMDeviceServiceInterface
-	VMImports               VMImportServiceInterface
-	VMImportLogs            VMImportLogServiceInterface
-	VMExports               VMExportServiceInterface
-	Catalogs                CatalogServiceInterface
-	VMRecipes               VMRecipeServiceInterface
-	VMRecipeInstances       VMRecipeInstanceServiceInterface
-	Networks                NetworkServiceInterface
-	Users                   UserServiceInterface
-	Members                 MemberServiceInterface
-	CloudInitFiles          CloudInitServiceInterface
-	Clusters                ClusterServiceInterface
-	Nodes                   NodeServiceInterface
-	Groups                  GroupServiceInterface
-	Files                   FileServiceInterface
-	ResourceGroups          ResourceGroupServiceInterface
-	Settings                SettingsServiceInterface
-	System                  SystemServiceInterface
-	Schema                  SchemaServiceInterface
-	Tags                    TagServiceInterface
-	TagCategories           TagCategoryServiceInterface
-	TagMembers              TagMemberServiceInterface
-	Volumes                 VolumeServiceInterface
-	VNetRules               VNetRuleServiceInterface
-	VNetRuleAliases         VNetRuleAliasServiceInterface
-	Tenants                 TenantServiceInterface
-	TenantNodes             TenantNodeServiceInterface
-	TenantStorage           TenantStorageServiceInterface
-	TenantStatus            TenantStatusServiceInterface
-	TenantStatsHistoryShort TenantStatsHistoryShortServiceInterface
-	TenantSnapshots         TenantSnapshotServiceInterface
-	TenantLayer2Networks    TenantLayer2NetworkServiceInterface
-	TenantNetworkBlocks     TenantNetworkBlockServiceInterface
-	TenantExternalIPs       TenantExternalIPServiceInterface
-	SnapshotProfiles        SnapshotProfileServiceInterface
-	SnapshotProfilePeriods  SnapshotProfilePeriodServiceInterface
-	Alarms                  AlarmServiceInterface
-	AlarmTypes              AlarmTypeServiceInterface
-	Tasks                   TaskServiceInterface
-	VNetAddresses           VNetAddressServiceInterface
-	VNetDNSViews            VNetDNSViewServiceInterface
-	VNetDNSZones            VNetDNSZoneServiceInterface
-	VNetDNSRecords          VNetDNSRecordServiceInterface
-	VNetHosts               VNetHostServiceInterface
-	VNetWireGuards          VNetWireGuardServiceInterface
-	VNetWireGuardPeers      VNetWireGuardPeerServiceInterface
-	VNetWireGuardPeerStatus VNetWireGuardPeerStatusServiceInterface
-	Certificates            CertificateServiceInterface
-	VNetIPSecs              VNetIPSecServiceInterface
-	VNetIPSecPhase1s        VNetIPSecPhase1ServiceInterface
-	VNetIPSecPhase2s        VNetIPSecPhase2ServiceInterface
-	VNetIPSecConnections    VNetIPSecConnectionServiceInterface
-	Sites                   SiteServiceInterface
-	SiteSyncsIncoming       SiteSyncIncomingServiceInterface
-	SiteSyncsOutgoing       SiteSyncOutgoingServiceInterface
-	SiteSyncProfilePeriods  SiteSyncProfilePeriodServiceInterface
-	CloudSnapshots          CloudSnapshotServiceInterface
-	CloudSnapshotVMs        CloudSnapshotVMServiceInterface
-	CloudSnapshotTenants    CloudSnapshotTenantServiceInterface
-	VolumeCIFSShares        VolumeCIFSShareServiceInterface
-	VolumeNFSShares         VolumeNFSShareServiceInterface
-	VolumeBrowser           VolumeBrowserServiceInterface
-	WebhookURLs             WebhookURLServiceInterface
-	Webhooks                WebhookServiceInterface
-	UserAPIKeys             UserAPIKeyServiceInterface
-	AuthSources             AuthSourceServiceInterface
-	OIDCApplications        OIDCApplicationServiceInterface
-	NASServices             NASServiceServiceInterface
-	NASServiceUsers         NASServiceUserServiceInterface
-	VolumeSyncs             VolumeSyncServiceInterface
-	VolumeSnapshots         VolumeSnapshotServiceInterface
-	Permissions             PermissionServiceInterface
-	Logs                    LogServiceInterface
-	StorageTiers            StorageTierServiceInterface
-	ClusterTiers            ClusterTierServiceInterface
-	MachineDrivePhys        MachineDrivePhysServiceInterface
-	ClusterStatsHistory     ClusterStatsHistoryServiceInterface
-	MachineStatus           MachineStatusServiceInterface
-	MachineStats            MachineStatsServiceInterface
-	MachineDriveStats       MachineDriveStatsServiceInterface
-	MachineNICs             MachineNICServiceInterface
-	UpdateSettings          UpdateSettingsServiceInterface
-	UpdateBranches          UpdateBranchServiceInterface
-	UpdateSourcePackages    UpdateSourcePackageServiceInterface
+	VMs                      VMServiceInterface
+	VMSnapshots              VMSnapshotServiceInterface
+	VMNICs                   VMNICServiceInterface
+	VMDrives                 VMDriveServiceInterface
+	VMDevices                VMDeviceServiceInterface
+	VMImports                VMImportServiceInterface
+	VMImportLogs             VMImportLogServiceInterface
+	VMExports                VMExportServiceInterface
+	Catalogs                 CatalogServiceInterface
+	VMRecipes                VMRecipeServiceInterface
+	VMRecipeInstances        VMRecipeInstanceServiceInterface
+	Networks                 NetworkServiceInterface
+	Users                    UserServiceInterface
+	Members                  MemberServiceInterface
+	CloudInitFiles           CloudInitServiceInterface
+	Clusters                 ClusterServiceInterface
+	Nodes                    NodeServiceInterface
+	Groups                   GroupServiceInterface
+	Files                    FileServiceInterface
+	ResourceGroups           ResourceGroupServiceInterface
+	Settings                 SettingsServiceInterface
+	System                   SystemServiceInterface
+	Schema                   SchemaServiceInterface
+	Tags                     TagServiceInterface
+	TagCategories            TagCategoryServiceInterface
+	TagMembers               TagMemberServiceInterface
+	Volumes                  VolumeServiceInterface
+	VNetRules                VNetRuleServiceInterface
+	VNetRuleAliases          VNetRuleAliasServiceInterface
+	Tenants                  TenantServiceInterface
+	TenantNodes              TenantNodeServiceInterface
+	TenantStorage            TenantStorageServiceInterface
+	TenantStatus             TenantStatusServiceInterface
+	TenantStatsHistoryShort  TenantStatsHistoryShortServiceInterface
+	TenantSnapshots          TenantSnapshotServiceInterface
+	TenantLayer2Networks     TenantLayer2NetworkServiceInterface
+	TenantNetworkBlocks      TenantNetworkBlockServiceInterface
+	TenantExternalIPs        TenantExternalIPServiceInterface
+	SnapshotProfiles         SnapshotProfileServiceInterface
+	SnapshotProfilePeriods   SnapshotProfilePeriodServiceInterface
+	Alarms                   AlarmServiceInterface
+	AlarmTypes               AlarmTypeServiceInterface
+	Tasks                    TaskServiceInterface
+	VNetAddresses            VNetAddressServiceInterface
+	VNetDNSViews             VNetDNSViewServiceInterface
+	VNetDNSZones             VNetDNSZoneServiceInterface
+	VNetDNSRecords           VNetDNSRecordServiceInterface
+	VNetHosts                VNetHostServiceInterface
+	VNetBGP                  VNetBGPServiceInterface
+	VNetBGPRouters           VNetBGPRouterServiceInterface
+	VNetBGPRouterCommands    VNetBGPRouterCommandServiceInterface
+	VNetBGPInterfaces        VNetBGPInterfaceServiceInterface
+	VNetBGPInterfaceCommands VNetBGPInterfaceCommandServiceInterface
+	VNetBGPRouteMaps         VNetBGPRouteMapServiceInterface
+	VNetBGPRouteMapCommands  VNetBGPRouteMapCommandServiceInterface
+	VNetBGPIPCommands        VNetBGPIPCommandServiceInterface
+	VNetOSPFCommands         VNetOSPFCommandServiceInterface
+	VNetEIGRPRouters         VNetEIGRPRouterServiceInterface
+	VNetEIGRPRouterCommands  VNetEIGRPRouterCommandServiceInterface
+	VNetWireGuards           VNetWireGuardServiceInterface
+	VNetWireGuardPeers       VNetWireGuardPeerServiceInterface
+	VNetWireGuardPeerStatus  VNetWireGuardPeerStatusServiceInterface
+	Certificates             CertificateServiceInterface
+	VNetIPSecs               VNetIPSecServiceInterface
+	VNetIPSecPhase1s         VNetIPSecPhase1ServiceInterface
+	VNetIPSecPhase2s         VNetIPSecPhase2ServiceInterface
+	VNetIPSecConnections     VNetIPSecConnectionServiceInterface
+	Sites                    SiteServiceInterface
+	SiteSyncsIncoming        SiteSyncIncomingServiceInterface
+	SiteSyncsOutgoing        SiteSyncOutgoingServiceInterface
+	SiteSyncProfilePeriods   SiteSyncProfilePeriodServiceInterface
+	CloudSnapshots           CloudSnapshotServiceInterface
+	CloudSnapshotVMs         CloudSnapshotVMServiceInterface
+	CloudSnapshotTenants     CloudSnapshotTenantServiceInterface
+	VolumeCIFSShares         VolumeCIFSShareServiceInterface
+	VolumeNFSShares          VolumeNFSShareServiceInterface
+	VolumeBrowser            VolumeBrowserServiceInterface
+	WebhookURLs              WebhookURLServiceInterface
+	Webhooks                 WebhookServiceInterface
+	UserAPIKeys              UserAPIKeyServiceInterface
+	AuthSources              AuthSourceServiceInterface
+	OIDCApplications         OIDCApplicationServiceInterface
+	NASServices              NASServiceServiceInterface
+	NASServiceUsers          NASServiceUserServiceInterface
+	VolumeSyncs              VolumeSyncServiceInterface
+	VolumeSnapshots          VolumeSnapshotServiceInterface
+	Permissions              PermissionServiceInterface
+	Logs                     LogServiceInterface
+	StorageTiers             StorageTierServiceInterface
+	ClusterTiers             ClusterTierServiceInterface
+	MachineDrivePhys         MachineDrivePhysServiceInterface
+	ClusterStatsHistory      ClusterStatsHistoryServiceInterface
+	MachineStatus            MachineStatusServiceInterface
+	MachineStats             MachineStatsServiceInterface
+	MachineDriveStats        MachineDriveStatsServiceInterface
+	MachineNICs              MachineNICServiceInterface
+	UpdateSettings           UpdateSettingsServiceInterface
+	UpdateBranches           UpdateBranchServiceInterface
+	UpdateSourcePackages     UpdateSourcePackageServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -700,6 +711,17 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.VNetDNSZones = &VNetDNSZoneService{client: c}
 	c.VNetDNSRecords = &VNetDNSRecordService{client: c}
 	c.VNetHosts = &VNetHostService{client: c}
+	c.VNetBGP = &VNetBGPService{client: c}
+	c.VNetBGPRouters = &VNetBGPRouterService{client: c}
+	c.VNetBGPRouterCommands = &VNetBGPRouterCommandService{client: c}
+	c.VNetBGPInterfaces = &VNetBGPInterfaceService{client: c}
+	c.VNetBGPInterfaceCommands = &VNetBGPInterfaceCommandService{client: c}
+	c.VNetBGPRouteMaps = &VNetBGPRouteMapService{client: c}
+	c.VNetBGPRouteMapCommands = &VNetBGPRouteMapCommandService{client: c}
+	c.VNetBGPIPCommands = &VNetBGPIPCommandService{client: c}
+	c.VNetOSPFCommands = &VNetOSPFCommandService{client: c}
+	c.VNetEIGRPRouters = &VNetEIGRPRouterService{client: c}
+	c.VNetEIGRPRouterCommands = &VNetEIGRPRouterCommandService{client: c}
 	c.VNetWireGuards = &VNetWireGuardService{client: c}
 	c.VNetWireGuardPeers = &VNetWireGuardPeerService{client: c}
 	c.VNetWireGuardPeerStatus = &VNetWireGuardPeerStatusService{client: c}

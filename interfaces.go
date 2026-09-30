@@ -546,6 +546,128 @@ type VNetHostServiceInterface interface {
 	Delete(ctx context.Context, id int) error
 }
 
+// VNetBGPServiceInterface defines the interface for the per-network dynamic
+// routing record (vnet_bgp).
+type VNetBGPServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetBGP, error)
+	ListByNetwork(ctx context.Context, networkID int, opts ...ListOption) ([]VNetBGP, error)
+	Get(ctx context.Context, id int) (*VNetBGP, error)
+	GetByNetwork(ctx context.Context, networkID int) (*VNetBGP, error)
+	Create(ctx context.Context, req *VNetBGPCreateRequest, opts ...RoutingRestartOption) (*VNetBGP, *RoutingRestartStatus, error)
+	GetOrCreate(ctx context.Context, networkID int, opts ...RoutingRestartOption) (*VNetBGP, *RoutingRestartStatus, error)
+	Delete(ctx context.Context, id int, opts ...RoutingRestartOption) (*RoutingRestartStatus, error)
+}
+
+// VNetBGPRouterServiceInterface defines the interface for BGP routers.
+type VNetBGPRouterServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetBGPRouter, error)
+	ListByBGP(ctx context.Context, bgpID int, opts ...ListOption) ([]VNetBGPRouter, error)
+	ListByNetwork(ctx context.Context, networkID int, opts ...ListOption) ([]VNetBGPRouter, error)
+	Get(ctx context.Context, id int) (*VNetBGPRouter, error)
+	GetByASN(ctx context.Context, bgpID int, asn int) (*VNetBGPRouter, error)
+	Create(ctx context.Context, req *VNetBGPRouterCreateRequest, opts ...RoutingRestartOption) (*VNetBGPRouter, *RoutingRestartStatus, error)
+	Update(ctx context.Context, id int, req *VNetBGPRouterUpdateRequest, opts ...RoutingRestartOption) (*VNetBGPRouter, *RoutingRestartStatus, error)
+	Delete(ctx context.Context, id int, opts ...RoutingRestartOption) (*RoutingRestartStatus, error)
+}
+
+// VNetBGPRouterCommandServiceInterface defines the interface for BGP router commands.
+type VNetBGPRouterCommandServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetBGPRouterCommand, error)
+	ListByRouter(ctx context.Context, routerID int, opts ...ListOption) ([]VNetBGPRouterCommand, error)
+	Get(ctx context.Context, id int) (*VNetBGPRouterCommand, error)
+	Create(ctx context.Context, req *VNetBGPRouterCommandCreateRequest, opts ...RoutingRestartOption) (*VNetBGPRouterCommand, *RoutingRestartStatus, error)
+	Update(ctx context.Context, id int, req *VNetBGPRouterCommandUpdateRequest, opts ...RoutingRestartOption) (*VNetBGPRouterCommand, *RoutingRestartStatus, error)
+	Delete(ctx context.Context, id int, opts ...RoutingRestartOption) (*RoutingRestartStatus, error)
+}
+
+// VNetBGPInterfaceServiceInterface defines the interface for BGP interfaces.
+type VNetBGPInterfaceServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetBGPInterface, error)
+	ListByBGP(ctx context.Context, bgpID int, opts ...ListOption) ([]VNetBGPInterface, error)
+	ListByNetwork(ctx context.Context, networkID int, opts ...ListOption) ([]VNetBGPInterface, error)
+	Get(ctx context.Context, id int) (*VNetBGPInterface, error)
+	GetByName(ctx context.Context, bgpID int, name string) (*VNetBGPInterface, error)
+	Create(ctx context.Context, req *VNetBGPInterfaceCreateRequest, opts ...RoutingRestartOption) (*VNetBGPInterface, *RoutingRestartStatus, error)
+	Update(ctx context.Context, id int, req *VNetBGPInterfaceUpdateRequest, opts ...RoutingRestartOption) (*VNetBGPInterface, *RoutingRestartStatus, error)
+	Delete(ctx context.Context, id int, opts ...RoutingRestartOption) (*RoutingRestartStatus, error)
+}
+
+// VNetBGPInterfaceCommandServiceInterface defines the interface for BGP interface commands.
+type VNetBGPInterfaceCommandServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetBGPInterfaceCommand, error)
+	ListByInterface(ctx context.Context, interfaceID int, opts ...ListOption) ([]VNetBGPInterfaceCommand, error)
+	Get(ctx context.Context, id int) (*VNetBGPInterfaceCommand, error)
+	Create(ctx context.Context, req *VNetBGPInterfaceCommandCreateRequest, opts ...RoutingRestartOption) (*VNetBGPInterfaceCommand, *RoutingRestartStatus, error)
+	Update(ctx context.Context, id int, req *VNetBGPInterfaceCommandUpdateRequest, opts ...RoutingRestartOption) (*VNetBGPInterfaceCommand, *RoutingRestartStatus, error)
+	Delete(ctx context.Context, id int, opts ...RoutingRestartOption) (*RoutingRestartStatus, error)
+}
+
+// VNetBGPRouteMapServiceInterface defines the interface for BGP route maps.
+type VNetBGPRouteMapServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetBGPRouteMap, error)
+	ListByBGP(ctx context.Context, bgpID int, opts ...ListOption) ([]VNetBGPRouteMap, error)
+	ListByNetwork(ctx context.Context, networkID int, opts ...ListOption) ([]VNetBGPRouteMap, error)
+	Get(ctx context.Context, id int) (*VNetBGPRouteMap, error)
+	GetByTagAndSequence(ctx context.Context, bgpID int, tag string, sequence int) (*VNetBGPRouteMap, error)
+	Create(ctx context.Context, req *VNetBGPRouteMapCreateRequest, opts ...RoutingRestartOption) (*VNetBGPRouteMap, *RoutingRestartStatus, error)
+	Update(ctx context.Context, id int, req *VNetBGPRouteMapUpdateRequest, opts ...RoutingRestartOption) (*VNetBGPRouteMap, *RoutingRestartStatus, error)
+	Delete(ctx context.Context, id int, opts ...RoutingRestartOption) (*RoutingRestartStatus, error)
+}
+
+// VNetBGPRouteMapCommandServiceInterface defines the interface for BGP route map commands.
+type VNetBGPRouteMapCommandServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetBGPRouteMapCommand, error)
+	ListByRouteMap(ctx context.Context, routeMapID int, opts ...ListOption) ([]VNetBGPRouteMapCommand, error)
+	Get(ctx context.Context, id int) (*VNetBGPRouteMapCommand, error)
+	Create(ctx context.Context, req *VNetBGPRouteMapCommandCreateRequest, opts ...RoutingRestartOption) (*VNetBGPRouteMapCommand, *RoutingRestartStatus, error)
+	Update(ctx context.Context, id int, req *VNetBGPRouteMapCommandUpdateRequest, opts ...RoutingRestartOption) (*VNetBGPRouteMapCommand, *RoutingRestartStatus, error)
+	Delete(ctx context.Context, id int, opts ...RoutingRestartOption) (*RoutingRestartStatus, error)
+}
+
+// VNetBGPIPCommandServiceInterface defines the interface for BGP IP commands (vnet_bgp_ip).
+type VNetBGPIPCommandServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetBGPIPCommand, error)
+	ListByBGP(ctx context.Context, bgpID int, opts ...ListOption) ([]VNetBGPIPCommand, error)
+	ListByNetwork(ctx context.Context, networkID int, opts ...ListOption) ([]VNetBGPIPCommand, error)
+	Get(ctx context.Context, id int) (*VNetBGPIPCommand, error)
+	Create(ctx context.Context, req *VNetBGPIPCommandCreateRequest, opts ...RoutingRestartOption) (*VNetBGPIPCommand, *RoutingRestartStatus, error)
+	Update(ctx context.Context, id int, req *VNetBGPIPCommandUpdateRequest, opts ...RoutingRestartOption) (*VNetBGPIPCommand, *RoutingRestartStatus, error)
+	Delete(ctx context.Context, id int, opts ...RoutingRestartOption) (*RoutingRestartStatus, error)
+}
+
+// VNetOSPFCommandServiceInterface defines the interface for OSPF commands.
+type VNetOSPFCommandServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetOSPFCommand, error)
+	ListByBGP(ctx context.Context, bgpID int, opts ...ListOption) ([]VNetOSPFCommand, error)
+	ListByNetwork(ctx context.Context, networkID int, opts ...ListOption) ([]VNetOSPFCommand, error)
+	Get(ctx context.Context, id int) (*VNetOSPFCommand, error)
+	Create(ctx context.Context, req *VNetOSPFCommandCreateRequest, opts ...RoutingRestartOption) (*VNetOSPFCommand, *RoutingRestartStatus, error)
+	Update(ctx context.Context, id int, req *VNetOSPFCommandUpdateRequest, opts ...RoutingRestartOption) (*VNetOSPFCommand, *RoutingRestartStatus, error)
+	Delete(ctx context.Context, id int, opts ...RoutingRestartOption) (*RoutingRestartStatus, error)
+}
+
+// VNetEIGRPRouterServiceInterface defines the interface for EIGRP routers.
+type VNetEIGRPRouterServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetEIGRPRouter, error)
+	ListByBGP(ctx context.Context, bgpID int, opts ...ListOption) ([]VNetEIGRPRouter, error)
+	ListByNetwork(ctx context.Context, networkID int, opts ...ListOption) ([]VNetEIGRPRouter, error)
+	Get(ctx context.Context, id int) (*VNetEIGRPRouter, error)
+	GetByASN(ctx context.Context, bgpID int, asn int) (*VNetEIGRPRouter, error)
+	Create(ctx context.Context, req *VNetEIGRPRouterCreateRequest, opts ...RoutingRestartOption) (*VNetEIGRPRouter, *RoutingRestartStatus, error)
+	Update(ctx context.Context, id int, req *VNetEIGRPRouterUpdateRequest, opts ...RoutingRestartOption) (*VNetEIGRPRouter, *RoutingRestartStatus, error)
+	Delete(ctx context.Context, id int, opts ...RoutingRestartOption) (*RoutingRestartStatus, error)
+}
+
+// VNetEIGRPRouterCommandServiceInterface defines the interface for EIGRP router commands.
+type VNetEIGRPRouterCommandServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetEIGRPRouterCommand, error)
+	ListByRouter(ctx context.Context, routerID int, opts ...ListOption) ([]VNetEIGRPRouterCommand, error)
+	Get(ctx context.Context, id int) (*VNetEIGRPRouterCommand, error)
+	Create(ctx context.Context, req *VNetEIGRPRouterCommandCreateRequest, opts ...RoutingRestartOption) (*VNetEIGRPRouterCommand, *RoutingRestartStatus, error)
+	Update(ctx context.Context, id int, req *VNetEIGRPRouterCommandUpdateRequest, opts ...RoutingRestartOption) (*VNetEIGRPRouterCommand, *RoutingRestartStatus, error)
+	Delete(ctx context.Context, id int, opts ...RoutingRestartOption) (*RoutingRestartStatus, error)
+}
+
 // VNetWireGuardServiceInterface defines the interface for WireGuard VPN interface operations.
 type VNetWireGuardServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]VNetWireGuard, error)

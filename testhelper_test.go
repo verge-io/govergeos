@@ -78,6 +78,17 @@ func initServices(c *Client) {
 	c.VNetDNSZones = &VNetDNSZoneService{client: c}
 	c.VNetDNSRecords = &VNetDNSRecordService{client: c}
 	c.VNetHosts = &VNetHostService{client: c}
+	c.VNetBGP = &VNetBGPService{client: c}
+	c.VNetBGPRouters = &VNetBGPRouterService{client: c}
+	c.VNetBGPRouterCommands = &VNetBGPRouterCommandService{client: c}
+	c.VNetBGPInterfaces = &VNetBGPInterfaceService{client: c}
+	c.VNetBGPInterfaceCommands = &VNetBGPInterfaceCommandService{client: c}
+	c.VNetBGPRouteMaps = &VNetBGPRouteMapService{client: c}
+	c.VNetBGPRouteMapCommands = &VNetBGPRouteMapCommandService{client: c}
+	c.VNetBGPIPCommands = &VNetBGPIPCommandService{client: c}
+	c.VNetOSPFCommands = &VNetOSPFCommandService{client: c}
+	c.VNetEIGRPRouters = &VNetEIGRPRouterService{client: c}
+	c.VNetEIGRPRouterCommands = &VNetEIGRPRouterCommandService{client: c}
 	c.VNetWireGuards = &VNetWireGuardService{client: c}
 	c.VNetWireGuardPeers = &VNetWireGuardPeerService{client: c}
 	c.VNetWireGuardPeerStatus = &VNetWireGuardPeerStatusService{client: c}

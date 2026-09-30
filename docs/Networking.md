@@ -1,13 +1,13 @@
 ---
 title: Networking
-description: Manage virtual networks, firewall rules, rule aliases, IP addresses, DNS, and host overrides
-tags: [network, vnet, firewall, rule, alias, address, dhcp, dns, dns-view, dns-zone, dns-record, host-override, diagnostics, statistics, ping, traceroute]
+description: Manage virtual networks, firewall rules, rule aliases, IP addresses, DNS, host overrides, and dynamic routing
+tags: [network, vnet, firewall, rule, alias, address, dhcp, dns, dns-view, dns-zone, dns-record, host-override, bgp, ospf, eigrp, routing, diagnostics, statistics, ping, traceroute]
 categories: [Networking]
 ---
 
 # Networking
 
-Manage virtual networks, firewall rules, DNS, and IP addressing.
+Manage virtual networks, firewall rules, DNS, IP addressing, and dynamic routing (BGP, OSPF, and EIGRP).
 
 ## Networks
 
@@ -299,4 +299,79 @@ host, err := client.VNetHosts.Update(ctx, hostID, &vergeos.VNetHostUpdateRequest
 
 // Delete a host override
 err = client.VNetHosts.Delete(ctx, hostID)
+```
+
+---
+
+## Dynamic Routing
+
+BGP, OSPF, and EIGRP configuration hangs off one `vnet_bgp` row per network. `GetOrCreate` returns that row. The other services take its key.
+
+A create, update, or delete does not reload routing by itself. VergeOS sets `need_restart` on the network. The call returns `RoutingRestartStatus`, and `Pending` is that flag. Pass `WithRestartNetwork` to restart the network in the same call. That restart is `Networks.Reset`. Routing changes take effect on the restart. `Restarted` is true when this call restarted the network.
+
+```go
+// The vnet_bgp row is the parent for BGP, OSPF, and EIGRP.
+cfg, _, err := client.VNetBGP.GetOrCreate(ctx, networkID)
+
+// Create a BGP router. Pending reports the network's need_restart flag.
+router, status, err := client.VNetBGPRouters.Create(ctx, &vergeos.VNetBGPRouterCreateRequest{
+    BGP: int(cfg.Key),
+    ASN: 65000,
+})
+fmt.Println(status.NetworkID, status.Pending, status.Restarted)
+
+// Add a neighbor and restart the network so the change takes effect.
+cmd, status, err := client.VNetBGPRouterCommands.Create(ctx, &vergeos.VNetBGPRouterCommandCreateRequest{
+    BGPRouter: int(router.Key),
+    Command:   vergeos.BGPRouterCommandNeighbor,
+    Params:    "192.168.1.1 remote-as 65001",
+    Enabled:   ptr(true),
+}, vergeos.WithRestartNetwork())
+fmt.Println(cmd.Command, status.Restarted)
+
+// A routing interface. layer2_type and mtu are omitted when unset.
+iface, status, err := client.VNetBGPInterfaces.Create(ctx, &vergeos.VNetBGPInterfaceCreateRequest{
+    BGP:           int(cfg.Key),
+    Name:          "bgp-peer",
+    IPAddress:     "10.255.0.1",
+    Network:       "10.255.0.0/30",
+    InterfaceVNet: uplinkID,
+    Layer2Type:    ptr(vergeos.BGPInterfaceLayer2VLAN),
+    Layer2ID:      ptr(100),
+})
+fmt.Println(iface.Name)
+
+// Route maps, prefix lists, OSPF, and EIGRP use the same vnet_bgp key.
+routeMap, status, err := client.VNetBGPRouteMaps.Create(ctx, &vergeos.VNetBGPRouteMapCreateRequest{
+    BGP:      int(cfg.Key),
+    Tag:      "IMPORT",
+    Sequence: 10,
+    Permit:   ptr(true),
+})
+_, status, err = client.VNetBGPRouteMapCommands.Create(ctx, &vergeos.VNetBGPRouteMapCommandCreateRequest{
+    BGPRouteMap: int(routeMap.Key),
+    Command:     vergeos.BGPRouteMapCommandMatch,
+    Params:      "ip address prefix-list MY-PREFIX",
+})
+_, status, err = client.VNetBGPIPCommands.Create(ctx, &vergeos.VNetBGPIPCommandCreateRequest{
+    BGP:     int(cfg.Key),
+    Command: vergeos.BGPIPCommandPrefixList,
+    Params:  "MY-PREFIX seq 10 permit 10.0.0.0/8 le 24",
+})
+_, status, err = client.VNetOSPFCommands.Create(ctx, &vergeos.VNetOSPFCommandCreateRequest{
+    BGP:     int(cfg.Key),
+    Command: vergeos.OSPFCommandNetwork,
+    Params:  "10.0.0.0/24 area 0",
+})
+eigrp, status, err := client.VNetEIGRPRouters.Create(ctx, &vergeos.VNetEIGRPRouterCreateRequest{
+    BGP: int(cfg.Key),
+    ASN: 100,
+})
+fmt.Println(eigrp.ASN, status.Pending)
+
+// Restart later by calling Reset directly.
+err = client.Networks.Reset(ctx, networkID, false)
+
+// Delete removes the vnet_bgp row and the routing rows that belong to it.
+status, err = client.VNetBGP.Delete(ctx, int(cfg.Key), vergeos.WithRestartNetwork())
 ```
