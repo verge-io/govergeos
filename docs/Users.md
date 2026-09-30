@@ -1,13 +1,13 @@
 ---
 title: Users
-description: Manage users, groups, API keys, and resource-level permissions
-tags: [user, group, member, api-key, permission, access-control, authentication, authorization, rbac]
+description: Manage users, groups, API keys, auth sources, OIDC applications, and resource-level permissions
+tags: [user, group, member, api-key, auth-source, oidc, permission, access-control, authentication, authorization, rbac]
 categories: [Users]
 ---
 
 # Users
 
-Manage users, groups, API keys, and resource-level permissions.
+Manage users, groups, API keys, authentication sources, OIDC applications, and resource-level permissions.
 
 ## User Management
 
@@ -93,6 +93,74 @@ key, err := client.UserAPIKeys.Update(ctx, keyID, &vergeos.UserAPIKeyUpdateReque
 
 // Delete an API key
 err = client.UserAPIKeys.Delete(ctx, keyID)
+```
+
+---
+
+## Authentication Sources
+
+External identity providers for single sign-on. `Update` reads the stored settings and merges the keys you send. A partial settings document does not delete the keys you left out, including `client_secret`. That secret is write-only: it is not returned, and printing settings redacts it.
+
+```go
+// List authentication sources
+sources, err := client.AuthSources.List(ctx)
+
+// Create an Azure AD source. The client secret is sent and not returned.
+source, err := client.AuthSources.Create(ctx, &vergeos.AuthSourceCreateRequest{
+    Name:   "Corporate Azure",
+    Driver: vergeos.AuthSourceDriverAzure,
+    Settings: vergeos.AuthSourceSettings{
+        "tenant_id":     "tenant",
+        "client_id":     "client",
+        "client_secret": vergeos.NewWriteOnlySecret("secret"),
+        "scope":         "openid profile email",
+    },
+    ButtonFAIcon: "bi-microsoft",
+})
+
+// Get by name
+source, err = client.AuthSources.GetByName(ctx, "Corporate Azure")
+
+// Change one setting. client_id, client_secret, and tenant_id stay.
+source, err = client.AuthSources.Update(ctx, int(source.Key), &vergeos.AuthSourceUpdateRequest{
+    Settings: vergeos.AuthSourceSettings{
+        "scope": "openid profile email groups",
+    },
+})
+
+// Delete an authentication source
+err = client.AuthSources.Delete(ctx, int(source.Key))
+```
+
+---
+
+## OIDC Applications
+
+Applications that authenticate through VergeOS acting as an identity provider. The client secret is generated on create, returned once, and not kept on the application. Printing the secret redacts it.
+
+```go
+// List OIDC applications
+apps, err := client.OIDCApplications.List(ctx)
+
+// Create an application. secret.Value() is the generated client secret.
+app, secret, err := client.OIDCApplications.Create(ctx, &vergeos.OIDCApplicationCreateRequest{
+    Name:        "Tenant Portal",
+    RedirectURI: "https://tenant.example.com/callback",
+    Description: "OIDC for tenant authentication",
+})
+fmt.Println(secret)
+_ = secret.Value()
+
+// Get by name
+app, err = client.OIDCApplications.GetByName(ctx, "Tenant Portal")
+
+// Update redirect URLs. Separate multiple URLs with a newline.
+app, err = client.OIDCApplications.Update(ctx, int(app.Key), &vergeos.OIDCApplicationUpdateRequest{
+    RedirectURI: ptr("https://tenant.example.com/callback"),
+})
+
+// Delete an OIDC application
+err = client.OIDCApplications.Delete(ctx, int(app.Key))
 ```
 
 ---

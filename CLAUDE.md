@@ -29,7 +29,7 @@ Integration tests use `//go:build integration` build constraint and require `VER
 
 **Single flat package** (`vergeos`) — all code lives at the repository root. No nested packages.
 
-### Core Pattern: Service-Oriented Design (79 services)
+### Core Pattern: Service-Oriented Design (82 services)
 
 Each VergeOS resource has three pieces:
 
@@ -41,7 +41,7 @@ Services are initialized in `NewClient()` (in `client.go`) and exposed as interf
 
 ### Key Design Decisions
 
-Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-020). The critical ones:
+Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-023). The critical ones:
 
 - **FlexInt** (`types.go`): Custom type handling VergeOS API returning IDs as int or string. Exception: Volume service uses `string` keys (SHA1 hashes).
 - **Pointer fields** in Update requests: `*int`, `*bool` etc. distinguish "not provided" (nil) from "set to zero value".
@@ -51,6 +51,7 @@ Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-020). The critical one
 - **Mandatory version and credential check**: `NewClient()` accepts VergeOS 26 and later (older majors are rejected) and validates the supplied credentials during initialization. A 401 from the credential check is not retried. A connection reset on that GET is retried like any other idempotent request. `WithMinimumVersion` changes the floor. `WithSkipVersionCheck` records the server version but does not reject it. Features that need a specific minor gate on `serverVersion` with `isVersionAtLeast`.
 - **Retries**: GET, PUT, and DELETE retry connection resets, timeouts before a response, and HTTP 429, 502, and 503. POST is not retried. HTTP 401 is never retried. `WithRetry` tunes or disables this. `WithRateLimit` is an optional minimum interval between request starts.
 - **WithEnvConfig() is opt-in**: Environment variables are not auto-read.
+- **Auth source settings are merged on update**: The API replaces the settings object. `AuthSourceService.Update` reads the stored settings and merges the caller's keys before sending, so a partial update cannot drop `client_secret`. Returned auth sources omit `client_secret`. An OIDC application's `client_secret` is write-only: `Create` returns it as a `WriteOnlySecret`, and `OIDCApplication` does not keep it.
 
 ### Adding a New Service
 

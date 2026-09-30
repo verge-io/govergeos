@@ -140,6 +140,8 @@ type Client struct {
 	WebhookURLs             WebhookURLServiceInterface
 	Webhooks                WebhookServiceInterface
 	UserAPIKeys             UserAPIKeyServiceInterface
+	AuthSources             AuthSourceServiceInterface
+	OIDCApplications        OIDCApplicationServiceInterface
 	NASServices             NASServiceServiceInterface
 	NASServiceUsers         NASServiceUserServiceInterface
 	VolumeSyncs             VolumeSyncServiceInterface
@@ -707,6 +709,8 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.WebhookURLs = &WebhookURLService{client: c}
 	c.Webhooks = &WebhookService{client: c}
 	c.UserAPIKeys = &UserAPIKeyService{client: c}
+	c.AuthSources = &AuthSourceService{client: c}
+	c.OIDCApplications = &OIDCApplicationService{client: c}
 	c.NASServices = &NASServiceService{client: c}
 	c.NASServiceUsers = &NASServiceUserService{client: c}
 	c.VolumeSyncs = &VolumeSyncService{client: c}
