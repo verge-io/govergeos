@@ -37,7 +37,8 @@ type Client struct {
 	username string
 	// password is the API password.
 	password string
-	// apiKey is the API key for Bearer token authentication (alternative to username/password).
+	// apiKey is the API key for Bearer token authentication.
+	// When set, requests use it instead of username and password.
 	apiKey string
 	// httpClient is the HTTP client used for requests.
 	httpClient *http.Client
@@ -160,6 +161,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // WithCredentials sets the username and password for API authentication.
 // This uses HTTP Basic Authentication.
+//
+// Requests use an API key instead when one is also configured, whether
+// that key came from WithAPIKey or from VERGEOS_API_KEY via WithEnvConfig.
 func WithCredentials(username, password string) ClientOption {
 	return func(c *Client) error {
 		c.username = username
@@ -169,7 +173,10 @@ func WithCredentials(username, password string) ClientOption {
 }
 
 // WithAPIKey sets the API key for Bearer token authentication.
-// This is an alternative to WithCredentials - use one or the other.
+//
+// The API key is used even when username and password are also set.
+// WithEnvConfig applies the same rule: VERGEOS_API_KEY wins over
+// VERGEOS_USERNAME and VERGEOS_PASSWORD.
 func WithAPIKey(apiKey string) ClientOption {
 	return func(c *Client) error {
 		c.apiKey = apiKey
@@ -190,16 +197,21 @@ func cloneOrNewTransport(rt http.RoundTripper) *http.Transport {
 	}
 }
 
+// useInsecureTLS skips TLS certificate verification on c.httpClient.
+func useInsecureTLS(c *Client) {
+	transport := cloneOrNewTransport(c.httpClient.Transport)
+	transport.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	c.httpClient.Transport = transport
+}
+
 // WithInsecureTLS configures whether to skip TLS certificate verification.
 // This is useful for self-signed certificates.
 func WithInsecureTLS(insecure bool) ClientOption {
 	return func(c *Client) error {
 		if insecure {
-			transport := cloneOrNewTransport(c.httpClient.Transport)
-			transport.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c.httpClient.Transport = transport
+			useInsecureTLS(c)
 		}
 		return nil
 	}
@@ -307,18 +319,24 @@ func WithSkipVersionCheck() ClientOption {
 // to override specific values.
 //
 // Environment variables:
-//   - VERGEOS_HOST: Base URL for the VergeOS API (required if not set via WithBaseURL)
+//   - VERGEOS_HOST: Host or base URL. A value with no scheme is treated as
+//     https. http and https are accepted; any other scheme is an error that
+//     names VERGEOS_HOST. Required if the base URL was not set with WithBaseURL.
 //   - VERGEOS_USERNAME + VERGEOS_PASSWORD: Basic authentication
-//   - VERGEOS_API_KEY: Bearer token authentication (alternative to username/password)
-//   - VERGEOS_VERIFY_SSL: Verify TLS certificates, "true" or "false" (default: "true")
+//   - VERGEOS_API_KEY: Bearer token authentication. Used when set, including
+//     when username and password are also set. WithAPIKey follows the same rule.
+//   - VERGEOS_VERIFY_SSL: Verify TLS certificates, "true" or "false" (default: "true").
+//     "false" and "0" skip verification.
+//   - VERGEOS_INSECURE: Skip TLS verification when "true" (also "yes", "on", or "1").
+//     VERGEOS_INSECURE=true is the same as VERGEOS_VERIFY_SSL=false. If both are
+//     set and they disagree, WithEnvConfig returns an error.
 //   - VERGEOS_TIMEOUT: Request timeout in seconds (default: "30")
 //
 // Example:
 //
-//	export VERGEOS_HOST=https://vergeos.example.com
-//	export VERGEOS_USERNAME=admin
-//	export VERGEOS_PASSWORD=secret
-//	export VERGEOS_VERIFY_SSL=false
+//	export VERGEOS_HOST=vergeos.example.com
+//	export VERGEOS_API_KEY=secret
+//	export VERGEOS_INSECURE=true
 //
 //	// Simple usage
 //	client, err := vergeos.NewClient(vergeos.WithEnvConfig())
@@ -333,34 +351,36 @@ func WithEnvConfig() ClientOption {
 		// Base URL (only if not already set)
 		if c.baseURL == "" {
 			if host := os.Getenv("VERGEOS_HOST"); host != "" {
-				c.baseURL = strings.TrimSuffix(host, "/")
+				normalized, err := normalizeEnvHost(host)
+				if err != nil {
+					return err
+				}
+				c.baseURL = normalized
 			}
 		}
 
-		// Authentication (only if not already set)
+		// Authentication (only if not already set).
+		// An API key wins when both it and username/password are set.
 		hasAuth := (c.username != "" && c.password != "") || c.apiKey != ""
 		if !hasAuth {
 			username := os.Getenv("VERGEOS_USERNAME")
 			password := os.Getenv("VERGEOS_PASSWORD")
 			apiKey := os.Getenv("VERGEOS_API_KEY")
 
-			if username != "" && password != "" {
+			if apiKey != "" {
+				c.apiKey = apiKey
+			} else if username != "" && password != "" {
 				c.username = username
 				c.password = password
-			} else if apiKey != "" {
-				c.apiKey = apiKey
 			}
 		}
 
-		// SSL verification (default: true = verify certificates)
-		// Only apply if VERGEOS_VERIFY_SSL is explicitly set to false
-		verifySSL := os.Getenv("VERGEOS_VERIFY_SSL")
-		if strings.ToLower(verifySSL) == "false" || verifySSL == "0" {
-			transport := cloneOrNewTransport(c.httpClient.Transport)
-			transport.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c.httpClient.Transport = transport
+		skipVerify, err := envSkipTLSVerify()
+		if err != nil {
+			return err
+		}
+		if skipVerify {
+			useInsecureTLS(c)
 		}
 
 		// Timeout (only if set in environment)
@@ -374,6 +394,73 @@ func WithEnvConfig() ClientOption {
 
 		return nil
 	}
+}
+
+// normalizeEnvHost returns an http or https base URL for VERGEOS_HOST.
+// A value with no scheme is treated as https.
+func normalizeEnvHost(raw string) (string, error) {
+	host := strings.TrimSpace(raw)
+	if host == "" {
+		return "", fmt.Errorf("invalid VERGEOS_HOST %q: missing host", raw)
+	}
+	if !strings.Contains(host, "://") {
+		host = "https://" + host
+	}
+
+	u, err := url.Parse(host)
+	if err != nil {
+		return "", fmt.Errorf("invalid VERGEOS_HOST %q: %w", raw, err)
+	}
+	scheme := strings.ToLower(u.Scheme)
+	if scheme != "http" && scheme != "https" {
+		return "", fmt.Errorf("invalid VERGEOS_HOST %q: unsupported protocol scheme %q (use http or https)", raw, u.Scheme)
+	}
+	if u.Host == "" {
+		return "", fmt.Errorf("invalid VERGEOS_HOST %q: missing host", raw)
+	}
+	u.Scheme = scheme
+	return strings.TrimSuffix(u.String(), "/"), nil
+}
+
+// envSkipTLSVerify reports whether the TLS environment variables ask the
+// client to skip certificate verification.
+//
+// VERGEOS_INSECURE=true is an alias for VERGEOS_VERIFY_SSL=false. When both
+// variables are set they must agree. An empty value is treated as unset.
+// VERGEOS_VERIFY_SSL disables verification only for "false" and "0".
+// VERGEOS_INSECURE accepts the same boolean words Ansible does: true/false,
+// yes/no, on/off, y/n, t/f, and 1/0.
+func envSkipTLSVerify() (bool, error) {
+	verifyRaw := strings.TrimSpace(os.Getenv("VERGEOS_VERIFY_SSL"))
+	insecureRaw := strings.TrimSpace(os.Getenv("VERGEOS_INSECURE"))
+
+	verifySet := verifyRaw != ""
+	insecureSet := insecureRaw != ""
+
+	verifySkips := false
+	if verifySet {
+		verifySkips = strings.EqualFold(verifyRaw, "false") || verifyRaw == "0"
+	}
+
+	insecureSkips := false
+	if insecureSet {
+		switch strings.ToLower(insecureRaw) {
+		case "1", "t", "true", "y", "yes", "on":
+			insecureSkips = true
+		case "0", "f", "false", "n", "no", "off":
+			insecureSkips = false
+		default:
+			return false, fmt.Errorf("invalid VERGEOS_INSECURE value %q: expected true or false", insecureRaw)
+		}
+	}
+
+	if verifySet && insecureSet && verifySkips != insecureSkips {
+		return false, fmt.Errorf("VERGEOS_VERIFY_SSL=%q and VERGEOS_INSECURE=%q contradict each other (VERGEOS_INSECURE=true is the same as VERGEOS_VERIFY_SSL=false)", verifyRaw, insecureRaw)
+	}
+	if insecureSet {
+		return insecureSkips, nil
+	}
+	return verifySkips, nil
 }
 
 // NewClient creates a new VergeOS API client.
@@ -570,7 +657,7 @@ func (c *Client) request(ctx context.Context, method, endpoint string, body any,
 		return nil, fmt.Errorf("vergeos: failed to create request: %w", err)
 	}
 
-	// Set authentication header
+	// An API key takes precedence over username and password.
 	if c.apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	} else {

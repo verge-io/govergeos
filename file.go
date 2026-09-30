@@ -286,7 +286,7 @@ func (s *FileService) uploadChunk(ctx context.Context, id int, data []byte, offs
 		return fmt.Errorf("vergeos: failed to create request: %w", err)
 	}
 
-	// Set authentication header
+	// An API key takes precedence over username and password.
 	if s.client.apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+s.client.apiKey)
 	} else {

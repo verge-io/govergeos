@@ -5,10 +5,10 @@
 //
 // Usage:
 //
-//	export VERGEOS_HOST=https://your-vergeos-host
+//	export VERGEOS_HOST=your-vergeos-host   # https:// is assumed when the scheme is omitted
 //	export VERGEOS_USERNAME=admin
 //	export VERGEOS_PASSWORD=yourpassword
-//	export VERGEOS_VERIFY_SSL=false  # Optional: for self-signed certificates
+//	export VERGEOS_INSECURE=true            # Optional: self-signed certificates (or VERGEOS_VERIFY_SSL=false)
 //	go run main.go
 package main
 
@@ -22,8 +22,9 @@ import (
 
 func main() {
 	// Create client from environment variables.
-	// Required: VERGEOS_HOST, VERGEOS_USERNAME, VERGEOS_PASSWORD (or VERGEOS_API_KEY)
-	// Optional: VERGEOS_VERIFY_SSL (default: true), VERGEOS_TIMEOUT (default: 30)
+	// Required: VERGEOS_HOST, and either VERGEOS_API_KEY or VERGEOS_USERNAME + VERGEOS_PASSWORD.
+	// An API key is used when both are set.
+	// Optional: VERGEOS_VERIFY_SSL (default: true) or VERGEOS_INSECURE, VERGEOS_TIMEOUT (default: 30)
 	client, err := vergeos.NewClient(vergeos.WithEnvConfig())
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
