@@ -98,7 +98,7 @@ vms, err := client.VMs.List(ctx)
 
 // Create a VM
 vm, err := client.VMs.Create(ctx, &vergeos.VMCreateRequest{
-    Name: "web-server", CPUCores: 4, RAM: 8192, Cluster: clusterID,
+    Name: "web-server", CPUCores: 4, RAM: 8192, Cluster: &clusterID,
 })
 
 // Power operations
@@ -114,9 +114,12 @@ err = client.VMs.PowerOffWithOptions(ctx, vmID, &vergeos.VMPowerOffOptions{
     ForceAfterTimeout: true,
 })
 
-// Create a snapshot (expires in 24 hours)
+// Take a snapshot. Retention is a lifetime in seconds, sent as expires.
+// Quiesce requires a running guest agent; leave it false to snapshot
+// a VM that does not have one.
 snapshot, err := client.VMs.Snapshot(ctx, vmID, &vergeos.VMSnapshotOptions{
-    Name: "pre-upgrade", Retention: 86400,
+    Name:      "pre-upgrade",
+    Retention: 86400, // 24 hours
 })
 ```
 
@@ -148,7 +151,7 @@ for _, id := range vmIDs {
     go func(vmID int) {
         defer wg.Done()
         vm, _ := client.VMs.Get(ctx, vmID)
-        fmt.Printf("VM: %s, Status: %s\n", vm.Name, vm.Status)
+        fmt.Printf("VM: %s, Running: %v\n", vm.Name, vm.PowerState)
     }(id)
 }
 wg.Wait()
@@ -158,8 +161,14 @@ wg.Wait()
 
 ```go
 // Manage multiple environments
-prodClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://prod.example.com"), ...)
-devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com"), ...)
+prodClient, _ := vergeos.NewClient(
+    vergeos.WithBaseURL("https://prod.example.com"),
+    vergeos.WithAPIKey("prod-api-key"),
+)
+devClient, _ := vergeos.NewClient(
+    vergeos.WithBaseURL("https://dev.example.com"),
+    vergeos.WithAPIKey("dev-api-key"),
+)
 ```
 
 ## Service Reference

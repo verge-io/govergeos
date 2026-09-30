@@ -180,8 +180,8 @@ assignment, err := client.TenantLayer2Networks.Update(ctx, assignmentID, &vergeo
 })
 
 // Enable/disable an assignment
-assignment, err := client.TenantLayer2Networks.Enable(ctx, assignmentID)
-assignment, err := client.TenantLayer2Networks.Disable(ctx, assignmentID)
+err = client.TenantLayer2Networks.Enable(ctx, assignmentID)
+err = client.TenantLayer2Networks.Disable(ctx, assignmentID)
 
 // Convenience method: Assign a network to a tenant (creates if not exists)
 assignment, err := client.TenantLayer2Networks.Assign(ctx, tenantID, networkID)
