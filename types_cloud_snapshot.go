@@ -50,8 +50,8 @@ type CloudSnapshotUpdateRequest struct {
 
 // cloudSnapshotAction represents an action request for a cloud snapshot.
 type cloudSnapshotAction struct {
-	CloudSnapshot int                    `json:"cloud_snapshot"`
-	Action        string                 `json:"action"`
+	CloudSnapshot int            `json:"cloud_snapshot"`
+	Action        string         `json:"action"`
 	Params        map[string]any `json:"params,omitempty"`
 }
 

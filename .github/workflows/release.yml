@@ -1,0 +1,137 @@
+name: release
+
+# Creates an annotated tag and the GitHub release for that tag.
+# Run it from the Actions tab after the release commit is on main.
+# Pushing a vX.Y.Z tag by hand still publishes the GitHub release.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Tag to create, for example v0.4.0"
+        required: true
+        type: string
+      ref:
+        description: "Commit or branch to tag (must be contained in main)"
+        required: true
+        default: main
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Resolve version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -eu
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            version="$INPUT_VERSION"
+          else
+            version="$GITHUB_REF_NAME"
+          fi
+          if ! printf '%s\n' "$version" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "version must look like vX.Y.Z or vX.Y.Z-rc.1, got: $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Resolved $version"
+
+      - name: Require the commit on main
+        run: |
+          set -eu
+          git fetch origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "Ref $(git rev-parse HEAD) is not contained in origin/main."
+            exit 1
+          fi
+
+      - name: Require the user agent to match the tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -eu
+          version="$VERSION"
+          want="govergeos/${version#v}"
+          if ! grep -F -q "defaultUserAgent = \"$want\"" client.go; then
+            echo "client.go defaultUserAgent must be \"$want\" before tagging $version."
+            exit 1
+          fi
+
+      - name: gofmt
+        run: |
+          files=$(gofmt -l .)
+          if [ -n "$files" ]; then
+            echo "These files need gofmt:"
+            echo "$files"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@2026.2.1
+          "$(go env GOPATH)/bin/staticcheck" ./...
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Build examples
+        run: |
+          go build ./...
+          while IFS= read -r dir; do
+            go build -o /dev/null "$dir"
+          done < <(go list -f '{{if eq .Name "main"}}{{.Dir}}{{end}}' ./examples/...)
+
+      - name: Create tag
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -eu
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null; then
+            echo "Tag $VERSION already exists. Refusing to move it."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "refs/tags/$VERSION"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -eu
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "GitHub release $VERSION already exists."
+            exit 0
+          fi
+          gh release create "$VERSION" --title "$VERSION" --generate-notes
