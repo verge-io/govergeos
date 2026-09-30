@@ -77,8 +77,18 @@ func (s *VolumeSnapshotService) GetByName(ctx context.Context, volumeID int, nam
 	if len(snapshots) == 0 {
 		return nil, &NotFoundError{Resource: "VolumeSnapshot", ID: name}
 	}
+	if err := requireExactName("VolumeSnapshot", name, snapshots[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, int(snapshots[0].Key))
+	got, err := s.Get(ctx, int(snapshots[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VolumeSnapshot", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new volume snapshot and returns the created snapshot.

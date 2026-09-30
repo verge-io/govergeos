@@ -61,8 +61,18 @@ func (s *VolumeCIFSShareService) GetByName(ctx context.Context, volumeID, name s
 	if len(shares) == 0 {
 		return nil, &NotFoundError{Resource: "VolumeCIFSShare", ID: name}
 	}
+	if err := requireExactName("VolumeCIFSShare", name, shares[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, shares[0].ID)
+	got, err := s.Get(ctx, shares[0].ID)
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VolumeCIFSShare", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new CIFS share and returns the created share.
@@ -183,8 +193,18 @@ func (s *VolumeNFSShareService) GetByName(ctx context.Context, volumeID, name st
 	if len(shares) == 0 {
 		return nil, &NotFoundError{Resource: "VolumeNFSShare", ID: name}
 	}
+	if err := requireExactName("VolumeNFSShare", name, shares[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, shares[0].ID)
+	got, err := s.Get(ctx, shares[0].ID)
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VolumeNFSShare", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new NFS share and returns the created share.

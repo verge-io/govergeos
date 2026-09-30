@@ -76,6 +76,9 @@ func (s *NodeService) GetByName(ctx context.Context, name string) (*Node, error)
 	if len(nodes) == 0 {
 		return nil, &NotFoundError{Resource: "Node", ID: name}
 	}
+	if err := requireExactName("Node", name, nodes[0].Name, name); err != nil {
+		return nil, err
+	}
 
 	return &nodes[0], nil
 }

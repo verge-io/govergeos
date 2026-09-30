@@ -78,7 +78,17 @@ func (s *CloudSnapshotService) GetByName(ctx context.Context, name string) (*Clo
 	if len(snapshots) == 0 {
 		return nil, &NotFoundError{Resource: "CloudSnapshot", ID: name}
 	}
-	return s.Get(ctx, int(snapshots[0].Key))
+	if err := requireExactName("CloudSnapshot", name, snapshots[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(snapshots[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("CloudSnapshot", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new cloud snapshot (system snapshot).

@@ -64,8 +64,18 @@ func (s *VNetRuleService) GetByName(ctx context.Context, vnetID int, name string
 	if len(rules) == 0 {
 		return nil, &NotFoundError{Resource: "VNetRule", ID: name}
 	}
+	if err := requireExactName("VNetRule", name, rules[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, int(rules[0].Key))
+	got, err := s.Get(ctx, int(rules[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VNetRule", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new firewall rule and returns the created rule.
@@ -225,8 +235,18 @@ func (s *VNetRuleAliasService) GetByName(ctx context.Context, name string) (*VNe
 	if len(aliases) == 0 {
 		return nil, &NotFoundError{Resource: "VNetRuleAlias", ID: name}
 	}
+	if err := requireExactName("VNetRuleAlias", name, aliases[0].Name, name); err != nil {
+		return nil, err
+	}
 	// Get full details
-	return s.Get(ctx, int(aliases[0].Key))
+	got, err := s.Get(ctx, int(aliases[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VNetRuleAlias", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new rule alias and returns the created alias.

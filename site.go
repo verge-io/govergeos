@@ -55,7 +55,17 @@ func (s *SiteService) GetByName(ctx context.Context, name string) (*Site, error)
 	if len(sites) == 0 {
 		return nil, &NotFoundError{Resource: "Site", ID: name}
 	}
-	return s.Get(ctx, int(sites[0].Key))
+	if err := requireExactName("Site", name, sites[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(sites[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("Site", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // GetBySiteID returns a site by its 40-character SHA1 site ID.
@@ -243,7 +253,17 @@ func (s *SiteSyncIncomingService) GetByName(ctx context.Context, siteID int, nam
 	if len(syncs) == 0 {
 		return nil, &NotFoundError{Resource: "SiteSyncIncoming", ID: name}
 	}
-	return s.Get(ctx, int(syncs[0].Key))
+	if err := requireExactName("SiteSyncIncoming", name, syncs[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(syncs[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("SiteSyncIncoming", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // GetBySyncID returns an incoming sync by its 40-character sync ID.
@@ -395,7 +415,17 @@ func (s *SiteSyncOutgoingService) GetByName(ctx context.Context, siteID int, nam
 	if len(syncs) == 0 {
 		return nil, &NotFoundError{Resource: "SiteSyncOutgoing", ID: name}
 	}
-	return s.Get(ctx, int(syncs[0].Key))
+	if err := requireExactName("SiteSyncOutgoing", name, syncs[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(syncs[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("SiteSyncOutgoing", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Create creates a new outgoing sync and returns it.

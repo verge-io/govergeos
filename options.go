@@ -110,9 +110,36 @@ func (opts *ListOptions) toQueryParams() url.Values {
 	return params
 }
 
-// escapeFilterValue escapes single quotes in a string value for use in
-// VergeOS API filter expressions. A value containing an unescaped single
-// quote would break the filter syntax.
+// escapeFilterValue prepares a string for a VergeOS filter literal.
+//
+// VergeOS uses backslash escaping, not SQL quote-doubling. Three characters
+// are reserved inside a literal, and each is escaped with a backslash:
+//
+//	\  the escape character itself
+//	'  terminates the literal
+//	{  opens a balanced, nesting-aware construct
+//
+// Backslash is replaced first. Replacing it later would double the
+// backslashes inserted for ' and {. } is not reserved.
+//
+// An unescaped balanced {...} is consumed by the platform, and the filter
+// matches whatever text remains. A lookup can then return a different object.
 func escapeFilterValue(s string) string {
-	return strings.ReplaceAll(s, "'", "''")
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, "'", `\'`)
+	s = strings.ReplaceAll(s, "{", `\{`)
+	return s
+}
+
+// requireExactName returns NotFoundError unless got is exactly want.
+//
+// GetByName calls this on the resource it is about to return. A name filter
+// can come back with a different object when a literal contains a brace
+// group, and returning that object would let the caller update or delete
+// the wrong resource.
+func requireExactName(resource string, id any, got, want string) error {
+	if got == want {
+		return nil
+	}
+	return &NotFoundError{Resource: resource, ID: id}
 }

@@ -65,6 +65,9 @@ func (s *FileService) GetByName(ctx context.Context, name string) (*File, error)
 	if len(files) == 0 {
 		return nil, &NotFoundError{Resource: "File", ID: name}
 	}
+	if err := requireExactName("File", name, files[0].Name, name); err != nil {
+		return nil, err
+	}
 
 	return &files[0], nil
 }

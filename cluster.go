@@ -56,6 +56,9 @@ func (s *ClusterService) GetByName(ctx context.Context, name string) (*Cluster, 
 	if len(clusters) == 0 {
 		return nil, &NotFoundError{Resource: "Cluster", ID: name}
 	}
+	if err := requireExactName("Cluster", name, clusters[0].Name, name); err != nil {
+		return nil, err
+	}
 
 	return &clusters[0], nil
 }

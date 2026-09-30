@@ -70,7 +70,17 @@ func (s *TenantSnapshotService) GetByName(ctx context.Context, tenantID int, nam
 	if len(snapshots) == 0 {
 		return nil, &NotFoundError{Resource: "TenantSnapshot", ID: name}
 	}
-	return s.Get(ctx, int(snapshots[0].Key))
+	if err := requireExactName("TenantSnapshot", name, snapshots[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, int(snapshots[0].Key))
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("TenantSnapshot", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
 }
 
 // Update updates a tenant snapshot and returns the updated snapshot.
@@ -129,7 +139,7 @@ func (s *TenantSnapshotService) SetExpires(ctx context.Context, id int, expires 
 
 // tenantSnapshotAction represents a tenant snapshot action request.
 type tenantSnapshotAction struct {
-	Tenant int                    `json:"tenant"`
-	Action string                 `json:"action"`
+	Tenant int            `json:"tenant"`
+	Action string         `json:"action"`
 	Params map[string]any `json:"params,omitempty"`
 }
