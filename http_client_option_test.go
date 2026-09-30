@@ -619,3 +619,107 @@ func TestWithHTTPClientNil(t *testing.T) {
 		t.Fatalf("error = %v", err)
 	}
 }
+
+// TestClonedTransportKeepsHTTP2Disabled checks that an empty TLSNextProto
+// map still disables HTTP/2 after the transport is copied for insecure TLS.
+// A nil map is what lets net/http enable HTTP/2 on the first request.
+func TestClonedTransportKeepsHTTP2Disabled(t *testing.T) {
+	server, _ := newStartupServer(t, "26.1.8", http.StatusOK, `[]`)
+	const (
+		callerTimeout   = 30 * time.Second
+		explicitTimeout = 8 * time.Second
+	)
+
+	for _, order := range permutations([]string{"http", "insecure", "timeout"}) {
+		order := append([]string(nil), order...)
+		t.Run(strings.Join(order, " then "), func(t *testing.T) {
+			disabled := map[string]func(string, *tls.Conn) http.RoundTripper{}
+			base := &http.Transport{TLSNextProto: disabled}
+			caller := &http.Client{Transport: base, Timeout: callerTimeout}
+			opts := []ClientOption{
+				WithBaseURL(server.URL),
+				WithCredentials("admin", "correct-password"),
+			}
+			for _, name := range order {
+				switch name {
+				case "http":
+					opts = append(opts, WithHTTPClient(caller))
+				case "insecure":
+					opts = append(opts, WithInsecureTLS(true))
+				case "timeout":
+					opts = append(opts, WithTimeout(explicitTimeout))
+				}
+			}
+
+			client, err := NewClient(opts...)
+			if err != nil {
+				t.Fatalf("NewClient: %v", err)
+			}
+			if caller.Transport != base || caller.Timeout != callerTimeout {
+				t.Fatal("caller client was modified")
+			}
+			if base.TLSNextProto == nil || len(base.TLSNextProto) != 0 {
+				t.Fatalf("caller TLSNextProto = %v, want an empty map", base.TLSNextProto)
+			}
+
+			got, ok := unwrapTransport(client.httpClient.Transport).(*http.Transport)
+			if !ok {
+				t.Fatalf("transport = %T", unwrapTransport(client.httpClient.Transport))
+			}
+			if got == base {
+				t.Fatal("insecure TLS reused the caller's transport")
+			}
+			if got.TLSNextProto == nil {
+				t.Fatal("clone lost TLSNextProto, so the first request can re-enable HTTP/2")
+			}
+			if _, h2 := got.TLSNextProto["h2"]; h2 || len(got.TLSNextProto) != 0 {
+				t.Fatalf("clone TLSNextProto = %#v, want an empty map with HTTP/2 disabled", got.TLSNextProto)
+			}
+			if got.TLSClientConfig == nil || !got.TLSClientConfig.InsecureSkipVerify {
+				t.Fatal("InsecureSkipVerify was not set on the clone")
+			}
+			if client.httpClient.Timeout != explicitTimeout {
+				t.Fatalf("timeout = %s, want %s", client.httpClient.Timeout, explicitTimeout)
+			}
+
+			got.TLSNextProto["h2"] = nil
+			if _, shared := base.TLSNextProto["h2"]; shared {
+				t.Fatal("clone shares the caller's TLSNextProto map")
+			}
+		})
+	}
+
+	t.Run("copies TLSNextProto entries", func(t *testing.T) {
+		var called bool
+		next := map[string]func(string, *tls.Conn) http.RoundTripper{
+			"custom": func(string, *tls.Conn) http.RoundTripper {
+				called = true
+				return nil
+			},
+		}
+		base := &http.Transport{TLSNextProto: next}
+		caller := &http.Client{Transport: base, Timeout: callerTimeout}
+		client, err := NewClient(
+			WithBaseURL(server.URL),
+			WithCredentials("admin", "correct-password"),
+			WithTimeout(explicitTimeout),
+			WithHTTPClient(caller),
+			WithInsecureTLS(true),
+		)
+		if err != nil {
+			t.Fatalf("NewClient: %v", err)
+		}
+		got := unwrapTransport(client.httpClient.Transport).(*http.Transport)
+		fn := got.TLSNextProto["custom"]
+		if fn == nil || len(got.TLSNextProto) != 1 {
+			t.Fatalf("clone TLSNextProto = %#v, want the custom entry", got.TLSNextProto)
+		}
+		fn("", nil)
+		if !called {
+			t.Fatal("cloned TLSNextProto entry was not the caller's function")
+		}
+		if _, ok := base.TLSNextProto["h2"]; ok || len(base.TLSNextProto) != 1 {
+			t.Fatal("caller TLSNextProto was modified")
+		}
+	})
+}

@@ -216,7 +216,9 @@ func defaultHTTPClient() *http.Client {
 //
 // http.Transport.Clone also enables HTTP/2 on t, and that writes a TLS
 // config into the caller's transport. Copying the fields leaves t as it was.
-// The copy configures HTTP/2 for itself on its first request.
+// A nil TLSNextProto lets the copy configure HTTP/2 on its first request.
+// A non-nil map, including an empty one, is the documented way to disable
+// HTTP/2, so the copy gets its own map instead of nil.
 func cloneHTTPTransport(t *http.Transport) *http.Transport {
 	cloned := &http.Transport{
 		Proxy:                  t.Proxy,
@@ -244,7 +246,7 @@ func cloneHTTPTransport(t *http.Transport) *http.Transport {
 	if t.TLSClientConfig != nil {
 		cloned.TLSClientConfig = t.TLSClientConfig.Clone()
 	}
-	if len(t.TLSNextProto) > 0 {
+	if t.TLSNextProto != nil {
 		next := make(map[string]func(string, *tls.Conn) http.RoundTripper, len(t.TLSNextProto))
 		for name, fn := range t.TLSNextProto {
 			next[name] = fn
