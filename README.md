@@ -236,6 +236,8 @@ devClient, _ := vergeos.NewClient(
 | `VNetRules` | Firewall rule management |
 | `VNetRuleAliases` | IP/port alias groups for rules |
 | `VNetAddresses` | IP address management (static, DHCP, aliases) |
+| `VNetProxies` | Proxy that publishes tenant UIs through a parent network (`vnet_proxy`) |
+| `VNetProxyTenants` | Tenant FQDN mappings for a network proxy (`vnet_proxy_tenants`) |
 | `VNetDNSViews` | DNS view configuration |
 | `VNetDNSZones` | DNS zone management |
 | `VNetDNSRecords` | DNS record management (A, AAAA, CNAME, MX, TXT) |
@@ -288,7 +290,7 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 
 | Service | Description |
 |---------|-------------|
-| `Tenants` | Tenant CRUD, power operations, cloning, isolation |
+| `Tenants` | Tenant CRUD, power operations, cloning, isolation, and a client for a running tenant's UI |
 | `TenantNodes` | Tenant virtual node management |
 | `TenantStorage` | Tenant storage allocation |
 | `TenantSnapshots` | Tenant snapshot management |

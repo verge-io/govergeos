@@ -3,7 +3,9 @@ package vergeos
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/url"
+	"strings"
 )
 
 // TenantService handles tenant operations.
@@ -227,6 +229,153 @@ func (s *TenantService) IsolateOff(ctx context.Context, id int) error {
 		return fmt.Errorf("vergeos: failed to un-isolate tenant %d: %w", id, err)
 	}
 	return nil
+}
+
+// Connect returns a client for a running tenant's own UI.
+//
+// The tenant's ui_address row is read through VNetAddresses. The new client
+// uses that IP and the parent client's URL scheme. It keeps the parent's
+// TLS, timeout, retry, rate limit, version, user agent, and power-wait
+// settings. It does not keep the parent's username, password, or API key.
+//
+// opts supply the tenant credentials and may replace any inherited setting.
+// WithCredentials or WithAPIKey is required. WithBaseURL replaces the
+// address discovered here.
+//
+// A snapshot, a tenant that is not running, and a tenant with no UI address
+// are refused before the tenant client is created.
+func (s *TenantService) Connect(ctx context.Context, id int, opts ...ClientOption) (*Client, error) {
+	if err := tenantClientAuth(opts); err != nil {
+		return nil, err
+	}
+
+	tenant, err := s.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	baseURL, err := s.tenantUIBaseURL(ctx, tenant)
+	if err != nil {
+		return nil, err
+	}
+
+	inherited := s.client.tenantClientOptions(baseURL)
+	return NewClient(append(inherited, opts...)...)
+}
+
+// ConnectByName returns a client for a running tenant's own UI, looked up by name.
+// See Connect for the address and the settings the new client keeps.
+func (s *TenantService) ConnectByName(ctx context.Context, name string, opts ...ClientOption) (*Client, error) {
+	if err := tenantClientAuth(opts); err != nil {
+		return nil, err
+	}
+	tenant, err := s.GetByName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	baseURL, err := s.tenantUIBaseURL(ctx, tenant)
+	if err != nil {
+		return nil, err
+	}
+	inherited := s.client.tenantClientOptions(baseURL)
+	return NewClient(append(inherited, opts...)...)
+}
+
+// tenantUIBaseURL resolves the tenant UI from its ui_address row.
+func (s *TenantService) tenantUIBaseURL(ctx context.Context, tenant *Tenant) (string, error) {
+	if tenant == nil {
+		return "", &ValidationError{Message: "tenant is required"}
+	}
+	if tenant.IsSnapshot {
+		return "", &ValidationError{Message: fmt.Sprintf("cannot connect to tenant snapshot %q", tenant.Name)}
+	}
+
+	status, err := s.client.TenantStatus.Get(ctx, int(tenant.Key))
+	if err != nil {
+		return "", err
+	}
+	if !status.Running {
+		return "", &ValidationError{Message: fmt.Sprintf("tenant %q is not running", tenant.Name)}
+	}
+	if tenant.UIAddress == 0 {
+		return "", &ValidationError{Field: "ui_address", Message: fmt.Sprintf("tenant %q has no UI address configured", tenant.Name)}
+	}
+
+	address, err := s.client.VNetAddresses.Get(ctx, int(tenant.UIAddress))
+	if err != nil {
+		return "", err
+	}
+	return tenantUIBaseURL(s.client.baseURL, address.IP)
+}
+
+// tenantUIBaseURL builds the tenant client base URL from the parent scheme and the UI IP.
+func tenantUIBaseURL(parentBaseURL, ip string) (string, error) {
+	parsed := net.ParseIP(strings.TrimSpace(ip))
+	if parsed == nil {
+		return "", &ValidationError{Field: "ui_address", Message: "tenant UI address is not a valid IP"}
+	}
+	scheme := "https"
+	if u, err := url.Parse(parentBaseURL); err == nil {
+		switch strings.ToLower(u.Scheme) {
+		case "http", "https":
+			scheme = strings.ToLower(u.Scheme)
+		}
+	}
+	host := parsed.String()
+	if parsed.To4() == nil {
+		host = "[" + host + "]"
+	}
+	return scheme + "://" + host, nil
+}
+
+// tenantClientAuth reports whether opts carry tenant credentials.
+// The check runs before any request so a missing password does not depend
+// on the tenant being up.
+func tenantClientAuth(opts []ClientOption) error {
+	scratch := &Client{}
+	for _, opt := range opts {
+		if err := opt(scratch); err != nil {
+			return fmt.Errorf("vergeos: failed to apply client option: %w", err)
+		}
+	}
+	hasCredentials := scratch.username != "" && scratch.password != ""
+	if !hasCredentials && scratch.apiKey == "" {
+		return fmt.Errorf("vergeos: tenant client authentication required (use WithCredentials or WithAPIKey)")
+	}
+	return nil
+}
+
+// tenantClientOptions copies the parent settings a tenant UI client keeps.
+// Credentials are not copied. The tenant has its own.
+func (c *Client) tenantClientOptions(baseURL string) []ClientOption {
+	if c == nil {
+		return []ClientOption{WithBaseURL(baseURL)}
+	}
+	opts := []ClientOption{WithBaseURL(baseURL)}
+	if c.userAgent != "" {
+		opts = append(opts, WithUserAgent(c.userAgent))
+	}
+	if c.insecureTLS {
+		opts = append(opts, WithInsecureTLS(true))
+	}
+	if c.timeoutSet {
+		opts = append(opts, WithTimeout(c.timeout))
+	}
+	if c.retryConfigured {
+		opts = append(opts, WithRetry(c.retryPolicy))
+	}
+	if c.rateLimit > 0 {
+		opts = append(opts, WithRateLimit(c.rateLimit))
+	}
+	if c.skipVersionCheck {
+		opts = append(opts, WithSkipVersionCheck())
+	}
+	if c.minimumMajorVersion > 0 {
+		opts = append(opts, WithMinimumVersion(c.minimumMajorVersion))
+	}
+	if c.powerWaitTimeout > 0 || c.powerWaitInterval > 0 {
+		opts = append(opts, WithPowerWait(c.powerWaitTimeout, c.powerWaitInterval))
+	}
+	return opts
 }
 
 // tenantAction represents a tenant action request.

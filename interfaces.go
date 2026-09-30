@@ -382,6 +382,8 @@ type TenantServiceInterface interface {
 	Clone(ctx context.Context, id int, opts *TenantCloneOptions) error
 	IsolateOn(ctx context.Context, id int) error
 	IsolateOff(ctx context.Context, id int) error
+	Connect(ctx context.Context, id int, opts ...ClientOption) (*Client, error)
+	ConnectByName(ctx context.Context, name string, opts ...ClientOption) (*Client, error)
 }
 
 // TenantNodeServiceInterface defines the interface for TenantNode operations.
@@ -1124,6 +1126,32 @@ type TenantExternalIPServiceInterface interface {
 	Delete(ctx context.Context, id int, opts ...ParentFirewallOption) (*ParentFirewallStatus, error)
 }
 
+// VNetProxyServiceInterface defines the interface for network proxy configuration (vnet_proxy).
+type VNetProxyServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetProxy, error)
+	ListByNetwork(ctx context.Context, vnetID int, opts ...ListOption) ([]VNetProxy, error)
+	Get(ctx context.Context, id int) (*VNetProxy, error)
+	GetByNetwork(ctx context.Context, vnetID int) (*VNetProxy, error)
+	Exists(ctx context.Context, vnetID int) (bool, error)
+	Create(ctx context.Context, req *VNetProxyCreateRequest) (*VNetProxy, error)
+	GetOrCreate(ctx context.Context, req *VNetProxyCreateRequest) (*VNetProxy, error)
+	Update(ctx context.Context, id int, req *VNetProxyUpdateRequest) (*VNetProxy, error)
+	Delete(ctx context.Context, id int) error
+	DeleteByNetwork(ctx context.Context, vnetID int) error
+}
+
+// VNetProxyTenantServiceInterface defines the interface for proxy tenant FQDN mappings (vnet_proxy_tenants).
+type VNetProxyTenantServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetProxyTenant, error)
+	ListByProxy(ctx context.Context, proxyID int, opts ...ListOption) ([]VNetProxyTenant, error)
+	Get(ctx context.Context, id int) (*VNetProxyTenant, error)
+	GetByFQDN(ctx context.Context, proxyID int, fqdn string) (*VNetProxyTenant, error)
+	GetByTenant(ctx context.Context, proxyID, tenantID int) (*VNetProxyTenant, error)
+	Create(ctx context.Context, req *VNetProxyTenantCreateRequest) (*VNetProxyTenant, error)
+	Update(ctx context.Context, id int, req *VNetProxyTenantUpdateRequest) (*VNetProxyTenant, error)
+	Delete(ctx context.Context, id int) error
+}
+
 // StorageTierServiceInterface defines the interface for storage tier operations (read-only).
 // Storage tiers provide system-wide VSAN storage capacity and usage information.
 type StorageTierServiceInterface interface {
@@ -1264,6 +1292,8 @@ var (
 	_ TaskEventServiceInterface               = (*TaskEventService)(nil)
 	_ TaskScriptServiceInterface              = (*TaskScriptService)(nil)
 	_ VNetAddressServiceInterface             = (*VNetAddressService)(nil)
+	_ VNetProxyServiceInterface               = (*VNetProxyService)(nil)
+	_ VNetProxyTenantServiceInterface         = (*VNetProxyTenantService)(nil)
 	_ VNetDNSViewServiceInterface             = (*VNetDNSViewService)(nil)
 	_ VNetDNSZoneServiceInterface             = (*VNetDNSZoneService)(nil)
 	_ VNetDNSRecordServiceInterface           = (*VNetDNSRecordService)(nil)
