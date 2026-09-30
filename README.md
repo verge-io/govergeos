@@ -247,6 +247,8 @@ devClient, _ := vergeos.NewClient(
 | `Groups` | Group management |
 | `Members` | Group membership management |
 | `UserAPIKeys` | API key management |
+| `AuthSources` | External identity providers (SSO). Update merges settings |
+| `OIDCApplications` | OIDC applications where VergeOS is the identity provider |
 | `Permissions` | Resource-level access control (Grant/Revoke) |
 
 ### System Administration
@@ -370,6 +372,8 @@ The library supports HTTP Basic Authentication and API key authentication:
 
 - **Basic Auth**: User must have list and read permissions; MFA must be disabled
 - **API Keys**: Created via `UserAPIKeys` service; token shown only on creation. When an API key and username/password are both configured, the API key is used
+- **Auth sources**: `AuthSources.Update` reads the stored settings and merges the change before sending. The API would otherwise replace the whole settings object and drop keys that were not sent, including `client_secret`. That secret is write-only and is omitted from returned auth sources
+- **OIDC applications**: `OIDCApplications.Create` returns the generated client secret as a `WriteOnlySecret`. Printing it shows `[redacted]`. `Value` reads it. Later reads do not include the secret
 
 ## Query Options
 

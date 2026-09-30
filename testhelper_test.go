@@ -93,6 +93,8 @@ func initServices(c *Client) {
 	c.WebhookURLs = &WebhookURLService{client: c}
 	c.Webhooks = &WebhookService{client: c}
 	c.UserAPIKeys = &UserAPIKeyService{client: c}
+	c.AuthSources = &AuthSourceService{client: c}
+	c.OIDCApplications = &OIDCApplicationService{client: c}
 	c.NASServices = &NASServiceService{client: c}
 	c.NASServiceUsers = &NASServiceUserService{client: c}
 	c.VolumeSyncs = &VolumeSyncService{client: c}

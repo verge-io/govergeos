@@ -108,3 +108,85 @@ func (f FlexFK) MarshalJSON() ([]byte, error) {
 func (f FlexFK) Int() int {
 	return int(f)
 }
+
+// redactedSecret is what formatting prints in place of a client secret.
+const redactedSecret = "[redacted]"
+
+// clientSecretField is the JSON name of an OAuth client secret.
+// Auth source settings and OIDC applications both use it. Responses drop
+// the value, and formatting never prints it.
+const clientSecretField = "client_secret"
+
+// WriteOnlySecret is a client secret.
+//
+// JSON encoding writes the secret so it can be sent to the API. JSON
+// decoding discards the payload, so a response cannot fill the field.
+// String, GoString, and Format print "[redacted]" when a secret is set
+// and print nothing when it is empty. Call Value to read the secret.
+// Logging the WriteOnlySecret itself does not log the secret.
+type WriteOnlySecret struct {
+	v string
+}
+
+// NewWriteOnlySecret returns a write-only secret holding value.
+func NewWriteOnlySecret(value string) WriteOnlySecret {
+	return WriteOnlySecret{v: value}
+}
+
+// Value returns the secret. Printing the WriteOnlySecret does not.
+func (s WriteOnlySecret) Value() string {
+	return s.v
+}
+
+// String returns "[redacted]" when a secret is set.
+func (s WriteOnlySecret) String() string {
+	if s.v == "" {
+		return ""
+	}
+	return redactedSecret
+}
+
+// GoString returns the same redacted text as String.
+func (s WriteOnlySecret) GoString() string {
+	return s.String()
+}
+
+// Format prints the redacted form for every verb except %T and %p,
+// which fmt handles before calling Format.
+func (s WriteOnlySecret) Format(f fmt.State, _ rune) {
+	fmt.Fprint(f, s.String())
+}
+
+// formatRedacted writes v with the caller's fmt flags. v must not be a
+// value whose Format or String method calls formatRedacted on itself.
+func formatRedacted(f fmt.State, verb rune, v any) {
+	format := "%"
+	if f.Flag('+') {
+		format += "+"
+	}
+	if f.Flag('#') {
+		format += "#"
+	}
+	if w, ok := f.Width(); ok {
+		format += fmt.Sprintf("%d", w)
+	}
+	if p, ok := f.Precision(); ok {
+		format += fmt.Sprintf(".%d", p)
+	}
+	format += string(verb)
+	fmt.Fprintf(f, format, v)
+}
+
+// MarshalJSON writes the secret so an API request can carry it.
+func (s WriteOnlySecret) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.v)
+}
+
+// UnmarshalJSON discards the payload. A client secret read back from
+// the API is not stored.
+func (s *WriteOnlySecret) UnmarshalJSON(_ []byte) error {
+	if s != nil {
+		*s = WriteOnlySecret{}
+	}
+	return nil
+}

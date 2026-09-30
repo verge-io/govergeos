@@ -721,6 +721,26 @@ type UserAPIKeyServiceInterface interface {
 	ListExpired(ctx context.Context, opts ...ListOption) ([]UserAPIKey, error)
 }
 
+// AuthSourceServiceInterface defines the interface for external authentication source operations.
+type AuthSourceServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]AuthSource, error)
+	Get(ctx context.Context, id int) (*AuthSource, error)
+	GetByName(ctx context.Context, name string) (*AuthSource, error)
+	Create(ctx context.Context, req *AuthSourceCreateRequest) (*AuthSource, error)
+	Update(ctx context.Context, id int, req *AuthSourceUpdateRequest) (*AuthSource, error)
+	Delete(ctx context.Context, id int) error
+}
+
+// OIDCApplicationServiceInterface defines the interface for OIDC application operations.
+type OIDCApplicationServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]OIDCApplication, error)
+	Get(ctx context.Context, id int) (*OIDCApplication, error)
+	GetByName(ctx context.Context, name string) (*OIDCApplication, error)
+	Create(ctx context.Context, req *OIDCApplicationCreateRequest) (*OIDCApplication, WriteOnlySecret, error)
+	Update(ctx context.Context, id int, req *OIDCApplicationUpdateRequest) (*OIDCApplication, error)
+	Delete(ctx context.Context, id int) error
+}
+
 // NASServiceServiceInterface defines the interface for NAS service operations.
 type NASServiceServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]NASService, error)
