@@ -91,6 +91,8 @@ A nightly run is already scheduled and stays skipped until a dedicated lab exist
 
 Tag and publish from the Release workflow. That is the step that was missed when v0.3.1 merged without a tag. Cutting that existing tag is a separate decision; this workflow only creates a tag when someone runs it.
 
+Supported VergeOS versions, how long a deprecated method stays, and the criteria for tagging v1.0.0 are in [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+
 1. On the release commit, set `defaultUserAgent` in `client.go` (and the test that locks it) to `govergeos/X.Y.Z`, matching the tag without the leading `v`.
 2. Move the `CHANGELOG.md` notes for the release out of `Unreleased` and under a heading for that version.
 3. Merge the commit to `main`, then align `dev` with `main`.

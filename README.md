@@ -4,7 +4,7 @@
 [![Go 1.21+](https://img.shields.io/badge/go-1.21+-00ADD8.svg)](https://go.dev/dl/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **Pre-release**: This library is under active development. APIs may change before v1.0.0.
+> **Pre-release**: This library is under active development. APIs may change before v1.0.0. The freeze criteria and compatibility policy are in [docs/COMPATIBILITY.md](./docs/COMPATIBILITY.md). v1.0.0 is not tagged yet.
 
 A Go client library for managing VergeOS infrastructure programmatically. goVergeOS provides complete API coverage for virtual machines, networking, storage, multi-tenancy, and disaster recovery operations.
 
@@ -52,7 +52,7 @@ client, err := vergeos.NewClient(
 )
 ```
 
-`NewClient` accepts VergeOS 26 and every later major, and rejects anything older. `WithMinimumVersion` changes that floor. `WithSkipVersionCheck` still reads the server version (so per-feature gates keep working) and still checks credentials, but does not reject the major.
+`NewClient` accepts VergeOS 26 and every later major, and rejects anything older. `WithMinimumVersion` changes that floor. `WithSkipVersionCheck` still reads the server version (so per-feature gates keep working) and still checks credentials, but does not reject the major. Supported versions, deprecation, and the path to v1.0.0 are in [docs/COMPATIBILITY.md](./docs/COMPATIBILITY.md).
 
 ### Environment Configuration
 
@@ -583,6 +583,7 @@ For detailed API examples for all services, see [docs/REFERENCE.md](./docs/REFER
 
 ## Resources
 
+- [Compatibility and the 1.0 freeze](./docs/COMPATIBILITY.md) - Supported VergeOS versions, deprecation, and the v1.0.0 criteria
 - [VergeOS Documentation](https://docs.verge.io/) - Official VergeOS documentation
 - [VergeOS API Reference](https://docs.verge.io/knowledge-base/category/api/) - REST API documentation
 - [GitHub Issues](https://github.com/verge-io/govergeos/issues) - Bug reports and feature requests
