@@ -221,6 +221,8 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | `TenantStorage` | Tenant storage allocation |
 | `TenantSnapshots` | Tenant snapshot management |
 | `TenantLayer2Networks` | Layer 2 network assignments to tenants |
+| `TenantNetworkBlocks` | CIDR blocks assigned to a tenant (`vnet_cidrs`) |
+| `TenantExternalIPs` | Virtual IPs given to a tenant (`vnet_addresses`) |
 
 ### Users & Groups
 

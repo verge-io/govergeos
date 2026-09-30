@@ -60,6 +60,8 @@ func initServices(c *Client) {
 	c.TenantStatsHistoryShort = &TenantStatsHistoryShortService{client: c}
 	c.TenantSnapshots = &TenantSnapshotService{client: c}
 	c.TenantLayer2Networks = &TenantLayer2NetworkService{client: c}
+	c.TenantNetworkBlocks = &TenantNetworkBlockService{client: c}
+	c.TenantExternalIPs = &TenantExternalIPService{client: c}
 	c.SnapshotProfiles = &SnapshotProfileService{client: c}
 	c.SnapshotProfilePeriods = &SnapshotProfilePeriodService{client: c}
 	c.Alarms = &AlarmService{client: c}
