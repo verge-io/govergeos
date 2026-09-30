@@ -23,5 +23,5 @@ Detailed API examples for all goVergeOS services, organized by topic. For a quic
 | [System](System.md) | Nodes, Clusters, Settings, System | Infrastructure and system information |
 | [Tags](Tags.md) | Tags, Tag Categories, Tag Members | Resource organization and categorization |
 | [Backup & DR](Backup.md) | Snapshot Profiles, Sites, Site Syncs, Cloud Snapshots | Backup schedules and disaster recovery |
-| [Monitoring](Monitoring.md) | Alarms, Alarm Types, Tasks, Logs, Webhooks | System health, audit logs, and notifications |
+| [Monitoring](Monitoring.md) | Alarms, Alarm Types, Tasks, Task Schedules, Task Events, Task Scripts, Logs, Webhooks | System health, audit logs, task engine, and notifications |
 | [Files](Files.md) | Files | ISO/disk image upload, download, and management |

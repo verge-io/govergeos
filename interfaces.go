@@ -487,6 +487,57 @@ type TaskServiceInterface interface {
 	Disable(ctx context.Context, id int) error
 }
 
+// TaskScheduleServiceInterface defines operations on task_schedules.
+type TaskScheduleServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TaskSchedule, error)
+	ListEnabled(ctx context.Context, opts ...ListOption) ([]TaskSchedule, error)
+	ListDisabled(ctx context.Context, opts ...ListOption) ([]TaskSchedule, error)
+	Get(ctx context.Context, id int) (*TaskSchedule, error)
+	GetByName(ctx context.Context, name string) (*TaskSchedule, error)
+	Create(ctx context.Context, req *TaskScheduleCreateRequest) (*TaskSchedule, error)
+	Update(ctx context.Context, id int, req *TaskScheduleUpdateRequest) (*TaskSchedule, error)
+	Delete(ctx context.Context, id int) error
+	Enable(ctx context.Context, id int) (*TaskSchedule, error)
+	Disable(ctx context.Context, id int) (*TaskSchedule, error)
+	GetSchedule(ctx context.Context, id int, query *TaskScheduleQuery) ([]map[string]any, error)
+}
+
+// TaskScheduleTriggerServiceInterface defines operations on task_schedule_triggers.
+type TaskScheduleTriggerServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TaskScheduleTrigger, error)
+	ListByTask(ctx context.Context, taskID int, opts ...ListOption) ([]TaskScheduleTrigger, error)
+	ListBySchedule(ctx context.Context, scheduleID int, opts ...ListOption) ([]TaskScheduleTrigger, error)
+	Get(ctx context.Context, id int) (*TaskScheduleTrigger, error)
+	Create(ctx context.Context, req *TaskScheduleTriggerCreateRequest) (*TaskScheduleTrigger, error)
+	Delete(ctx context.Context, id int) error
+	Trigger(ctx context.Context, id int) (map[string]any, error)
+}
+
+// TaskEventServiceInterface defines operations on task_events.
+type TaskEventServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TaskEvent, error)
+	ListByTask(ctx context.Context, taskID int, opts ...ListOption) ([]TaskEvent, error)
+	ListByOwner(ctx context.Context, ownerID int, opts ...ListOption) ([]TaskEvent, error)
+	ListByTable(ctx context.Context, table string, opts ...ListOption) ([]TaskEvent, error)
+	ListByEvent(ctx context.Context, event string, opts ...ListOption) ([]TaskEvent, error)
+	Get(ctx context.Context, id int) (*TaskEvent, error)
+	Create(ctx context.Context, req *TaskEventCreateRequest) (*TaskEvent, error)
+	Update(ctx context.Context, id int, req *TaskEventUpdateRequest) (*TaskEvent, error)
+	Delete(ctx context.Context, id int) error
+	Trigger(ctx context.Context, id int, eventContext map[string]any) (map[string]any, error)
+}
+
+// TaskScriptServiceInterface defines operations on task_scripts.
+type TaskScriptServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TaskScript, error)
+	Get(ctx context.Context, id int) (*TaskScript, error)
+	GetByName(ctx context.Context, name string) (*TaskScript, error)
+	Create(ctx context.Context, req *TaskScriptCreateRequest) (*TaskScript, error)
+	Update(ctx context.Context, id int, req *TaskScriptUpdateRequest) (*TaskScript, error)
+	Delete(ctx context.Context, id int) error
+	Run(ctx context.Context, id int, params map[string]any) (map[string]any, error)
+}
+
 // VNetAddressServiceInterface defines the interface for network IP address operations.
 type VNetAddressServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]VNetAddress, error)
@@ -1202,6 +1253,10 @@ var (
 	_ AlarmServiceInterface                   = (*AlarmService)(nil)
 	_ AlarmTypeServiceInterface               = (*AlarmTypeService)(nil)
 	_ TaskServiceInterface                    = (*TaskService)(nil)
+	_ TaskScheduleServiceInterface            = (*TaskScheduleService)(nil)
+	_ TaskScheduleTriggerServiceInterface     = (*TaskScheduleTriggerService)(nil)
+	_ TaskEventServiceInterface               = (*TaskEventService)(nil)
+	_ TaskScriptServiceInterface              = (*TaskScriptService)(nil)
 	_ VNetAddressServiceInterface             = (*VNetAddressService)(nil)
 	_ VNetDNSViewServiceInterface             = (*VNetDNSViewService)(nil)
 	_ VNetDNSZoneServiceInterface             = (*VNetDNSZoneService)(nil)

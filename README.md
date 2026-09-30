@@ -326,6 +326,10 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | `Alarms` | Alarm management (snooze, resolve, delete) |
 | `AlarmTypes` | Alarm type reference data (read-only, string keys) |
 | `Tasks` | Task monitoring, execution, and scheduling |
+| `TaskSchedules` | Reusable schedules (`task_schedules`), including upcoming run times |
+| `TaskScheduleTriggers` | Links a task to a schedule (`task_schedule_triggers`) |
+| `TaskEvents` | Event triggers (`task_events`), including a manual trigger |
+| `TaskScripts` | GCS scripts (`task_scripts`) and run |
 
 ### VSAN & Storage Monitoring
 

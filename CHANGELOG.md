@@ -22,6 +22,7 @@ Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
 
 ### Added
 
+- Task engine services: `TaskSchedules` (`task_schedules`), `TaskScheduleTriggers` (`task_schedule_triggers`), `TaskEvents` (`task_events`), and `TaskScripts` (`task_scripts`). Schedule create sends the same defaults as pyVergeOS (enabled, every day, hourly, iteration 1, start of day through 86400, day of month `start_date`). `GetSchedule`, trigger, and script `Run` call the row action (`PUT /{table}/{key}?action=...`). A script created without settings sends `{"questions": []}`.
 - `VMImports` creates a VM import from a media-catalog file or an http(s) URL (OVA, OVF, or a disk image such as qcow2, vmdk, vhd, or raw), and can also import from a NAS volume path or a shared object. `Wait` returns as soon as the import reports an error, an abort, or a failed drive, including `status_info` and the error log lines. `Create` does not post another import when a VM with that name already exists. `DeleteByName` removes every finished row with the name. When several rows share the name and one is still importing, it deletes none. `VMImportLogs` reads `vm_import_logs`.
 - `VMExports` exports a VM to a NAS volume. `Run` ensures the volume's export configuration and starts the export. `Wait` returns as soon as the export reports an error, or when the newest statistics row recorded errors.
 - `VMService.GetByName` looks up a VM by name. The `vms` table also stores snapshots, so the lookup filters `is_snapshot eq false`. Snapshot lookup stays on `VMSnapshots.GetByName`.

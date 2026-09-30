@@ -73,6 +73,10 @@ func initServices(c *Client) {
 	c.Alarms = &AlarmService{client: c}
 	c.AlarmTypes = &AlarmTypeService{client: c}
 	c.Tasks = &TaskService{client: c}
+	c.TaskSchedules = &TaskScheduleService{client: c}
+	c.TaskScheduleTriggers = &TaskScheduleTriggerService{client: c}
+	c.TaskEvents = &TaskEventService{client: c}
+	c.TaskScripts = &TaskScriptService{client: c}
 	c.VNetAddresses = &VNetAddressService{client: c}
 	c.VNetDNSViews = &VNetDNSViewService{client: c}
 	c.VNetDNSZones = &VNetDNSZoneService{client: c}

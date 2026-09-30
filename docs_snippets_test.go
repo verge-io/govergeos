@@ -569,6 +569,13 @@ func transformExpr(expr ast.Expr, defined map[string]bool) {
 		}
 	case *ast.FuncLit:
 		transformFuncLit(ex, defined)
+	case *ast.MapType:
+		transformExpr(ex.Key, defined)
+		transformExpr(ex.Value, defined)
+	case *ast.ArrayType:
+		if ex.Elt != nil {
+			transformExpr(ex.Elt, defined)
+		}
 	case *ast.CompositeLit:
 		if ex.Type != nil {
 			transformExpr(ex.Type, defined)
@@ -911,6 +918,13 @@ func (s *scope) expr(expr ast.Expr) {
 		}
 	case *ast.FuncLit:
 		s.funcLit(ex)
+	case *ast.MapType:
+		s.expr(ex.Key)
+		s.expr(ex.Value)
+	case *ast.ArrayType:
+		if ex.Elt != nil {
+			s.expr(ex.Elt)
+		}
 	case *ast.CompositeLit:
 		if ex.Type != nil {
 			s.expr(ex.Type)

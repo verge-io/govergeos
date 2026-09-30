@@ -5,6 +5,7 @@
 // - Query alarm type definitions
 // - Snooze and resolve alarms
 // - List and manage scheduled tasks
+// - List task schedules, triggers, events, and scripts
 //
 // Run with:
 //
@@ -43,6 +44,9 @@ func main() {
 
 	fmt.Println("\n=== Tasks ===")
 	showTasks(ctx, client)
+
+	fmt.Println("\n=== Task engine ===")
+	showTaskEngine(ctx, client)
 }
 
 func showAlarmTypes(ctx context.Context, client *vergeos.Client) {
@@ -267,4 +271,44 @@ func showTasks(ctx context.Context, client *vergeos.Client) {
 	// 		fmt.Printf("Executed task %d\n", taskID)
 	// 	}
 	// }
+}
+
+// showTaskEngine lists schedules, triggers, events, and scripts.
+// It does not create or run anything.
+func showTaskEngine(ctx context.Context, client *vergeos.Client) {
+	schedules, err := client.TaskSchedules.List(ctx)
+	if err != nil {
+		log.Printf("Failed to list task schedules: %v", err)
+	} else {
+		fmt.Printf("Schedules: %d\n", len(schedules))
+		limit := 5
+		if len(schedules) < limit {
+			limit = len(schedules)
+		}
+		for i := 0; i < limit; i++ {
+			s := schedules[i]
+			fmt.Printf("  - %s (%s, enabled=%v)\n", s.Name, s.RepeatEvery, s.Enabled)
+		}
+	}
+
+	triggers, err := client.TaskScheduleTriggers.List(ctx)
+	if err != nil {
+		log.Printf("Failed to list schedule triggers: %v", err)
+	} else {
+		fmt.Printf("Schedule triggers: %d\n", len(triggers))
+	}
+
+	events, err := client.TaskEvents.List(ctx)
+	if err != nil {
+		log.Printf("Failed to list task events: %v", err)
+	} else {
+		fmt.Printf("Task events: %d\n", len(events))
+	}
+
+	scripts, err := client.TaskScripts.List(ctx)
+	if err != nil {
+		log.Printf("Failed to list task scripts: %v", err)
+	} else {
+		fmt.Printf("Task scripts: %d\n", len(scripts))
+	}
 }

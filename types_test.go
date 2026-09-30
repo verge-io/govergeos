@@ -65,6 +65,42 @@ func TestFlexFK_UnmarshalJSON_Null(t *testing.T) {
 	}
 }
 
+func TestFlexString_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		in   string
+		want string
+	}{
+		{`"users/3"`, "users/3"},
+		{`123`, "123"},
+		{`null`, ""},
+		{`""`, ""},
+	}
+	for _, tt := range tests {
+		var got FlexString
+		if err := json.Unmarshal([]byte(tt.in), &got); err != nil {
+			t.Fatalf("unmarshal %s: %v", tt.in, err)
+		}
+		if got.String() != tt.want {
+			t.Errorf("unmarshal %s: got %q, want %q", tt.in, got, tt.want)
+		}
+	}
+
+	var bad FlexString
+	if err := json.Unmarshal([]byte(`{"$key":1}`), &bad); err == nil {
+		t.Fatal("expected error for object")
+	}
+}
+
+func TestFlexString_MarshalJSON(t *testing.T) {
+	data, err := json.Marshal(FlexString("vms/39"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != `"vms/39"` {
+		t.Fatalf("got %s", data)
+	}
+}
+
 func TestFlexFK_MarshalJSON(t *testing.T) {
 	f := FlexFK(42)
 	data, err := json.Marshal(f)
