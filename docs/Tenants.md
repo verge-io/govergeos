@@ -1,7 +1,7 @@
 ---
 title: Tenants
-description: Manage multi-tenant virtual data centers, nodes, storage, snapshots, and Layer 2 networks
-tags: [tenant, multi-tenant, vdc, tenant-node, tenant-storage, tenant-snapshot, layer2, isolation, clone]
+description: Manage multi-tenant virtual data centers, nodes, storage, snapshots, Layer 2 networks, and the tenant UI proxy
+tags: [tenant, multi-tenant, vdc, tenant-node, tenant-storage, tenant-snapshot, layer2, isolation, clone, vnet-proxy]
 categories: [Tenants]
 ---
 
@@ -191,4 +191,41 @@ err = client.TenantLayer2Networks.Unassign(ctx, tenantID, networkID)
 
 // Delete an assignment
 err = client.TenantLayer2Networks.Delete(ctx, assignmentID)
+```
+
+---
+
+## Network proxy
+
+Publish tenant UIs through one address on a parent network. Each tenant gets an FQDN. A network has one proxy.
+
+```go
+proxy, err := client.VNetProxies.GetOrCreate(ctx, &vergeos.VNetProxyCreateRequest{
+    VNet: externalNetworkID,
+})
+
+mapping, err := client.VNetProxyTenants.Create(ctx, &vergeos.VNetProxyTenantCreateRequest{
+    Proxy:  int(proxy.Key),
+    Tenant: tenantID,
+    FQDN:   "customer-a.example.com",
+})
+
+mappings, err := client.VNetProxyTenants.ListByProxy(ctx, int(proxy.Key))
+```
+
+---
+
+## Client for a tenant
+
+`Connect` builds a client aimed at the tenant's own UI address. The tenant must be running, and `ui_address` must already point at an address row. The new client keeps the parent's TLS and retry settings and uses the credentials passed in the options.
+
+```go
+tenantClient, err := client.Tenants.Connect(ctx, tenantID,
+    vergeos.WithCredentials("admin", "tenant-password"),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+vms, err := tenantClient.VMs.List(ctx)
 ```

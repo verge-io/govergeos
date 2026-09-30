@@ -78,6 +78,8 @@ func initServices(c *Client) {
 	c.TaskEvents = &TaskEventService{client: c}
 	c.TaskScripts = &TaskScriptService{client: c}
 	c.VNetAddresses = &VNetAddressService{client: c}
+	c.VNetProxies = &VNetProxyService{client: c}
+	c.VNetProxyTenants = &VNetProxyTenantService{client: c}
 	c.VNetDNSViews = &VNetDNSViewService{client: c}
 	c.VNetDNSZones = &VNetDNSZoneService{client: c}
 	c.VNetDNSRecords = &VNetDNSRecordService{client: c}
