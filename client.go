@@ -94,6 +94,15 @@ type Client struct {
 	CloudInitFiles           CloudInitServiceInterface
 	Clusters                 ClusterServiceInterface
 	Nodes                    NodeServiceInterface
+	VGPUProfiles             VGPUProfileServiceInterface
+	NodeGPUs                 NodeGPUServiceInterface
+	NodeGPUStats             NodeGPUStatsServiceInterface
+	NodeGPUInstances         NodeGPUInstanceServiceInterface
+	NodeVGPUDevices          NodeVGPUDeviceServiceInterface
+	NodeHostGPUDevices       NodeHostGPUDeviceServiceInterface
+	NodeVGPUProfiles         NodeVGPUProfileServiceInterface
+	NodeMemory               NodeMemoryServiceInterface
+	NodeLLDPNeighbors        NodeLLDPNeighborServiceInterface
 	Groups                   GroupServiceInterface
 	Files                    FileServiceInterface
 	ResourceGroups           ResourceGroupServiceInterface
@@ -686,6 +695,15 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.CloudInitFiles = &CloudInitService{client: c}
 	c.Clusters = &ClusterService{client: c}
 	c.Nodes = &NodeService{client: c}
+	c.VGPUProfiles = &VGPUProfileService{client: c}
+	c.NodeGPUs = &NodeGPUService{client: c}
+	c.NodeGPUStats = &NodeGPUStatsService{client: c}
+	c.NodeGPUInstances = &NodeGPUInstanceService{client: c}
+	c.NodeVGPUDevices = &NodeVGPUDeviceService{client: c}
+	c.NodeHostGPUDevices = &NodeHostGPUDeviceService{client: c}
+	c.NodeVGPUProfiles = &NodeVGPUProfileService{client: c}
+	c.NodeMemory = &NodeMemoryService{client: c}
+	c.NodeLLDPNeighbors = &NodeLLDPNeighborService{client: c}
 	c.Groups = &GroupService{client: c}
 	c.Files = &FileService{client: c}
 	c.ResourceGroups = &ResourceGroupService{client: c}

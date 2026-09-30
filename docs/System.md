@@ -27,6 +27,40 @@ nodes, err := client.Nodes.List(ctx,
 
 ---
 
+## Hardware inventory
+
+GPUs, DIMMs, and LLDP neighbors are separate read services. `NodeGPUs.Update` is the call that changes a GPU mode.
+
+```go
+// NVIDIA vGPU profiles the driver published
+profiles, err := client.VGPUProfiles.List(ctx)
+compute, err := client.VGPUProfiles.ListByProfileType(ctx, vergeos.VGPUProfileTypeCompute)
+
+// GPUs configured on a node, then switch one to PCI passthrough
+gpus, err := client.NodeGPUs.ListByNode(ctx, nodeID)
+mode := vergeos.GPUModePassthrough
+gpu, err := client.NodeGPUs.Update(ctx, gpuID, &vergeos.NodeGPUUpdateRequest{
+    Mode: &mode,
+})
+fmt.Println(gpu.ModeDisplay())
+
+// DIMMs that are not online
+dimms, err := client.NodeMemory.ListByNode(ctx, nodeID)
+for _, dimm := range dimms {
+    if !dimm.IsHealthy() {
+        fmt.Println(dimm.Locator, dimm.Status)
+    }
+}
+
+// Switch port discovered for each NIC on the node
+neighbors, err := client.NodeLLDPNeighbors.ListByNode(ctx, nodeID)
+for _, neighbor := range neighbors {
+    fmt.Println(neighbor.NIC, neighbor.ChassisName(), neighbor.PortID())
+}
+```
+
+---
+
 ## Clusters
 
 Manage VergeOS clusters for compute and storage resources.

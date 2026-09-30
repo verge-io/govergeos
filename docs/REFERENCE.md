@@ -20,7 +20,7 @@ Detailed API examples for all goVergeOS services, organized by topic. For a quic
 | [Storage](Storage.md) | NAS Services, NAS Users, Volumes, Volume Snapshots, Volume Syncs, CIFS/NFS Shares, Volume Browser | NAS volumes, shares, and replication |
 | [Tenants](Tenants.md) | Tenants, Tenant Nodes, Tenant Storage, Tenant Snapshots, Tenant Layer2 | Multi-tenant virtual data centers |
 | [Users](Users.md) | Users, Groups, API Keys, Auth Sources, OIDC Applications, Permissions | Authentication, authorization, and access control |
-| [System](System.md) | Nodes, Clusters, Settings, System | Infrastructure and system information |
+| [System](System.md) | Nodes, Clusters, Settings, System, GPUs, node memory, LLDP | Infrastructure, hardware inventory, and system information |
 | [Tags](Tags.md) | Tags, Tag Categories, Tag Members | Resource organization and categorization |
 | [Backup & DR](Backup.md) | Snapshot Profiles, Sites, Site Syncs, Cloud Snapshots | Backup schedules and disaster recovery |
 | [Monitoring](Monitoring.md) | Alarms, Alarm Types, Tasks, Task Schedules, Task Events, Task Scripts, Logs, Webhooks | System health, audit logs, task engine, and notifications |
