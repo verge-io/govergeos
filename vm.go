@@ -69,6 +69,37 @@ func (s *VMService) Get(ctx context.Context, id int) (*VM, error) {
 	return &vm, nil
 }
 
+// GetByName returns the VM named name.
+//
+// The vms table stores snapshots in the same rows as VMs. This lookup
+// adds is_snapshot eq false, so a snapshot is not returned. Look up a
+// snapshot with VMSnapshots.GetByName.
+// Returns NotFoundError when nothing matches, and AmbiguousNameError when
+// more than one VM matches.
+func (s *VMService) GetByName(ctx context.Context, name string) (*VM, error) {
+	vms, err := s.List(ctx, WithFilter(fmt.Sprintf("is_snapshot eq false and name eq '%s'", escapeFilterValue(name))))
+	if err != nil {
+		return nil, err
+	}
+	if len(vms) == 0 {
+		return nil, &NotFoundError{Resource: "VM", ID: name}
+	}
+	if err := requireUniqueName("VM", name, vms, func(vm VM) any { return vm.ID }); err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VM", name, vms[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, vms[0].ID.Int())
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("VM", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
+}
+
 // Create creates a new VM and returns the created VM.
 func (s *VMService) Create(ctx context.Context, req *VMCreateRequest) (*VM, error) {
 	if req == nil {

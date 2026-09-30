@@ -124,6 +124,67 @@ func TestVMService_Get_NotFound(t *testing.T) {
 	}
 }
 
+func TestVMService_GetByName(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
+			if got := r.URL.Query().Get("filter"); got != "is_snapshot eq false and name eq 'vm-alpha'" {
+				t.Errorf("filter = %q", got)
+			}
+			jsonResponse(w, 200, []VM{{ID: 1, Name: "vm-alpha"}})
+		},
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 1, Name: "vm-alpha", Description: "full"})
+		},
+	}))
+
+	vm, err := client.VMs.GetByName(context.Background(), "vm-alpha")
+	if err != nil {
+		t.Fatalf("GetByName failed: %v", err)
+	}
+	if vm.Name != "vm-alpha" || vm.Description != "full" {
+		t.Fatalf("got %+v", vm)
+	}
+}
+
+func TestVMService_GetByName_Ambiguous(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, []VM{
+				{ID: 1, Name: "vm-alpha"},
+				{ID: 9, Name: "vm-alpha"},
+			})
+		},
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			t.Error("GetByName fetched the first match")
+		},
+	}))
+
+	_, err := client.VMs.GetByName(context.Background(), "vm-alpha")
+	amb, ok := err.(*AmbiguousNameError)
+	if !ok {
+		t.Fatalf("expected *AmbiguousNameError, got %T: %v", err, err)
+	}
+	if amb.Resource != "VM" || amb.Name != "vm-alpha" || len(amb.Keys) != 2 || amb.Keys[0] != FlexInt(1) || amb.Keys[1] != FlexInt(9) {
+		t.Fatalf("unexpected details: %+v", amb)
+	}
+}
+
+func TestVMService_GetByName_NotFound(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, []VM{})
+		},
+	}))
+
+	_, err := client.VMs.GetByName(context.Background(), "missing")
+	if err == nil {
+		t.Fatal("expected error for not found")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Create
 // ---------------------------------------------------------------------------

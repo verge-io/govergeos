@@ -96,6 +96,9 @@ ctx := context.Background()
 // List all VMs
 vms, err := client.VMs.List(ctx)
 
+// Look up a VM by name. Snapshots are excluded.
+vm, err := client.VMs.GetByName(ctx, "web-server")
+
 // Create a VM
 vm, err := client.VMs.Create(ctx, &vergeos.VMCreateRequest{
     Name: "web-server", CPUCores: 4, RAM: 8192, Cluster: &clusterID,
@@ -126,6 +129,9 @@ snapshot, err := client.VMs.Snapshot(ctx, vmID, &vergeos.VMSnapshotOptions{
 ### Network Management
 
 ```go
+// Look up a network by name
+network, err := client.Networks.GetByName(ctx, "External")
+
 // Create a network with DHCP
 network, err := client.Networks.Create(ctx, &vergeos.NetworkCreateRequest{
     Name: "internal", Network: "10.0.0.0/24", DHCPEnabled: ptr(true),

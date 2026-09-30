@@ -12,6 +12,8 @@ Behavior change for the next minor release.
 
 ### Added
 
+- `VMService.GetByName` looks up a VM by name. The `vms` table also stores snapshots, so the lookup filters `is_snapshot eq false`. Snapshot lookup stays on `VMSnapshots.GetByName`.
+- `NetworkService.GetByName` looks up a network by name. Both lookups use the shared exact-name and ambiguous-name checks.
 - `TenantNetworkBlocks` manages tenant CIDR blocks on `vnet_cidrs` (`List`, `ListByTenant`, `Get`, `GetByTenantAndCIDR`, `Create`, `Delete`).
 - `TenantExternalIPs` gives a tenant a virtual IP on `vnet_addresses`. The tenant is the owner (`tenants/{id}`), separate from the generic `VNetAddresses` service.
 - `Create` and `Delete` on both services return `ParentFirewallStatus`. `Pending` is the parent network's `need_fw_apply` flag. `WithApplyParentFirewall` applies that network's rules in the same call.
