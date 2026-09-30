@@ -84,13 +84,13 @@ func (s *VMService) GetByName(ctx context.Context, name string) (*VM, error) {
 	if len(vms) == 0 {
 		return nil, &NotFoundError{Resource: "VM", ID: name}
 	}
-	if err := requireUniqueName("VM", name, vms, func(vm VM) any { return vm.ID }); err != nil {
+	if err := requireUniqueName("VM", name, vms, func(vm VM) any { return vm.Key }); err != nil {
 		return nil, err
 	}
 	if err := requireExactName("VM", name, vms[0].Name, name); err != nil {
 		return nil, err
 	}
-	got, err := s.Get(ctx, vms[0].ID.Int())
+	got, err := s.Get(ctx, vms[0].Key.Int())
 	if err != nil {
 		return nil, err
 	}

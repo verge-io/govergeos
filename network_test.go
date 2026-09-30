@@ -14,8 +14,8 @@ func TestNetworkService_List(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []Network{
-				{ID: 1, Name: "internal", Type: "internal"},
-				{ID: 2, Name: "external", Type: "external"},
+				{Key: 1, Name: "internal", Type: "internal"},
+				{Key: 2, Name: "external", Type: "external"},
 			})
 		},
 	}))
@@ -39,7 +39,7 @@ func TestNetworkService_List_WithFilter(t *testing.T) {
 			if filter == "" {
 				t.Error("expected filter parameter")
 			}
-			jsonResponse(w, 200, []Network{{ID: 1, Name: "internal", Type: "internal"}})
+			jsonResponse(w, 200, []Network{{Key: 1, Name: "internal", Type: "internal"}})
 		},
 	}))
 
@@ -101,7 +101,7 @@ func TestNetworkService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, Network{
-				ID:        1,
+				Key:       1,
 				Name:      "internal",
 				Type:      "internal",
 				Enabled:   true,
@@ -144,10 +144,10 @@ func TestNetworkService_GetByName(t *testing.T) {
 			if got := r.URL.Query().Get("filter"); got != "name eq 'External'" {
 				t.Errorf("filter = %q", got)
 			}
-			jsonResponse(w, 200, []Network{{ID: 1, Name: "External"}})
+			jsonResponse(w, 200, []Network{{Key: 1, Name: "External"}})
 		},
 		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 1, Name: "External", Description: "full"})
+			jsonResponse(w, 200, Network{Key: 1, Name: "External", Description: "full"})
 		},
 	}))
 
@@ -164,8 +164,8 @@ func TestNetworkService_GetByName_Ambiguous(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []Network{
-				{ID: 1, Name: "Core"},
-				{ID: 4, Name: "Core"},
+				{Key: 1, Name: "Core"},
+				{Key: 4, Name: "Core"},
 			})
 		},
 		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
@@ -215,7 +215,7 @@ func TestNetworkService_Create(t *testing.T) {
 			jsonResponse(w, 200, apiResponse{Key: 42})
 		},
 		"GET /api/v4/vnets/42": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 42, Name: "test-net", Enabled: true})
+			jsonResponse(w, 200, Network{Key: 42, Name: "test-net", Enabled: true})
 		},
 	}))
 
@@ -225,8 +225,8 @@ func TestNetworkService_Create(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
-	if int(net.ID) != 42 {
-		t.Errorf("expected ID 42, got %d", int(net.ID))
+	if int(net.Key) != 42 {
+		t.Errorf("expected ID 42, got %d", int(net.Key))
 	}
 	if net.Name != "test-net" {
 		t.Errorf("expected name 'test-net', got %q", net.Name)
@@ -271,7 +271,7 @@ func TestNetworkService_Update(t *testing.T) {
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 1, Name: newName})
+			jsonResponse(w, 200, Network{Key: 1, Name: newName})
 		},
 	}))
 
@@ -850,7 +850,7 @@ func TestNetworkService_GetLatestStatistics_Empty(t *testing.T) {
 func TestNetworkService_PowerOn_AlreadyRunning(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 1, Name: "net", Running: true})
+			jsonResponse(w, 200, Network{Key: 1, Name: "net", Running: true})
 		},
 	}))
 
@@ -865,7 +865,7 @@ func TestNetworkService_PowerOn(t *testing.T) {
 	powered := false
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 1, Name: "net", Running: powered})
+			jsonResponse(w, 200, Network{Key: 1, Name: "net", Running: powered})
 		},
 		"POST /api/v4/vnet_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body vnetAction
@@ -892,7 +892,7 @@ func TestNetworkService_PowerOff(t *testing.T) {
 	powered := true
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 1, Name: "net", Running: powered})
+			jsonResponse(w, 200, Network{Key: 1, Name: "net", Running: powered})
 		},
 		"POST /api/v4/vnet_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body vnetAction
@@ -916,7 +916,7 @@ func TestNetworkService_PowerOff(t *testing.T) {
 func TestNetworkService_PowerOff_AlreadyStopped(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 1, Name: "net", Running: false})
+			jsonResponse(w, 200, Network{Key: 1, Name: "net", Running: false})
 		},
 	}))
 

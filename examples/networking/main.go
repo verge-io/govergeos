@@ -69,11 +69,11 @@ func showNetworks(ctx context.Context, client *vergeos.Client) int {
 
 	fmt.Println("\nAvailable networks:")
 	for _, n := range networks {
-		fmt.Printf("  - [%d] %s (%s)\n", n.ID, n.Name, n.Network)
+		fmt.Printf("  - [%d] %s (%s)\n", n.Key, n.Name, n.Network)
 	}
 
 	// Return first network ID for further examples
-	return int(networks[0].ID)
+	return int(networks[0].Key)
 }
 
 func showAddresses(ctx context.Context, client *vergeos.Client, networkID int) {

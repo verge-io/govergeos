@@ -139,7 +139,7 @@ func TestTenantNetworkBlockService_Create_PendingFirewall(t *testing.T) {
 			jsonResponse(w, 200, TenantNetworkBlock{Key: 5, VNet: 10, CIDR: "192.168.100.0/24", Owner: "tenants/7", NetworkName: "external"})
 		},
 		"GET /api/v4/vnets/10": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 10, NeedFWApply: true})
+			jsonResponse(w, 200, Network{Key: 10, NeedFWApply: true})
 		},
 		"POST /api/v4/vnet_actions": func(w http.ResponseWriter, r *http.Request) {
 			applied = true
@@ -186,7 +186,7 @@ func TestTenantNetworkBlockService_Create_ApplyFirewall(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		},
 		"GET /api/v4/vnets/10": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 10, NeedFWApply: false})
+			jsonResponse(w, 200, Network{Key: 10, NeedFWApply: false})
 		},
 	}))
 
@@ -215,7 +215,7 @@ func TestTenantNetworkBlockService_Create_ApplyFailure(t *testing.T) {
 			w.WriteHeader(http.StatusBadGateway)
 		},
 		"GET /api/v4/vnets/10": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 10, NeedFWApply: true})
+			jsonResponse(w, 200, Network{Key: 10, NeedFWApply: true})
 		},
 	}))
 
@@ -267,7 +267,7 @@ func TestTenantNetworkBlockService_Delete_PendingFirewall(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		},
 		"GET /api/v4/vnets/10": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 10, NeedFWApply: true})
+			jsonResponse(w, 200, Network{Key: 10, NeedFWApply: true})
 		},
 	}))
 

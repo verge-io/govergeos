@@ -18,7 +18,7 @@ func TestMachineKeyForVM_ResolvesDistinctKey(t *testing.T) {
 			if got := r.URL.Query().Get("fields"); got != "$key,machine" {
 				t.Errorf("fields = %q, want $key,machine", got)
 			}
-			jsonResponse(w, 200, VM{ID: FlexInt(45), Machine: 26})
+			jsonResponse(w, 200, VM{Key: FlexInt(45), Machine: 26})
 		},
 	}))
 
@@ -65,10 +65,10 @@ func TestVMKeyForMachine_SkipsOtherRows(t *testing.T) {
 				t.Errorf("fields = %q, want $key,machine,is_snapshot", got)
 			}
 			jsonResponse(w, 200, []VM{
-				{ID: FlexInt(63), Machine: 26, IsSnapshot: false},
-				{ID: FlexInt(45), Machine: 63, IsSnapshot: false},
-				{ID: FlexInt(77), Machine: 99, IsSnapshot: true},
-				{ID: FlexInt(90), Machine: 63, IsSnapshot: true},
+				{Key: FlexInt(63), Machine: 26, IsSnapshot: false},
+				{Key: FlexInt(45), Machine: 63, IsSnapshot: false},
+				{Key: FlexInt(77), Machine: 99, IsSnapshot: true},
+				{Key: FlexInt(90), Machine: 63, IsSnapshot: true},
 			})
 		},
 	}))
@@ -85,9 +85,9 @@ func TestVMKeyForMachine_SkipsOtherRows(t *testing.T) {
 	live := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []VM{
-				{ID: FlexInt(88), Machine: 26, IsSnapshot: true},
-				{ID: FlexInt(26), Machine: 99, IsSnapshot: false},
-				{ID: FlexInt(45), Machine: 26, IsSnapshot: false},
+				{Key: FlexInt(88), Machine: 26, IsSnapshot: true},
+				{Key: FlexInt(26), Machine: 99, IsSnapshot: false},
+				{Key: FlexInt(45), Machine: 26, IsSnapshot: false},
 			})
 		},
 	}))
@@ -201,8 +201,8 @@ func TestVMSnapshotService_Restore_SnapshotVMNotFound(t *testing.T) {
 		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
 			// A live VM and a snapshot of a different machine must not be used.
 			jsonResponse(w, 200, []VM{
-				{ID: FlexInt(63), Machine: 26, IsSnapshot: false},
-				{ID: FlexInt(77), Machine: 99, IsSnapshot: true},
+				{Key: FlexInt(63), Machine: 26, IsSnapshot: false},
+				{Key: FlexInt(77), Machine: 99, IsSnapshot: true},
 			})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
@@ -240,7 +240,7 @@ func TestVMDriveService_ListAndCreate_ResolveMachineKey(t *testing.T) {
 			jsonResponse(w, 200, apiResponse{Key: float64(7)})
 		},
 		"GET /api/v4/machine_drives/7": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMDrive{ID: FlexInt(7), Machine: 26, Name: "disk0"})
+			jsonResponse(w, 200, VMDrive{Key: FlexInt(7), Machine: 26, Name: "disk0"})
 		},
 	}))
 
@@ -264,10 +264,10 @@ func TestVMDriveService_GetByName_ResolvesMachineKey(t *testing.T) {
 			if got := r.URL.Query().Get("filter"); got != want {
 				t.Errorf("filter = %q, want %q", got, want)
 			}
-			jsonResponse(w, 200, []VMDrive{{ID: FlexInt(7), Machine: 26, Name: "disk0"}})
+			jsonResponse(w, 200, []VMDrive{{Key: FlexInt(7), Machine: 26, Name: "disk0"}})
 		},
 		"GET /api/v4/machine_drives/7": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMDrive{ID: FlexInt(7), Machine: 26, Name: "disk0"})
+			jsonResponse(w, 200, VMDrive{Key: FlexInt(7), Machine: 26, Name: "disk0"})
 		},
 	}))
 
@@ -275,8 +275,8 @@ func TestVMDriveService_GetByName_ResolvesMachineKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetByName: %v", err)
 	}
-	if drive.ID.Int() != 7 {
-		t.Fatalf("id = %d, want 7", drive.ID.Int())
+	if drive.Key.Int() != 7 {
+		t.Fatalf("id = %d, want 7", drive.Key.Int())
 	}
 }
 
@@ -289,16 +289,16 @@ func TestVMDriveService_Delete_HotUnplug_UsesVMKey(t *testing.T) {
 			if getCalls > 1 {
 				state = "offline"
 			}
-			jsonResponse(w, 200, VMDrive{ID: FlexInt(1), Machine: 26, PowerState: state})
+			jsonResponse(w, 200, VMDrive{Key: FlexInt(1), Machine: 26, PowerState: state})
 		},
 		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
 			if got := r.URL.Query().Get("filter"); got != "machine eq 26" {
 				t.Errorf("filter = %q, want machine eq 26", got)
 			}
 			jsonResponse(w, 200, []VM{
-				{ID: FlexInt(26), Machine: 99, IsSnapshot: false},
-				{ID: FlexInt(88), Machine: 26, IsSnapshot: true},
-				{ID: FlexInt(45), Machine: 26, IsSnapshot: false},
+				{Key: FlexInt(26), Machine: 99, IsSnapshot: false},
+				{Key: FlexInt(88), Machine: 26, IsSnapshot: true},
+				{Key: FlexInt(45), Machine: 26, IsSnapshot: false},
 			})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
@@ -329,11 +329,11 @@ func TestVMDriveService_Delete_HotUnplug_VMNotFound(t *testing.T) {
 	posted := false
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_drives/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMDrive{ID: FlexInt(1), Machine: 26, PowerState: "online"})
+			jsonResponse(w, 200, VMDrive{Key: FlexInt(1), Machine: 26, PowerState: "online"})
 		},
 		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []VM{
-				{ID: FlexInt(88), Machine: 26, IsSnapshot: true},
+				{Key: FlexInt(88), Machine: 26, IsSnapshot: true},
 			})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
@@ -370,7 +370,7 @@ func TestVMNICService_CreateAndDelete_ResolveKeys(t *testing.T) {
 			jsonResponse(w, 200, apiResponse{Key: float64(4)})
 		},
 		"GET /api/v4/machine_nics/4": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMNIC{ID: FlexInt(4), Machine: 26, Name: "nic0"})
+			jsonResponse(w, 200, VMNIC{Key: FlexInt(4), Machine: 26, Name: "nic0"})
 		},
 		"GET /api/v4/machine_nics/1": func(w http.ResponseWriter, r *http.Request) {
 			getCalls++
@@ -378,12 +378,12 @@ func TestVMNICService_CreateAndDelete_ResolveKeys(t *testing.T) {
 			if getCalls > 1 {
 				state = "down"
 			}
-			jsonResponse(w, 200, VMNIC{ID: FlexInt(1), Machine: 26, PowerState: state})
+			jsonResponse(w, 200, VMNIC{Key: FlexInt(1), Machine: 26, PowerState: state})
 		},
 		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []VM{
-				{ID: FlexInt(26), Machine: 99, IsSnapshot: false},
-				{ID: FlexInt(45), Machine: 26, IsSnapshot: false},
+				{Key: FlexInt(26), Machine: 99, IsSnapshot: false},
+				{Key: FlexInt(45), Machine: 26, IsSnapshot: false},
 			})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
@@ -430,7 +430,7 @@ func TestVMDeviceService_Create_ResolvesMachineKey(t *testing.T) {
 			jsonResponse(w, 200, apiResponse{Key: float64(5)})
 		},
 		"GET /api/v4/machine_devices/5": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMDevice{ID: FlexInt(5), Machine: 26, Name: "tpm0", Type: DeviceTypeTPM})
+			jsonResponse(w, 200, VMDevice{Key: FlexInt(5), Machine: 26, Name: "tpm0", Type: DeviceTypeTPM})
 		},
 		"GET /api/v4/machine_device_settings_tpm": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []TPMDeviceSettings{})

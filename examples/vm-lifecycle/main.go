@@ -54,11 +54,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create VM: %v", err)
 	}
-	fmt.Printf("Created VM: %s (ID: %d)\n", vm.Name, vm.ID)
+	fmt.Printf("Created VM: %s (ID: %d)\n", vm.Name, vm.Key)
 
 	// Add a virtual disk
 	fmt.Println("Adding virtual disk...")
-	drive, err := client.VMDrives.Create(ctx, vm.ID.Int(), &vergeos.VMDriveCreateRequest{
+	drive, err := client.VMDrives.Create(ctx, vm.Key.Int(), &vergeos.VMDriveCreateRequest{
 		Name:      "disk0",
 		Interface: "virtio",
 		Media:     "disk",
@@ -67,7 +67,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create drive: %v", err)
 	}
-	fmt.Printf("Created drive: %s (ID: %d, Size: %dGB)\n", drive.Name, drive.ID, drive.SizeGB)
+	fmt.Printf("Created drive: %s (ID: %d, Size: %dGB)\n", drive.Name, drive.Key, drive.SizeGB)
 
 	// List available networks to attach
 	networks, err := client.Networks.List(ctx, vergeos.WithLimit(1))
@@ -78,26 +78,26 @@ func main() {
 	if len(networks) > 0 {
 		// Add a network interface
 		fmt.Println("Adding network interface...")
-		nic, err := client.VMNICs.Create(ctx, vm.ID.Int(), &vergeos.VMNICCreateRequest{
+		nic, err := client.VMNICs.Create(ctx, vm.Key.Int(), &vergeos.VMNICCreateRequest{
 			Name: "nic0",
-			VNET: networks[0].ID.Int(),
+			VNET: networks[0].Key.Int(),
 		})
 		if err != nil {
 			log.Fatalf("Failed to create NIC: %v", err)
 		}
 		fmt.Printf("Created NIC: %s (ID: %d, MAC: %s, Network: %s)\n",
-			nic.Name, nic.ID, nic.MAC, networks[0].Name)
+			nic.Name, nic.Key, nic.MAC, networks[0].Name)
 	}
 
 	// Power on the VM
 	fmt.Println("Powering on VM...")
-	if err := client.VMs.PowerOn(ctx, vm.ID.Int()); err != nil {
+	if err := client.VMs.PowerOn(ctx, vm.Key.Int()); err != nil {
 		log.Fatalf("Failed to power on VM: %v", err)
 	}
 	fmt.Println("VM is now running")
 
 	// Get updated VM status
-	vm, err = client.VMs.Get(ctx, vm.ID.Int())
+	vm, err = client.VMs.Get(ctx, vm.Key.Int())
 	if err != nil {
 		log.Fatalf("Failed to get VM: %v", err)
 	}
@@ -105,7 +105,7 @@ func main() {
 
 	// List all drives for the VM
 	fmt.Println("\nVM Drives:")
-	drives, err := client.VMDrives.List(ctx, vm.ID.Int())
+	drives, err := client.VMDrives.List(ctx, vm.Key.Int())
 	if err != nil {
 		log.Fatalf("Failed to list drives: %v", err)
 	}
@@ -115,7 +115,7 @@ func main() {
 
 	// List all NICs for the VM
 	fmt.Println("\nVM NICs:")
-	nics, err := client.VMNICs.List(ctx, vm.ID.Int())
+	nics, err := client.VMNICs.List(ctx, vm.Key.Int())
 	if err != nil {
 		log.Fatalf("Failed to list NICs: %v", err)
 	}
@@ -126,14 +126,14 @@ func main() {
 	// Power off the VM. PowerOff asks the guest to shut down and waits
 	// until the VM stops. Kill is the immediate power-off.
 	fmt.Println("\nPowering off VM...")
-	if err := client.VMs.PowerOff(ctx, vm.ID.Int()); err != nil {
+	if err := client.VMs.PowerOff(ctx, vm.Key.Int()); err != nil {
 		log.Fatalf("Failed to power off VM: %v", err)
 	}
 	fmt.Println("VM is now stopped")
 
 	// Cleanup: Delete the VM
 	fmt.Println("\nCleaning up - deleting VM...")
-	if err := client.VMs.Delete(ctx, vm.ID.Int()); err != nil {
+	if err := client.VMs.Delete(ctx, vm.Key.Int()); err != nil {
 		log.Fatalf("Failed to delete VM: %v", err)
 	}
 	fmt.Println("VM deleted successfully")

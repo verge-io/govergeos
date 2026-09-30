@@ -37,10 +37,10 @@ func TestVMKeyAndMachineKeyDiffer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("VMs.Get(%d) failed: %v", vmID, err)
 	}
-	if vm.ID.Int() == vm.Machine {
-		t.Skipf("VM %d key equals machine key %d; this test needs them to differ", vm.ID.Int(), vm.Machine)
+	if vm.Key.Int() == vm.Machine {
+		t.Skipf("VM %d key equals machine key %d; this test needs them to differ", vm.Key.Int(), vm.Machine)
 	}
-	t.Logf("VM %q key=%d machine=%d running=%v", vm.Name, vm.ID.Int(), vm.Machine, vm.PowerState)
+	t.Logf("VM %q key=%d machine=%d running=%v", vm.Name, vm.Key.Int(), vm.Machine, vm.PowerState)
 
 	wasRunning := vm.PowerState
 	originalDesc := vm.Description
@@ -91,12 +91,12 @@ func TestVMKeyAndMachineKeyDiffer(t *testing.T) {
 		if err != nil {
 			t.Fatalf("VMDrives.Create(%d) failed: %v", vmID, err)
 		}
-		driveID = drive.ID.Int()
+		driveID = drive.Key.Int()
 		if drive.Machine != vm.Machine {
 			t.Fatalf("drive machine = %d, want VM machine %d", drive.Machine, vm.Machine)
 		}
-		if drive.Machine == vm.ID.Int() {
-			t.Fatalf("drive was attached using the VM $key %d", vm.ID.Int())
+		if drive.Machine == vm.Key.Int() {
+			t.Fatalf("drive was attached using the VM $key %d", vm.Key.Int())
 		}
 
 		drives, err := client.VMDrives.List(ctx, vmID)
@@ -105,7 +105,7 @@ func TestVMKeyAndMachineKeyDiffer(t *testing.T) {
 		}
 		found := false
 		for _, d := range drives {
-			if d.ID.Int() == driveID {
+			if d.Key.Int() == driveID {
 				found = true
 				if d.Machine != vm.Machine {
 					t.Errorf("listed drive machine = %d, want %d", d.Machine, vm.Machine)
@@ -131,7 +131,7 @@ func TestVMKeyAndMachineKeyDiffer(t *testing.T) {
 			t.Fatalf("VMDrives.Delete(%d) on running VM failed: %v", driveID, err)
 		}
 		driveID = 0
-		if _, err := client.VMDrives.Get(ctx, plugged.ID.Int()); !vergeos.IsNotFoundError(err) {
+		if _, err := client.VMDrives.Get(ctx, plugged.Key.Int()); !vergeos.IsNotFoundError(err) {
 			t.Fatalf("drive still present after delete: %v", err)
 		}
 	})
@@ -149,17 +149,17 @@ func TestVMKeyAndMachineKeyDiffer(t *testing.T) {
 		nic, err := client.VMNICs.Create(ctx, vmID, &vergeos.VMNICCreateRequest{
 			Name:      "sdk-key-nic-" + stamp,
 			Interface: "virtio",
-			VNET:      networks[0].ID.Int(),
+			VNET:      networks[0].Key.Int(),
 		})
 		if err != nil {
 			t.Fatalf("VMNICs.Create(%d) failed: %v", vmID, err)
 		}
-		nicID = nic.ID.Int()
+		nicID = nic.Key.Int()
 		if nic.Machine != vm.Machine {
 			t.Fatalf("NIC machine = %d, want VM machine %d", nic.Machine, vm.Machine)
 		}
-		if nic.Machine == vm.ID.Int() {
-			t.Fatalf("NIC was attached using the VM $key %d", vm.ID.Int())
+		if nic.Machine == vm.Key.Int() {
+			t.Fatalf("NIC was attached using the VM $key %d", vm.Key.Int())
 		}
 
 		nics, err := client.VMNICs.List(ctx, vmID)
@@ -168,7 +168,7 @@ func TestVMKeyAndMachineKeyDiffer(t *testing.T) {
 		}
 		found := false
 		for _, n := range nics {
-			if n.ID.Int() == nicID {
+			if n.Key.Int() == nicID {
 				found = true
 			}
 		}
@@ -189,7 +189,7 @@ func TestVMKeyAndMachineKeyDiffer(t *testing.T) {
 			t.Fatalf("VMNICs.Delete(%d) on running VM failed: %v", nicID, err)
 		}
 		nicID = 0
-		if _, err := client.VMNICs.Get(ctx, current.ID.Int()); !vergeos.IsNotFoundError(err) {
+		if _, err := client.VMNICs.Get(ctx, current.Key.Int()); !vergeos.IsNotFoundError(err) {
 			t.Fatalf("NIC still present after delete: %v", err)
 		}
 	})
@@ -284,8 +284,8 @@ func TestVMKeyAndMachineKeyDiffer(t *testing.T) {
 		if restored.Description != before {
 			t.Fatalf("description after restore = %q, want %q", restored.Description, before)
 		}
-		if restored.ID.Int() != vmID || restored.Machine != vm.Machine {
-			t.Fatalf("restore changed VM identity: key=%d machine=%d", restored.ID.Int(), restored.Machine)
+		if restored.Key.Int() != vmID || restored.Machine != vm.Machine {
+			t.Fatalf("restore changed VM identity: key=%d machine=%d", restored.Key.Int(), restored.Machine)
 		}
 
 		if err := client.VMSnapshots.Delete(ctx, snapshotID); err != nil {

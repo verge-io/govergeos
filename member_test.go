@@ -11,8 +11,8 @@ func TestMemberService_List(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/members": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []Member{
-				{ID: 1, Group: 10, Member: "users/admin"},
-				{ID: 2, Group: 10, Member: "users/operator"},
+				{Key: 1, Group: 10, Member: "users/admin"},
+				{Key: 2, Group: 10, Member: "users/operator"},
 			})
 		},
 	}))
@@ -37,7 +37,7 @@ func TestMemberService_ListByGroup(t *testing.T) {
 				t.Errorf("unexpected filter: %s", filter)
 			}
 			jsonResponse(w, 200, []Member{
-				{ID: 1, Group: 10, Member: "users/admin"},
+				{Key: 1, Group: 10, Member: "users/admin"},
 			})
 		},
 	}))
@@ -54,7 +54,7 @@ func TestMemberService_ListByGroup(t *testing.T) {
 func TestMemberService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/members/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Member{ID: 1, Group: 10, Member: "users/admin"})
+			jsonResponse(w, 200, Member{Key: 1, Group: 10, Member: "users/admin"})
 		},
 	}))
 
@@ -100,7 +100,7 @@ func TestMemberService_Create(t *testing.T) {
 			jsonResponse(w, 200, apiResponse{Key: float64(3)})
 		},
 		"GET /api/v4/members/3": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Member{ID: 3, Group: 10, Member: "users/newuser"})
+			jsonResponse(w, 200, Member{Key: 3, Group: 10, Member: "users/newuser"})
 		},
 	}))
 
@@ -114,8 +114,8 @@ func TestMemberService_Create(t *testing.T) {
 	if member.Member != "users/newuser" {
 		t.Errorf("expected member 'users/newuser', got %q", member.Member)
 	}
-	if int(member.ID) != 3 {
-		t.Errorf("expected ID 3, got %d", int(member.ID))
+	if int(member.Key) != 3 {
+		t.Errorf("expected ID 3, got %d", int(member.Key))
 	}
 }
 
@@ -171,7 +171,7 @@ func TestMemberService_Update(t *testing.T) {
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/members/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Member{ID: 1, Group: 10, Member: newMember})
+			jsonResponse(w, 200, Member{Key: 1, Group: 10, Member: newMember})
 		},
 	}))
 
@@ -257,7 +257,7 @@ func TestMemberService_Add(t *testing.T) {
 			jsonResponse(w, 200, apiResponse{Key: float64(5)})
 		},
 		"GET /api/v4/members/5": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Member{ID: 5, Group: 10, Member: "users/admin"})
+			jsonResponse(w, 200, Member{Key: 5, Group: 10, Member: "users/admin"})
 		},
 	}))
 
@@ -274,7 +274,7 @@ func TestMemberService_Remove(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/members": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []Member{
-				{ID: 5, Group: 10, Member: "users/admin"},
+				{Key: 5, Group: 10, Member: "users/admin"},
 			})
 		},
 		"DELETE /api/v4/members/5": func(w http.ResponseWriter, r *http.Request) {

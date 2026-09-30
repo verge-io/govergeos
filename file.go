@@ -65,7 +65,7 @@ func (s *FileService) GetByName(ctx context.Context, name string) (*File, error)
 	if len(files) == 0 {
 		return nil, &NotFoundError{Resource: "File", ID: name}
 	}
-	if err := requireUniqueName("File", name, files, func(f File) any { return f.ID }); err != nil {
+	if err := requireUniqueName("File", name, files, func(f File) any { return f.Key }); err != nil {
 		return nil, err
 	}
 	if err := requireExactName("File", name, files[0].Name, name); err != nil {
@@ -265,10 +265,10 @@ func (s *FileService) UploadFromFile(ctx context.Context, localPath string, req 
 	}
 
 	// Upload content
-	uploadedFile, err := s.Upload(ctx, int(createdFile.ID), file, fileSize)
+	uploadedFile, err := s.Upload(ctx, int(createdFile.Key), file, fileSize)
 	if err != nil {
 		// Try to clean up on failure
-		_ = s.Delete(ctx, int(createdFile.ID))
+		_ = s.Delete(ctx, int(createdFile.Key))
 		return nil, err
 	}
 

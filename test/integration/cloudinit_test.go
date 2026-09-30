@@ -12,7 +12,7 @@ import (
 )
 
 // TestCloudInitFileCreateForVM creates a cloud-init file on a throwaway VM.
-// Owner must be the VM $key reference (vms/<VM.ID>), not the machine key.
+// Owner must be the VM $key reference (vms/<VM.Key>), not the machine key.
 // The test runs when the lab client env vars are set (see setupTestClient).
 func TestCloudInitFileCreateForVM(t *testing.T) {
 	client := setupTestClient(t)
@@ -30,7 +30,7 @@ func TestCloudInitFileCreateForVM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("VMs.Create failed: %v", err)
 	}
-	vmID := vm.ID.Int()
+	vmID := vm.Key.Int()
 	t.Logf("Created VM %q key=%d machine=%d", vm.Name, vmID, vm.Machine)
 
 	var fileID int
@@ -55,7 +55,7 @@ func TestCloudInitFileCreateForVM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CloudInitFiles.CreateForVM(%d) failed: %v", vmID, err)
 	}
-	fileID = file.ID.Int()
+	fileID = file.Key.Int()
 
 	wantOwner := fmt.Sprintf("vms/%d", vmID)
 	if file.Owner != wantOwner {
@@ -79,7 +79,7 @@ func TestCloudInitFileCreateForVM(t *testing.T) {
 	}
 	found := false
 	for _, f := range listed {
-		if f.ID.Int() == fileID {
+		if f.Key.Int() == fileID {
 			found = true
 			if f.Owner != wantOwner {
 				t.Errorf("listed owner = %q, want %q", f.Owner, wantOwner)
@@ -98,7 +98,7 @@ func TestCloudInitFileCreateForVM(t *testing.T) {
 			t.Fatalf("CloudInitFiles.ListByVM(machine %d) failed: %v", vm.Machine, err)
 		}
 		for _, f := range byMachine {
-			if f.ID.Int() == fileID {
+			if f.Key.Int() == fileID {
 				t.Fatalf("file %d was listed for machine key %d", fileID, vm.Machine)
 			}
 		}

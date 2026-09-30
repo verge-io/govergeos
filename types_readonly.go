@@ -274,8 +274,8 @@ type NodeStatus struct {
 
 // Group represents a VergeOS group.
 type Group struct {
-	// ID is the unique identifier for the group.
-	ID FlexInt `json:"$key,omitempty"`
+	// Key is the unique identifier for the group ($key).
+	Key FlexInt `json:"$key,omitempty"`
 	// Name is the group name.
 	Name string `json:"name"`
 	// Description is the group description.
@@ -324,8 +324,8 @@ type GroupUpdateRequest struct {
 
 // File represents a file (ISO, image, etc.) in VergeOS.
 type File struct {
-	// ID is the unique identifier for the file.
-	ID FlexInt `json:"$key,omitempty"`
+	// Key is the unique identifier for the file ($key).
+	Key FlexInt `json:"$key,omitempty"`
 	// Name is the file name.
 	Name string `json:"name"`
 	// Description is the description.
@@ -379,8 +379,8 @@ type FileUpdateRequest struct {
 
 // ResourceGroup represents a resource group in VergeOS.
 type ResourceGroup struct {
-	// ID is the unique identifier for the resource group (UUID string).
-	ID string `json:"$key,omitempty"`
+	// Key is the unique identifier for the resource group ($key, a UUID string).
+	Key string `json:"$key,omitempty"`
 	// Name is the resource group name.
 	Name string `json:"name"`
 	// Description is the description.

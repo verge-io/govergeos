@@ -20,8 +20,8 @@ func TestVMDriveService_List(t *testing.T) {
 				t.Errorf("unexpected filter: %s", filter)
 			}
 			jsonResponse(w, 200, []VMDrive{
-				{ID: FlexInt(1), Machine: 42, Name: "disk0", SizeBytes: 10 * bytesPerGB, MS2023KEKApplied: true},
-				{ID: FlexInt(2), Machine: 42, Name: "disk1", SizeBytes: 20 * bytesPerGB},
+				{Key: FlexInt(1), Machine: 42, Name: "disk0", SizeBytes: 10 * bytesPerGB, MS2023KEKApplied: true},
+				{Key: FlexInt(2), Machine: 42, Name: "disk1", SizeBytes: 20 * bytesPerGB},
 			})
 		},
 	}))
@@ -118,8 +118,8 @@ func TestVMDriveService_ListAll(t *testing.T) {
 				t.Errorf("expected no filter for ListAll, got %q", filter)
 			}
 			jsonResponse(w, 200, []VMDrive{
-				{ID: FlexInt(1), Machine: 42, Name: "disk0", SizeBytes: 10 * bytesPerGB},
-				{ID: FlexInt(2), Machine: 99, Name: "disk1", SizeBytes: 20 * bytesPerGB},
+				{Key: FlexInt(1), Machine: 42, Name: "disk0", SizeBytes: 10 * bytesPerGB},
+				{Key: FlexInt(2), Machine: 99, Name: "disk1", SizeBytes: 20 * bytesPerGB},
 			})
 		},
 	}))
@@ -161,7 +161,7 @@ func TestVMDriveService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_drives/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMDrive{
-				ID:        FlexInt(1),
+				Key:       FlexInt(1),
 				Machine:   42,
 				Name:      "disk0",
 				SizeBytes: 50 * bytesPerGB,
@@ -192,12 +192,12 @@ func TestVMDriveService_GetByName(t *testing.T) {
 				t.Errorf("expected filter %q, got %q", expected, filter)
 			}
 			jsonResponse(w, 200, []VMDrive{
-				{ID: FlexInt(7), Machine: 42, Name: "disk0", SizeBytes: 10 * bytesPerGB},
+				{Key: FlexInt(7), Machine: 42, Name: "disk0", SizeBytes: 10 * bytesPerGB},
 			})
 		},
 		"GET /api/v4/machine_drives/7": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMDrive{
-				ID:        FlexInt(7),
+				Key:       FlexInt(7),
 				Machine:   42,
 				Name:      "disk0",
 				SizeBytes: 10 * bytesPerGB,
@@ -213,8 +213,8 @@ func TestVMDriveService_GetByName(t *testing.T) {
 	if drive.Name != "disk0" {
 		t.Errorf("expected name 'disk0', got %q", drive.Name)
 	}
-	if drive.ID.Int() != 7 {
-		t.Errorf("expected ID 7, got %d", drive.ID.Int())
+	if drive.Key.Int() != 7 {
+		t.Errorf("expected ID 7, got %d", drive.Key.Int())
 	}
 	if drive.SizeGB != 10 {
 		t.Errorf("expected SizeGB 10, got %d", drive.SizeGB)
@@ -298,7 +298,7 @@ func TestVMDriveService_Create(t *testing.T) {
 		},
 		"GET /api/v4/machine_drives/7": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMDrive{
-				ID:        FlexInt(7),
+				Key:       FlexInt(7),
 				Machine:   10,
 				Name:      "disk0",
 				SizeBytes: 25 * bytesPerGB,
@@ -314,8 +314,8 @@ func TestVMDriveService_Create(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
-	if drive.ID.Int() != 7 {
-		t.Errorf("expected ID 7, got %d", drive.ID.Int())
+	if drive.Key.Int() != 7 {
+		t.Errorf("expected ID 7, got %d", drive.Key.Int())
 	}
 	if drive.SizeGB != 25 {
 		t.Errorf("expected SizeGB 25, got %d", drive.SizeGB)
@@ -359,7 +359,7 @@ func TestVMDriveService_Update(t *testing.T) {
 		},
 		"GET /api/v4/machine_drives/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMDrive{
-				ID:        FlexInt(1),
+				Key:       FlexInt(1),
 				Name:      newName,
 				SizeBytes: 10 * bytesPerGB,
 			})
@@ -407,7 +407,7 @@ func TestVMDriveService_Update_NotFound(t *testing.T) {
 func TestVMDriveService_Delete(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_drives/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMDrive{ID: FlexInt(1), Machine: 10, PowerState: "offline"})
+			jsonResponse(w, 200, VMDrive{Key: FlexInt(1), Machine: 10, PowerState: "offline"})
 		},
 		"DELETE /api/v4/machine_drives/1": func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
@@ -447,7 +447,7 @@ func TestVMDriveService_Delete_HotUnplug(t *testing.T) {
 			if getCalls > 1 {
 				state = "offline"
 			}
-			jsonResponse(w, 200, VMDrive{ID: FlexInt(1), Machine: 10, PowerState: state})
+			jsonResponse(w, 200, VMDrive{Key: FlexInt(1), Machine: 10, PowerState: state})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
@@ -489,7 +489,7 @@ func TestVMDriveService_HotplugDrive(t *testing.T) {
 		},
 		"GET /api/v4/machine_drives/5": func(w http.ResponseWriter, r *http.Request) {
 			getCalls++
-			jsonResponse(w, 200, VMDrive{ID: FlexInt(5), Machine: 10, PowerState: "online"})
+			jsonResponse(w, 200, VMDrive{Key: FlexInt(5), Machine: 10, PowerState: "online"})
 		},
 	}))
 
@@ -516,7 +516,7 @@ func TestVMDriveService_HotUnplugDrive(t *testing.T) {
 		},
 		"GET /api/v4/machine_drives/5": func(w http.ResponseWriter, r *http.Request) {
 			getCalls++
-			jsonResponse(w, 200, VMDrive{ID: FlexInt(5), Machine: 10, PowerState: "offline"})
+			jsonResponse(w, 200, VMDrive{Key: FlexInt(5), Machine: 10, PowerState: "offline"})
 		},
 	}))
 

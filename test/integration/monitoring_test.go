@@ -332,7 +332,7 @@ func TestTasksEnableDisable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("VMs.Create(%q) failed: %v", vmName, err)
 	}
-	vmID := vm.ID.Int()
+	vmID := vm.Key.Int()
 	if vm.Name != "" {
 		vmName = vm.Name
 	}

@@ -176,10 +176,10 @@ func TestResolveRecipeAnswers_ConstraintsAndList(t *testing.T) {
 func TestResolveRecipeAnswers_NetworkNames(t *testing.T) {
 	questions := []RecipeQuestion{{Name: "YB_NIC_ETH0", Type: "network"}}
 	networks := []Network{
-		{ID: 12, Name: "Internal"},
-		{ID: 3, Name: "3"},
-		{ID: 4, Name: "Dup"},
-		{ID: 5, Name: "Dup"},
+		{Key: 12, Name: "Internal"},
+		{Key: 3, Name: "3"},
+		{Key: 4, Name: "Dup"},
+		{Key: 5, Name: "Dup"},
 	}
 
 	got, err := resolveRecipeAnswers(questions, RecipeAnswers{"YB_NIC_ETH0": "Internal"}, networks)

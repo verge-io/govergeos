@@ -2,7 +2,17 @@
 
 ## Unreleased
 
-Behavior change for the next minor release.
+Breaking change: the `$key` field is named `Key` on every type. Types that exposed it as `ID` are renamed below.
+
+Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
+
+### Breaking
+
+- The Go field for `$key` is `Key`. These types previously named that field `ID`. JSON is unchanged (`$key`).
+  - `FlexInt`, renamed from `ID`: `VM`, `Network`, `VMNIC`, `VMDrive`, `VMDevice`, `Group`, `File`, `Member`, `CloudInitFile`. Use `vm.Key` where code used `vm.ID`, and the same for the other types in this list.
+  - `int`, renamed from `ID`: `USBDeviceSettings`, `TPMDeviceSettings`, `VGPUDeviceSettings`.
+  - `string`, renamed from `ID`: `ResourceGroup` (UUID).
+- A separate `id` column is still `ID` (`User.ID`, volume SHA1 `ID`, and the same pattern on other string-key tables). `Node.ID` is that `id` column and is not renamed. Method parameters that take a key as an `int` are unchanged.
 
 ### Changed
 

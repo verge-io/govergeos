@@ -34,7 +34,7 @@ func TestFiles(t *testing.T) {
 				break
 			}
 			sizeMB := f.Filesize / (1024 * 1024)
-			t.Logf("  - %s (ID: %d, Type: %s, Size: %d MB)", f.Name, f.ID, f.Type, sizeMB)
+			t.Logf("  - %s (ID: %d, Type: %s, Size: %d MB)", f.Name, f.Key, f.Type, sizeMB)
 		}
 	})
 
@@ -50,7 +50,7 @@ func TestFiles(t *testing.T) {
 				t.Logf("  ... and %d more", len(isos)-5)
 				break
 			}
-			t.Logf("  - %s (ID: %d)", iso.Name, iso.ID)
+			t.Logf("  - %s (ID: %d)", iso.Name, iso.Key)
 		}
 	})
 
@@ -64,13 +64,13 @@ func TestFiles(t *testing.T) {
 			t.Skip("No files found to test Get()")
 		}
 
-		file, err := client.Files.Get(ctx, files[0].ID.Int())
+		file, err := client.Files.Get(ctx, files[0].Key.Int())
 		if err != nil {
 			t.Fatalf("Files.Get failed: %v", err)
 		}
 
 		t.Logf("File: %s", file.Name)
-		t.Logf("  ID: %d", file.ID)
+		t.Logf("  ID: %d", file.Key)
 		t.Logf("  Type: %s", file.Type)
 		t.Logf("  Filesize: %d bytes", file.Filesize)
 		t.Logf("  AllocatedBytes: %d bytes", file.AllocatedBytes)
@@ -93,7 +93,7 @@ func TestFiles(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Files.GetByName failed: %v", err)
 		}
-		t.Logf("Found file by name: %s (ID: %d)", file.Name, file.ID)
+		t.Logf("Found file by name: %s (ID: %d)", file.Name, file.Key)
 	})
 }
 
@@ -122,13 +122,13 @@ func TestFilesUploadDownloadDelete(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Files.Create failed: %v", err)
 	}
-	t.Logf("  Created file entry with ID: %d", createdFile.ID)
+	t.Logf("  Created file entry with ID: %d", createdFile.Key)
 
 	defer func() {
 		t.Log("Cleanup: Deleting test file...")
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cleanupCancel()
-		if err := client.Files.Delete(cleanupCtx, createdFile.ID.Int()); err != nil {
+		if err := client.Files.Delete(cleanupCtx, createdFile.Key.Int()); err != nil {
 			t.Logf("  Warning: Failed to delete test file: %v", err)
 		} else {
 			t.Log("  Cleanup successful")
@@ -138,7 +138,7 @@ func TestFilesUploadDownloadDelete(t *testing.T) {
 	// Step 2: Upload content
 	t.Log("Step 2: Uploading file content...")
 	reader := bytes.NewReader(testContent)
-	uploadedFile, err := client.Files.Upload(ctx, createdFile.ID.Int(), reader, int64(len(testContent)))
+	uploadedFile, err := client.Files.Upload(ctx, createdFile.Key.Int(), reader, int64(len(testContent)))
 	if err != nil {
 		t.Fatalf("Files.Upload failed: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestFilesUploadDownloadDelete(t *testing.T) {
 
 	// Step 3: Download and verify
 	t.Log("Step 3: Downloading file...")
-	downloadReader, downloadedFile, err := client.Files.Download(ctx, createdFile.ID.Int())
+	downloadReader, downloadedFile, err := client.Files.Download(ctx, createdFile.Key.Int())
 	if err != nil {
 		t.Fatalf("Files.Download failed: %v", err)
 	}
@@ -198,13 +198,13 @@ func TestFilesUploadFromFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Files.UploadFromFile failed: %v", err)
 	}
-	t.Logf("  Upload successful. File ID: %d, Size: %d bytes", uploadedFile.ID, uploadedFile.Filesize)
+	t.Logf("  Upload successful. File ID: %d, Size: %d bytes", uploadedFile.Key, uploadedFile.Filesize)
 
 	defer func() {
 		t.Log("Cleanup: Deleting uploaded file...")
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cleanupCancel()
-		if err := client.Files.Delete(cleanupCtx, uploadedFile.ID.Int()); err != nil {
+		if err := client.Files.Delete(cleanupCtx, uploadedFile.Key.Int()); err != nil {
 			t.Logf("  Warning: Failed to delete test file: %v", err)
 		} else {
 			t.Log("  Cleanup successful")
@@ -212,7 +212,7 @@ func TestFilesUploadFromFile(t *testing.T) {
 	}()
 
 	// Verify by downloading
-	downloadReader, _, err := client.Files.Download(ctx, uploadedFile.ID.Int())
+	downloadReader, _, err := client.Files.Download(ctx, uploadedFile.Key.Int())
 	if err != nil {
 		t.Fatalf("Failed to download uploaded file: %v", err)
 	}
@@ -254,9 +254,9 @@ func TestFilesDownloadToFile(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	t.Logf("Downloading file %s (ID: %d, Size: %d bytes) to %s",
-		files[0].Name, files[0].ID, files[0].Filesize, tmpDir)
+		files[0].Name, files[0].Key, files[0].Filesize, tmpDir)
 
-	downloadedPath, err := client.Files.DownloadToFile(ctx, files[0].ID.Int(), tmpDir)
+	downloadedPath, err := client.Files.DownloadToFile(ctx, files[0].Key.Int(), tmpDir)
 	if err != nil {
 		t.Fatalf("Files.DownloadToFile failed: %v", err)
 	}

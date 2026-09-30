@@ -131,5 +131,5 @@ func (s *MemberService) Remove(ctx context.Context, groupID int, member string) 
 		return nil // Already removed
 	}
 
-	return s.Delete(ctx, members[0].ID.Int())
+	return s.Delete(ctx, members[0].Key.Int())
 }

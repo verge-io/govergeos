@@ -300,7 +300,7 @@ func (s *VMImportService) adoptExisting(ctx context.Context, vm *VM) (*VMImport,
 	if err != nil {
 		return nil, err
 	}
-	vmID := FlexInt(vm.ID)
+	vmID := FlexInt(vm.Key)
 	if len(rows) != 1 {
 		return &VMImport{
 			Name:           vm.Name,
@@ -340,7 +340,7 @@ func (s *VMImportService) importBody(ctx context.Context, req *VMImportCreateReq
 		if err != nil {
 			return nil, err
 		}
-		body["file"] = int(file.ID)
+		body["file"] = int(file.Key)
 	case req.Volume != "":
 		body["volume"] = req.Volume
 		if req.VolumePath != "" {

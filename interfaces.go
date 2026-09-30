@@ -47,7 +47,7 @@ type VMSnapshotServiceInterface interface {
 }
 
 // VMNICServiceInterface defines the interface for VM NIC operations.
-// Methods that take vmID use the VM $key (VM.ID). The machine key stored on
+// Methods that take vmID use the VM $key (VM.Key). The machine key stored on
 // machine_nics is resolved internally. Hot-unplug posts that VM $key to vm_actions.
 type VMNICServiceInterface interface {
 	List(ctx context.Context, vmID int) ([]VMNIC, error)
@@ -58,7 +58,7 @@ type VMNICServiceInterface interface {
 }
 
 // VMDriveServiceInterface defines the interface for VM Drive operations.
-// Methods that take vmID use the VM $key (VM.ID). The machine key stored on
+// Methods that take vmID use the VM $key (VM.Key). The machine key stored on
 // machine_drives is resolved internally. HotplugDrive and HotUnplugDrive also
 // take the VM $key, which is what vm_actions requires.
 type VMDriveServiceInterface interface {
@@ -75,7 +75,7 @@ type VMDriveServiceInterface interface {
 }
 
 // VMDeviceServiceInterface defines the interface for VM Device operations.
-// Methods that take vmID use the VM $key (VM.ID). The machine key stored on
+// Methods that take vmID use the VM $key (VM.Key). The machine key stored on
 // machine_devices is resolved internally.
 type VMDeviceServiceInterface interface {
 	List(ctx context.Context, vmID int) ([]VMDevice, error)

@@ -2,8 +2,8 @@ package vergeos
 
 // VMDevice represents a device attached to a VM.
 type VMDevice struct {
-	// ID is the unique identifier for the device.
-	ID FlexInt `json:"$key,omitempty"`
+	// Key is the unique identifier for the device ($key).
+	Key FlexInt `json:"$key,omitempty"`
 	// Machine is the machine reference ID.
 	Machine int `json:"machine,omitempty"`
 	// MachineType is the machine type (vm, container, node, etc.) - read-only.
@@ -42,8 +42,8 @@ type VMDevice struct {
 
 // USBDeviceSettings contains USB device-specific settings.
 type USBDeviceSettings struct {
-	// ID is the settings ID.
-	ID int `json:"$key,omitempty"`
+	// Key is the settings row key ($key).
+	Key int `json:"$key,omitempty"`
 	// MachineDevice is the parent device ID.
 	MachineDevice int `json:"machine_device,omitempty"`
 	// GuestReset indicates whether guest reset is allowed.
@@ -54,8 +54,8 @@ type USBDeviceSettings struct {
 
 // TPMDeviceSettings contains TPM device-specific settings.
 type TPMDeviceSettings struct {
-	// ID is the settings ID.
-	ID int `json:"$key,omitempty"`
+	// Key is the settings row key ($key).
+	Key int `json:"$key,omitempty"`
 	// MachineDevice is the parent device ID.
 	MachineDevice int `json:"machine_device,omitempty"`
 	// Model is the TPM model.
@@ -66,8 +66,8 @@ type TPMDeviceSettings struct {
 
 // VGPUDeviceSettings contains NVIDIA vGPU device-specific settings.
 type VGPUDeviceSettings struct {
-	// ID is the settings ID.
-	ID int `json:"$key,omitempty"`
+	// Key is the settings row key ($key).
+	Key int `json:"$key,omitempty"`
 	// MachineDevice is the parent device ID.
 	MachineDevice int `json:"machine_device,omitempty"`
 	// ProfileType is the vGPU profile type.

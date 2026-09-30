@@ -16,8 +16,8 @@ func TestVMNICService_List(t *testing.T) {
 				t.Errorf("unexpected filter: %s", filter)
 			}
 			jsonResponse(w, 200, []VMNIC{
-				{ID: FlexInt(1), Machine: 42, Name: "nic0"},
-				{ID: FlexInt(2), Machine: 42, Name: "nic1"},
+				{Key: FlexInt(1), Machine: 42, Name: "nic0"},
+				{Key: FlexInt(2), Machine: 42, Name: "nic1"},
 			})
 		},
 	}))
@@ -38,7 +38,7 @@ func TestVMNICService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_nics/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMNIC{
-				ID:      FlexInt(1),
+				Key:     FlexInt(1),
 				Machine: 42,
 				Name:    "nic0",
 				MAC:     "00:11:22:33:44:55",
@@ -90,7 +90,7 @@ func TestVMNICService_Create(t *testing.T) {
 		},
 		"GET /api/v4/machine_nics/5": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMNIC{
-				ID:      FlexInt(5),
+				Key:     FlexInt(5),
 				Machine: 10,
 				Name:    "nic0",
 				Enabled: true,
@@ -104,8 +104,8 @@ func TestVMNICService_Create(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
-	if nic.ID.Int() != 5 {
-		t.Errorf("expected ID 5, got %d", nic.ID.Int())
+	if nic.Key.Int() != 5 {
+		t.Errorf("expected ID 5, got %d", nic.Key.Int())
 	}
 }
 
@@ -145,7 +145,7 @@ func TestVMNICService_Update(t *testing.T) {
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/machine_nics/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMNIC{ID: FlexInt(1), Name: newName})
+			jsonResponse(w, 200, VMNIC{Key: FlexInt(1), Name: newName})
 		},
 	}))
 
@@ -190,7 +190,7 @@ func TestVMNICService_Update_NotFound(t *testing.T) {
 func TestVMNICService_Delete(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_nics/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMNIC{ID: FlexInt(1), Machine: 10, PowerState: "down"})
+			jsonResponse(w, 200, VMNIC{Key: FlexInt(1), Machine: 10, PowerState: "down"})
 		},
 		"DELETE /api/v4/machine_nics/1": func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
@@ -231,7 +231,7 @@ func TestVMNICService_Delete_HotUnplug(t *testing.T) {
 			if getCalls > 1 {
 				state = "down"
 			}
-			jsonResponse(w, 200, VMNIC{ID: FlexInt(1), Machine: 10, PowerState: state})
+			jsonResponse(w, 200, VMNIC{Key: FlexInt(1), Machine: 10, PowerState: state})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any

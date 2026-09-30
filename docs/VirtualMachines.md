@@ -137,7 +137,7 @@ snapshot, err := client.VMSnapshots.Get(ctx, snapshotID)
 // Get a snapshot by name within a VM
 snapshot, err := client.VMSnapshots.GetByName(ctx, vmID, "pre-upgrade")
 
-// Create a snapshot. VM is the VM $key (VM.ID). Create resolves the machine key.
+// Create a snapshot. VM is the VM $key (VM.Key). Create resolves the machine key.
 snapshot, err := client.VMSnapshots.Create(ctx, &vergeos.VMSnapshotCreateRequest{
     VM:          vmID,
     Name:        "pre-upgrade",
@@ -171,7 +171,7 @@ err = client.VMSnapshots.Delete(ctx, snapshotID)
 
 ## VM Drives
 
-Drive, NIC, and device methods take the VM `$key` (`VM.ID`). Rows in
+Drive, NIC, and device methods take the VM `$key` (`VM.Key`). Rows in
 `machine_drives`, `machine_nics`, and `machine_devices` are stored against
 the machine key (`VM.Machine`), which these methods resolve internally.
 `vm_actions` (hotplug, restore) uses the VM `$key`. The two numbers differ
@@ -199,15 +199,15 @@ drive, err := client.VMDrives.Update(ctx, driveID, &vergeos.VMDriveUpdateRequest
 
 ## Cloud-Init Files
 
-Every cloud-init file belongs to one VM. `owner` is required on create, cannot be changed later, and is a reference that uses the VM $key (`vms/<VM.ID>`). It is not the machine key (`VM.Machine`).
+Every cloud-init file belongs to one VM. `owner` is required on create, cannot be changed later, and is a reference that uses the VM $key (`vms/<VM.Key>`). It is not the machine key (`VM.Machine`).
 
 ```go
-file, err := client.CloudInitFiles.CreateForVM(ctx, vm.ID.Int(), &vergeos.CloudInitFileCreateRequest{
+file, err := client.CloudInitFiles.CreateForVM(ctx, vm.Key.Int(), &vergeos.CloudInitFileCreateRequest{
     Name:     "/user-data",
     Contents: "#cloud-config\nhostname: web-01\n",
 })
 
-files, err := client.CloudInitFiles.ListByVM(ctx, vm.ID.Int())
+files, err := client.CloudInitFiles.ListByVM(ctx, vm.Key.Int())
 ```
 
 `Create` takes the same request with `Owner` set to that reference.

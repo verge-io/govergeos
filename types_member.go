@@ -2,8 +2,8 @@ package vergeos
 
 // Member represents a group membership in VergeOS.
 type Member struct {
-	// ID is the unique identifier for the membership.
-	ID FlexInt `json:"$key,omitempty"`
+	// Key is the unique identifier for the membership ($key).
+	Key FlexInt `json:"$key,omitempty"`
 	// Group is the parent group ID.
 	Group FlexInt `json:"parent_group,omitempty"`
 	// Member is the member value (user or group reference).

@@ -2,8 +2,8 @@ package vergeos
 
 // CloudInitFile represents a cloud-init file in VergeOS.
 type CloudInitFile struct {
-	// ID is the unique identifier for the file.
-	ID FlexInt `json:"$key,omitempty"`
+	// Key is the unique identifier for the file ($key).
+	Key FlexInt `json:"$key,omitempty"`
 	// Owner is the VM this file belongs to. The value is a reference that
 	// uses the VM $key, for example "vms/12". It is not the machine key
 	// (VM.Machine). Owner is required when the file is created and cannot

@@ -5,7 +5,7 @@
 // setting up users, SSH keys, packages, and custom scripts.
 //
 // Every file belongs to a VM. The owner reference uses the VM $key
-// (vms/<VM.ID>), not the machine key. CreateForVM fills that in.
+// (vms/<VM.Key>), not the machine key. CreateForVM fills that in.
 //
 // Usage:
 //
@@ -64,7 +64,7 @@ func run(ctx context.Context, client *vergeos.Client) error {
 		fmt.Println("No cloud-init files found.")
 	} else {
 		for _, f := range files {
-			fmt.Printf("- %s (ID: %d, Owner: %s, Size: %d bytes)\n", f.Name, f.ID, f.Owner, f.FileSize)
+			fmt.Printf("- %s (ID: %d, Owner: %s, Size: %d bytes)\n", f.Name, f.Key, f.Owner, f.FileSize)
 		}
 	}
 
@@ -80,10 +80,10 @@ func run(ctx context.Context, client *vergeos.Client) error {
 	if err != nil {
 		return fmt.Errorf("create VM: %w", err)
 	}
-	fmt.Printf("Created VM: %s (ID: %d, machine: %d)\n", vm.Name, vm.ID, vm.Machine)
+	fmt.Printf("Created VM: %s (ID: %d, machine: %d)\n", vm.Name, vm.Key, vm.Machine)
 	defer func() {
 		fmt.Println("\n=== Cleanup VM ===")
-		if err := client.VMs.Delete(ctx, vm.ID.Int()); err != nil {
+		if err := client.VMs.Delete(ctx, vm.Key.Int()); err != nil {
 			log.Printf("Failed to delete VM: %v", err)
 			return
 		}
@@ -123,29 +123,29 @@ runcmd:
 final_message: "System ready after $UPTIME seconds"
 `
 
-	// CreateForVM sets owner to vms/<VM.ID>. Pass vm.ID, not vm.Machine.
-	cloudInitFile, err := client.CloudInitFiles.CreateForVM(ctx, vm.ID.Int(), &vergeos.CloudInitFileCreateRequest{
+	// CreateForVM sets owner to vms/<VM.Key>. Pass vm.Key, not vm.Machine.
+	cloudInitFile, err := client.CloudInitFiles.CreateForVM(ctx, vm.Key.Int(), &vergeos.CloudInitFileCreateRequest{
 		Name:     "/user-data",
 		Contents: cloudConfig,
 	})
 	if err != nil {
 		return fmt.Errorf("create cloud-init file: %w", err)
 	}
-	fmt.Printf("Created cloud-init file: %s (ID: %d, Owner: %s)\n", cloudInitFile.Name, cloudInitFile.ID, cloudInitFile.Owner)
+	fmt.Printf("Created cloud-init file: %s (ID: %d, Owner: %s)\n", cloudInitFile.Name, cloudInitFile.Key, cloudInitFile.Owner)
 
 	// List files for this VM
 	fmt.Println("\n=== Cloud-Init Files For VM ===")
-	vmFiles, err := client.CloudInitFiles.ListByVM(ctx, vm.ID.Int())
+	vmFiles, err := client.CloudInitFiles.ListByVM(ctx, vm.Key.Int())
 	if err != nil {
 		return fmt.Errorf("list cloud-init files for VM: %w", err)
 	}
 	for _, f := range vmFiles {
-		fmt.Printf("- %s (ID: %d, Owner: %s)\n", f.Name, f.ID, f.Owner)
+		fmt.Printf("- %s (ID: %d, Owner: %s)\n", f.Name, f.Key, f.Owner)
 	}
 
 	// Get the cloud-init file details
 	fmt.Println("\n=== Cloud-Init File Details ===")
-	cloudInitFile, err = client.CloudInitFiles.Get(ctx, cloudInitFile.ID.Int())
+	cloudInitFile, err = client.CloudInitFiles.Get(ctx, cloudInitFile.Key.Int())
 	if err != nil {
 		return fmt.Errorf("get cloud-init file: %w", err)
 	}
@@ -169,7 +169,7 @@ final_message: "System ready after $UPTIME seconds"
 	// Update the cloud-init file. Owner cannot be changed.
 	fmt.Println("\n=== Updating Cloud-Init File ===")
 	newName := "/user-data-updated"
-	cloudInitFile, err = client.CloudInitFiles.Update(ctx, cloudInitFile.ID.Int(), &vergeos.CloudInitFileUpdateRequest{
+	cloudInitFile, err = client.CloudInitFiles.Update(ctx, cloudInitFile.Key.Int(), &vergeos.CloudInitFileUpdateRequest{
 		Name: &newName,
 	})
 	if err != nil {
@@ -179,7 +179,7 @@ final_message: "System ready after $UPTIME seconds"
 
 	// Cleanup: Delete the cloud-init file, then the VM (deferred above).
 	fmt.Println("\n=== Cleanup ===")
-	if err := client.CloudInitFiles.Delete(ctx, cloudInitFile.ID.Int()); err != nil {
+	if err := client.CloudInitFiles.Delete(ctx, cloudInitFile.Key.Int()); err != nil {
 		return fmt.Errorf("delete cloud-init file: %w", err)
 	}
 	fmt.Println("Cloud-init file deleted successfully")

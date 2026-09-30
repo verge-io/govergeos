@@ -22,7 +22,7 @@ type VMNICService struct {
 }
 
 // List returns all NICs for a VM.
-// vmID is the VM $key (VM.ID). NICs are stored against the machine key,
+// vmID is the VM $key (VM.Key). NICs are stored against the machine key,
 // which is resolved before querying machine_nics.
 func (s *VMNICService) List(ctx context.Context, vmID int) ([]VMNIC, error) {
 	machine, err := s.client.machineKeyForVM(ctx, vmID)
@@ -60,7 +60,7 @@ func (s *VMNICService) Get(ctx context.Context, nicID int) (*VMNIC, error) {
 }
 
 // Create creates a new NIC and returns the created NIC.
-// vmID is the VM $key (VM.ID). It is resolved to the machine key stored on the NIC.
+// vmID is the VM $key (VM.Key). It is resolved to the machine key stored on the NIC.
 func (s *VMNICService) Create(ctx context.Context, vmID int, req *VMNICCreateRequest) (*VMNIC, error) {
 	if req == nil {
 		return nil, &ValidationError{Message: "create request is required"}

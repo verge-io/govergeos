@@ -30,7 +30,7 @@ func TestVMRecipeInstanceService_DeployValidatesBeforeSend(t *testing.T) {
 			if r.URL.Query().Get("fields") != "$key,name" {
 				t.Errorf("network fields = %q", r.URL.Query().Get("fields"))
 			}
-			jsonResponse(w, 200, []Network{{ID: 12, Name: "Internal"}})
+			jsonResponse(w, 200, []Network{{Key: 12, Name: "Internal"}})
 		},
 		"POST /api/v4/vm_recipe_instances": func(w http.ResponseWriter, r *http.Request) {
 			body, err := io.ReadAll(r.Body)

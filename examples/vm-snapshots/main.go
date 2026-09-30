@@ -82,18 +82,18 @@ func demonstrateSnapshots(ctx context.Context, client *vergeos.Client) {
 		if err != nil {
 			log.Printf("Failed to list VMs: %v", err)
 		} else if len(vms) > 0 {
-			vmSnapshots, err := client.VMSnapshots.ListByVM(ctx, vms[0].ID.Int())
+			vmSnapshots, err := client.VMSnapshots.ListByVM(ctx, vms[0].Key.Int())
 			if err != nil {
 				log.Printf("Failed to list VM snapshots: %v", err)
 			} else {
-				fmt.Printf("\nSnapshots for VM %d: %d total\n", vms[0].ID.Int(), len(vmSnapshots))
+				fmt.Printf("\nSnapshots for VM %d: %d total\n", vms[0].Key.Int(), len(vmSnapshots))
 			}
 		}
 	}
 
 	// Example: Creating a snapshot (commented out to avoid side effects)
 	/*
-		vmID := 123 // Replace with the VM $key (VM.ID), not VM.Machine
+		vmID := 123 // Replace with the VM $key (VM.Key), not VM.Machine
 		snapshot, err := client.VMSnapshots.Create(ctx, &vergeos.VMSnapshotCreateRequest{
 			VM:          vmID,
 			Name:        "my-snapshot-" + time.Now().Format("20060102-150405"),

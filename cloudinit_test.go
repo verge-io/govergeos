@@ -12,8 +12,8 @@ func TestCloudInitService_List(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/cloudinit_files": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []CloudInitFile{
-				{ID: 1, Name: "user-data", Contents: "#cloud-config"},
-				{ID: 2, Name: "meta-data", Contents: "instance-id: test"},
+				{Key: 1, Name: "user-data", Contents: "#cloud-config"},
+				{Key: 2, Name: "meta-data", Contents: "instance-id: test"},
 			})
 		},
 	}))
@@ -37,7 +37,7 @@ func TestCloudInitService_List_WithFilter(t *testing.T) {
 			if filter == "" {
 				t.Error("expected filter parameter")
 			}
-			jsonResponse(w, 200, []CloudInitFile{{ID: 1, Name: "user-data"}})
+			jsonResponse(w, 200, []CloudInitFile{{Key: 1, Name: "user-data"}})
 		},
 	}))
 
@@ -53,7 +53,7 @@ func TestCloudInitService_List_WithFilter(t *testing.T) {
 func TestCloudInitService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/cloudinit_files/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, CloudInitFile{ID: 1, Name: "user-data", Contents: "#cloud-config"})
+			jsonResponse(w, 200, CloudInitFile{Key: 1, Name: "user-data", Contents: "#cloud-config"})
 		},
 	}))
 
@@ -88,7 +88,7 @@ func TestCloudInitService_Get_NotFound(t *testing.T) {
 func TestCloudInitService_GetByName(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/cloudinit_files": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, []CloudInitFile{{ID: 1, Name: "user-data"}})
+			jsonResponse(w, 200, []CloudInitFile{{Key: 1, Name: "user-data"}})
 		},
 	}))
 
@@ -131,7 +131,7 @@ func TestCloudInitService_Create(t *testing.T) {
 			jsonResponse(w, 200, map[string]any{"$key": 1})
 		},
 		"GET /api/v4/cloudinit_files/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, CloudInitFile{ID: 1, Name: "user-data", Owner: "vms/12", Contents: "#cloud-config"})
+			jsonResponse(w, 200, CloudInitFile{Key: 1, Name: "user-data", Owner: "vms/12", Contents: "#cloud-config"})
 		},
 	}))
 
@@ -205,7 +205,7 @@ func TestCloudInitService_CreateForVM(t *testing.T) {
 			jsonResponse(w, 200, map[string]any{"$key": 7})
 		},
 		"GET /api/v4/cloudinit_files/7": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, CloudInitFile{ID: 7, Name: "/user-data", Owner: "vms/12"})
+			jsonResponse(w, 200, CloudInitFile{Key: 7, Name: "/user-data", Owner: "vms/12"})
 		},
 	}))
 
@@ -262,7 +262,7 @@ func TestCloudInitService_ListByVM(t *testing.T) {
 			if filter != "owner eq 'vms/12'" {
 				t.Errorf("expected owner filter, got %q", filter)
 			}
-			jsonResponse(w, 200, []CloudInitFile{{ID: 7, Name: "/user-data", Owner: "vms/12"}})
+			jsonResponse(w, 200, []CloudInitFile{{Key: 7, Name: "/user-data", Owner: "vms/12"}})
 		},
 	}))
 
@@ -321,7 +321,7 @@ func TestCloudInitService_Update(t *testing.T) {
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/cloudinit_files/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, CloudInitFile{ID: 1, Name: newName})
+			jsonResponse(w, 200, CloudInitFile{Key: 1, Name: newName})
 		},
 	}))
 

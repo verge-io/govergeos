@@ -116,7 +116,7 @@ func TestTenantExternalIPService_Create_PendingFirewall(t *testing.T) {
 			jsonResponse(w, 200, TenantExternalIP{Key: 9, VNet: 10, IP: "203.0.113.50", Type: "virtual", Owner: "tenants/7"})
 		},
 		"GET /api/v4/vnets/10": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 10, NeedFWApply: true})
+			jsonResponse(w, 200, Network{Key: 10, NeedFWApply: true})
 		},
 		"POST /api/v4/vnet_actions": func(w http.ResponseWriter, r *http.Request) {
 			applied = true
@@ -163,7 +163,7 @@ func TestTenantExternalIPService_Create_ApplyFirewall(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		},
 		"GET /api/v4/vnets/10": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 10, NeedFWApply: false})
+			jsonResponse(w, 200, Network{Key: 10, NeedFWApply: false})
 		},
 	}))
 
@@ -212,7 +212,7 @@ func TestTenantExternalIPService_Delete_PendingFirewall(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		},
 		"GET /api/v4/vnets/10": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Network{ID: 10, NeedFWApply: true})
+			jsonResponse(w, 200, Network{Key: 10, NeedFWApply: true})
 		},
 	}))
 

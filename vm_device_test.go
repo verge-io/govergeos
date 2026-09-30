@@ -16,8 +16,8 @@ func TestVMDeviceService_List(t *testing.T) {
 				t.Errorf("unexpected filter: %s", filter)
 			}
 			jsonResponse(w, 200, []VMDevice{
-				{ID: FlexInt(1), Machine: 42, Name: "tpm0", Type: DeviceTypeTPM},
-				{ID: FlexInt(2), Machine: 42, Name: "usb0", Type: DeviceTypeUSB},
+				{Key: FlexInt(1), Machine: 42, Name: "tpm0", Type: DeviceTypeTPM},
+				{Key: FlexInt(2), Machine: 42, Name: "usb0", Type: DeviceTypeUSB},
 			})
 		},
 		// Settings endpoints return empty arrays (no settings configured)
@@ -45,7 +45,7 @@ func TestVMDeviceService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_devices/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMDevice{
-				ID:      FlexInt(1),
+				Key:     FlexInt(1),
 				Machine: 42,
 				Name:    "tpm0",
 				Type:    DeviceTypeTPM,
@@ -54,7 +54,7 @@ func TestVMDeviceService_Get(t *testing.T) {
 		},
 		"GET /api/v4/machine_device_settings_tpm": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []TPMDeviceSettings{
-				{ID: 10, MachineDevice: 1, Model: "tpm-crb", Version: "2.0"},
+				{Key: 10, MachineDevice: 1, Model: "tpm-crb", Version: "2.0"},
 			})
 		},
 	}))
@@ -78,14 +78,14 @@ func TestVMDeviceService_Get_USBSettings(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_devices/2": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMDevice{
-				ID:   FlexInt(2),
+				Key:  FlexInt(2),
 				Name: "usb0",
 				Type: DeviceTypeUSB,
 			})
 		},
 		"GET /api/v4/machine_device_settings_usb": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []USBDeviceSettings{
-				{ID: 20, MachineDevice: 2, GuestReset: true},
+				{Key: 20, MachineDevice: 2, GuestReset: true},
 			})
 		},
 	}))
@@ -106,14 +106,14 @@ func TestVMDeviceService_Get_VGPUSettings(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_devices/3": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMDevice{
-				ID:   FlexInt(3),
+				Key:  FlexInt(3),
 				Name: "vgpu0",
 				Type: DeviceTypeVGPU,
 			})
 		},
 		"GET /api/v4/machine_device_settings_nvidia_vgpu": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []VGPUDeviceSettings{
-				{ID: 30, MachineDevice: 3, ProfileType: "nvidia-123"},
+				{Key: 30, MachineDevice: 3, ProfileType: "nvidia-123"},
 			})
 		},
 	}))
@@ -168,7 +168,7 @@ func TestVMDeviceService_Create(t *testing.T) {
 		},
 		"GET /api/v4/machine_devices/5": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMDevice{
-				ID:      FlexInt(5),
+				Key:     FlexInt(5),
 				Machine: 10,
 				Name:    "tpm0",
 				Type:    DeviceTypeTPM,
@@ -187,8 +187,8 @@ func TestVMDeviceService_Create(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
-	if device.ID.Int() != 5 {
-		t.Errorf("expected ID 5, got %d", device.ID.Int())
+	if device.Key.Int() != 5 {
+		t.Errorf("expected ID 5, got %d", device.Key.Int())
 	}
 }
 
@@ -245,7 +245,7 @@ func TestVMDeviceService_Update(t *testing.T) {
 		},
 		"GET /api/v4/machine_devices/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMDevice{
-				ID:   FlexInt(1),
+				Key:  FlexInt(1),
 				Name: newName,
 				Type: DeviceTypeTPM,
 			})

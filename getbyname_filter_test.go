@@ -30,7 +30,7 @@ func TestGroupService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 						if got := r.URL.Query().Get("filter"); got != wantFilter {
 							t.Errorf("filter = %q, want %q", got, wantFilter)
 						}
-						jsonResponse(w, 200, []Group{{ID: 2, Name: tt.name}})
+						jsonResponse(w, 200, []Group{{Key: 2, Name: tt.name}})
 					},
 				}))
 
@@ -38,7 +38,7 @@ func TestGroupService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 				if err != nil {
 					t.Fatalf("GetByName: %v", err)
 				}
-				if group.Name != tt.name || group.ID != 2 {
+				if group.Name != tt.name || group.Key != 2 {
 					t.Fatalf("got %+v", group)
 				}
 			})
@@ -54,7 +54,7 @@ func TestGroupService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 						if got := r.URL.Query().Get("filter"); got != wantFilter {
 							t.Errorf("filter = %q, want %q", got, wantFilter)
 						}
-						jsonResponse(w, 200, []Group{{ID: 2, Name: returned}})
+						jsonResponse(w, 200, []Group{{Key: 2, Name: returned}})
 					},
 				}))
 
@@ -156,10 +156,10 @@ func TestVMService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 						if got := r.URL.Query().Get("filter"); got != wantFilter {
 							t.Errorf("filter = %q, want %q", got, wantFilter)
 						}
-						jsonResponse(w, 200, []VM{{ID: 2, Name: tt.name}})
+						jsonResponse(w, 200, []VM{{Key: 2, Name: tt.name}})
 					},
 					"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
-						jsonResponse(w, 200, VM{ID: 2, Name: tt.name})
+						jsonResponse(w, 200, VM{Key: 2, Name: tt.name})
 					},
 				}))
 
@@ -167,7 +167,7 @@ func TestVMService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 				if err != nil {
 					t.Fatalf("GetByName: %v", err)
 				}
-				if vm.Name != tt.name || vm.ID != 2 {
+				if vm.Name != tt.name || vm.Key != 2 {
 					t.Fatalf("got %+v", vm)
 				}
 			})
@@ -182,11 +182,11 @@ func TestVMService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 						if got := r.URL.Query().Get("filter"); got != wantFilter {
 							t.Errorf("filter = %q, want %q", got, wantFilter)
 						}
-						jsonResponse(w, 200, []VM{{ID: 2, Name: returned}})
+						jsonResponse(w, 200, []VM{{Key: 2, Name: returned}})
 					},
 					"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
 						t.Error("Get was called for a list row whose name did not match")
-						jsonResponse(w, 200, VM{ID: 2, Name: returned})
+						jsonResponse(w, 200, VM{Key: 2, Name: returned})
 					},
 				}))
 
@@ -203,10 +203,10 @@ func TestVMService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 			t.Run("fetched name mismatch", func(t *testing.T) {
 				client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 					"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
-						jsonResponse(w, 200, []VM{{ID: 2, Name: tt.name}})
+						jsonResponse(w, 200, []VM{{Key: 2, Name: tt.name}})
 					},
 					"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
-						jsonResponse(w, 200, VM{ID: 2, Name: "other-vm"})
+						jsonResponse(w, 200, VM{Key: 2, Name: "other-vm"})
 					},
 				}))
 
@@ -234,10 +234,10 @@ func TestNetworkService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 						if got := r.URL.Query().Get("filter"); got != wantFilter {
 							t.Errorf("filter = %q, want %q", got, wantFilter)
 						}
-						jsonResponse(w, 200, []Network{{ID: 3, Name: tt.name}})
+						jsonResponse(w, 200, []Network{{Key: 3, Name: tt.name}})
 					},
 					"GET /api/v4/vnets/3": func(w http.ResponseWriter, r *http.Request) {
-						jsonResponse(w, 200, Network{ID: 3, Name: tt.name})
+						jsonResponse(w, 200, Network{Key: 3, Name: tt.name})
 					},
 				}))
 
@@ -245,7 +245,7 @@ func TestNetworkService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 				if err != nil {
 					t.Fatalf("GetByName: %v", err)
 				}
-				if network.Name != tt.name || network.ID != 3 {
+				if network.Name != tt.name || network.Key != 3 {
 					t.Fatalf("got %+v", network)
 				}
 			})
@@ -260,11 +260,11 @@ func TestNetworkService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 						if got := r.URL.Query().Get("filter"); got != wantFilter {
 							t.Errorf("filter = %q, want %q", got, wantFilter)
 						}
-						jsonResponse(w, 200, []Network{{ID: 3, Name: returned}})
+						jsonResponse(w, 200, []Network{{Key: 3, Name: returned}})
 					},
 					"GET /api/v4/vnets/3": func(w http.ResponseWriter, r *http.Request) {
 						t.Error("Get was called for a list row whose name did not match")
-						jsonResponse(w, 200, Network{ID: 3, Name: returned})
+						jsonResponse(w, 200, Network{Key: 3, Name: returned})
 					},
 				}))
 
@@ -281,10 +281,10 @@ func TestNetworkService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 			t.Run("fetched name mismatch", func(t *testing.T) {
 				client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 					"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
-						jsonResponse(w, 200, []Network{{ID: 3, Name: tt.name}})
+						jsonResponse(w, 200, []Network{{Key: 3, Name: tt.name}})
 					},
 					"GET /api/v4/vnets/3": func(w http.ResponseWriter, r *http.Request) {
-						jsonResponse(w, 200, Network{ID: 3, Name: "other-network"})
+						jsonResponse(w, 200, Network{Key: 3, Name: "other-network"})
 					},
 				}))
 

@@ -81,7 +81,7 @@ func main() {
 			status = "running"
 		}
 		fmt.Printf("- %s (ID: %d, CPU: %d, RAM: %dMB, Status: %s)\n",
-			vm.Name, vm.ID, vm.CPUCores, vm.RAM, status)
+			vm.Name, vm.Key, vm.CPUCores, vm.RAM, status)
 	}
 
 	// List networks
@@ -92,7 +92,7 @@ func main() {
 	}
 	for _, net := range networks {
 		fmt.Printf("- %s (ID: %d, Network: %s, DHCP: %v)\n",
-			net.Name, net.ID, net.Network, net.DHCPEnabled)
+			net.Name, net.Key, net.Network, net.DHCPEnabled)
 	}
 
 	fmt.Println("\nDone!")

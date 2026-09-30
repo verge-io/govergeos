@@ -50,7 +50,7 @@ func main() {
 	}
 	for _, net := range networks {
 		fmt.Printf("- %s (ID: %d, Network: %s, DHCP: %v)\n",
-			net.Name, net.ID, net.Network, net.DHCPEnabled)
+			net.Name, net.Key, net.Network, net.DHCPEnabled)
 	}
 
 	// Create a new network with DHCP
@@ -67,7 +67,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create network: %v", err)
 	}
-	fmt.Printf("Created network: %s (ID: %d)\n", network.Name, network.ID)
+	fmt.Printf("Created network: %s (ID: %d)\n", network.Name, network.Key)
 	fmt.Printf("  Network: %s\n", network.Network)
 	fmt.Printf("  IP Address: %s\n", network.IPAddress)
 	fmt.Printf("  DHCP Enabled: %v\n", network.DHCPEnabled)
@@ -76,7 +76,7 @@ func main() {
 	// Update the network
 	fmt.Println("\n=== Updating Network ===")
 	newDHCPStop := "192.168.100.250"
-	network, err = client.Networks.Update(ctx, network.ID.Int(), &vergeos.NetworkUpdateRequest{
+	network, err = client.Networks.Update(ctx, network.Key.Int(), &vergeos.NetworkUpdateRequest{
 		DHCPStop: &newDHCPStop,
 	})
 	if err != nil {
@@ -86,12 +86,12 @@ func main() {
 
 	// Get network by ID
 	fmt.Println("\n=== Get Network Details ===")
-	network, err = client.Networks.Get(ctx, network.ID.Int())
+	network, err = client.Networks.Get(ctx, network.Key.Int())
 	if err != nil {
 		log.Fatalf("Failed to get network: %v", err)
 	}
 	fmt.Printf("Network: %s\n", network.Name)
-	fmt.Printf("  ID: %d\n", network.ID)
+	fmt.Printf("  ID: %d\n", network.Key)
 	fmt.Printf("  Enabled: %v\n", network.Enabled)
 	fmt.Printf("  Network: %s\n", network.Network)
 	fmt.Printf("  Type: %s\n", network.Type)
@@ -109,7 +109,7 @@ func main() {
 
 	// Cleanup: Delete the network
 	fmt.Println("\n=== Cleanup ===")
-	if err := client.Networks.Delete(ctx, network.ID.Int()); err != nil {
+	if err := client.Networks.Delete(ctx, network.Key.Int()); err != nil {
 		log.Fatalf("Failed to delete network: %v", err)
 	}
 	fmt.Println("Network deleted successfully")

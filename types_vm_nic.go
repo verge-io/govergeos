@@ -2,8 +2,8 @@ package vergeos
 
 // VMNIC represents a network interface attached to a VM.
 type VMNIC struct {
-	// ID is the unique identifier for the NIC.
-	ID FlexInt `json:"$key,omitempty"`
+	// Key is the unique identifier for the NIC ($key).
+	Key FlexInt `json:"$key,omitempty"`
 	// Machine is the machine reference ID.
 	Machine int `json:"machine,omitempty"`
 	// OrderID is the NIC order (0-30).

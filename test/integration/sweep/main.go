@@ -335,7 +335,7 @@ func (s *sweeper) sweepFiles() {
 		}
 		item := item
 		s.remove("file", item.Name, func() error {
-			return s.client.Files.Delete(s.ctx, int(item.ID))
+			return s.client.Files.Delete(s.ctx, int(item.Key))
 		})
 	}
 }
@@ -369,7 +369,7 @@ func (s *sweeper) sweepGroups() {
 		}
 		item := item
 		s.remove("group", item.Name, func() error {
-			return s.client.Groups.Delete(s.ctx, int(item.ID))
+			return s.client.Groups.Delete(s.ctx, int(item.Key))
 		})
 	}
 }
@@ -487,57 +487,57 @@ func (s *sweeper) sweepVMs() {
 		vm := vm
 		if !s.dry {
 			s.deleteVMChildren(vm)
-			if err := s.client.VMs.Kill(s.ctx, int(vm.ID)); err != nil && !vergeos.IsNotFoundError(err) {
+			if err := s.client.VMs.Kill(s.ctx, int(vm.Key)); err != nil && !vergeos.IsNotFoundError(err) {
 				fmt.Fprintf(os.Stderr, "kill VM %s: %v\n", vm.Name, err)
 			}
 		}
 		s.remove("VM", vm.Name, func() error {
-			return s.client.VMs.Delete(s.ctx, int(vm.ID))
+			return s.client.VMs.Delete(s.ctx, int(vm.Key))
 		})
 	}
 }
 
 func (s *sweeper) deleteVMChildren(vm vergeos.VM) {
-	owner := fmt.Sprintf("vms/%d", int(vm.ID))
+	owner := fmt.Sprintf("vms/%d", int(vm.Key))
 	s.sweepTasks(&owner)
 
-	files, err := s.client.CloudInitFiles.ListByVM(s.ctx, int(vm.ID))
+	files, err := s.client.CloudInitFiles.ListByVM(s.ctx, int(vm.Key))
 	if err != nil {
 		s.listErr("cloud-init files for "+vm.Name, err)
 	} else {
 		for _, file := range files {
 			file := file
 			s.remove("cloud-init file", vm.Name+file.Name, func() error {
-				return s.client.CloudInitFiles.Delete(s.ctx, int(file.ID))
+				return s.client.CloudInitFiles.Delete(s.ctx, int(file.Key))
 			})
 		}
 	}
 
-	drives, err := s.client.VMDrives.List(s.ctx, int(vm.ID))
+	drives, err := s.client.VMDrives.List(s.ctx, int(vm.Key))
 	if err != nil {
 		s.listErr("drives for "+vm.Name, err)
 	} else {
 		for _, drive := range drives {
 			drive := drive
 			s.remove("VM drive", vm.Name+"/"+drive.Name, func() error {
-				return s.client.VMDrives.Delete(s.ctx, int(drive.ID))
+				return s.client.VMDrives.Delete(s.ctx, int(drive.Key))
 			})
 		}
 	}
 
-	nics, err := s.client.VMNICs.List(s.ctx, int(vm.ID))
+	nics, err := s.client.VMNICs.List(s.ctx, int(vm.Key))
 	if err != nil {
 		s.listErr("NICs for "+vm.Name, err)
 	} else {
 		for _, nic := range nics {
 			nic := nic
 			s.remove("VM NIC", vm.Name+"/"+nic.Name, func() error {
-				return s.client.VMNICs.Delete(s.ctx, int(nic.ID))
+				return s.client.VMNICs.Delete(s.ctx, int(nic.Key))
 			})
 		}
 	}
 
-	snapshots, err := s.client.VMSnapshots.ListByVM(s.ctx, int(vm.ID))
+	snapshots, err := s.client.VMSnapshots.ListByVM(s.ctx, int(vm.Key))
 	if err != nil {
 		s.listErr("snapshots for "+vm.Name, err)
 		return
@@ -562,7 +562,7 @@ func (s *sweeper) sweepOrphanDrives() {
 		}
 		item := item
 		s.remove("VM drive", item.Name, func() error {
-			return s.client.VMDrives.Delete(s.ctx, int(item.ID))
+			return s.client.VMDrives.Delete(s.ctx, int(item.Key))
 		})
 	}
 }
@@ -613,13 +613,13 @@ func (s *sweeper) sweepNetworks() {
 		}
 		item := item
 		if !s.dry {
-			s.deleteNetworkChildren(int(item.ID), item.Name)
-			if err := s.client.Networks.PowerOff(s.ctx, int(item.ID)); err != nil && !vergeos.IsNotFoundError(err) {
+			s.deleteNetworkChildren(int(item.Key), item.Name)
+			if err := s.client.Networks.PowerOff(s.ctx, int(item.Key)); err != nil && !vergeos.IsNotFoundError(err) {
 				fmt.Fprintf(os.Stderr, "power off network %s: %v\n", item.Name, err)
 			}
 		}
 		s.remove("network", item.Name, func() error {
-			return s.client.Networks.Delete(s.ctx, int(item.ID))
+			return s.client.Networks.Delete(s.ctx, int(item.Key))
 		})
 	}
 }

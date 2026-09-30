@@ -18,8 +18,8 @@ func TestVMService_List(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []VM{
-				{ID: 1, Name: "vm-alpha", CPUCores: 2, RAM: 4096},
-				{ID: 2, Name: "vm-beta", CPUCores: 4, RAM: 8192},
+				{Key: 1, Name: "vm-alpha", CPUCores: 2, RAM: 4096},
+				{Key: 2, Name: "vm-beta", CPUCores: 4, RAM: 8192},
 			})
 		},
 	}))
@@ -59,7 +59,7 @@ func TestVMService_List_WithFilter(t *testing.T) {
 			if filter == "" {
 				t.Error("expected filter query param")
 			}
-			jsonResponse(w, 200, []VM{{ID: 1, Name: "vm-alpha"}})
+			jsonResponse(w, 200, []VM{{Key: 1, Name: "vm-alpha"}})
 		},
 	}))
 
@@ -92,7 +92,7 @@ func TestVMService_List_ServerError(t *testing.T) {
 func TestVMService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm-alpha", CPUCores: 2, RAM: 4096})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm-alpha", CPUCores: 2, RAM: 4096})
 		},
 	}))
 
@@ -130,10 +130,10 @@ func TestVMService_GetByName(t *testing.T) {
 			if got := r.URL.Query().Get("filter"); got != "is_snapshot eq false and name eq 'vm-alpha'" {
 				t.Errorf("filter = %q", got)
 			}
-			jsonResponse(w, 200, []VM{{ID: 1, Name: "vm-alpha"}})
+			jsonResponse(w, 200, []VM{{Key: 1, Name: "vm-alpha"}})
 		},
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm-alpha", Description: "full"})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm-alpha", Description: "full"})
 		},
 	}))
 
@@ -150,8 +150,8 @@ func TestVMService_GetByName_Ambiguous(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []VM{
-				{ID: 1, Name: "vm-alpha"},
-				{ID: 9, Name: "vm-alpha"},
+				{Key: 1, Name: "vm-alpha"},
+				{Key: 9, Name: "vm-alpha"},
 			})
 		},
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
@@ -206,7 +206,7 @@ func TestVMService_Create(t *testing.T) {
 			jsonResponse(w, 200, apiResponse{Key: float64(42)})
 		},
 		"GET /api/v4/vms/42": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 42, Name: "new-vm", CPUCores: 4, RAM: 8192})
+			jsonResponse(w, 200, VM{Key: 42, Name: "new-vm", CPUCores: 4, RAM: 8192})
 		},
 	}))
 
@@ -218,8 +218,8 @@ func TestVMService_Create(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
-	if vm.ID.Int() != 42 {
-		t.Errorf("expected ID 42, got %d", vm.ID.Int())
+	if vm.Key.Int() != 42 {
+		t.Errorf("expected ID 42, got %d", vm.Key.Int())
 	}
 	if vm.Name != "new-vm" {
 		t.Errorf("expected name 'new-vm', got %q", vm.Name)
@@ -294,7 +294,7 @@ func TestVMService_Create_DefaultsEnabled(t *testing.T) {
 			jsonResponse(w, 200, apiResponse{Key: float64(1)})
 		},
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", CPUCores: 1, RAM: 1024, Enabled: true})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", CPUCores: 1, RAM: 1024, Enabled: true})
 		},
 	}))
 
@@ -324,7 +324,7 @@ func TestVMService_Update(t *testing.T) {
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: newName, CPUCores: 2, RAM: 4096})
+			jsonResponse(w, 200, VM{Key: 1, Name: newName, CPUCores: 2, RAM: 4096})
 		},
 	}))
 
@@ -406,7 +406,7 @@ func TestVMService_Delete_NotFound(t *testing.T) {
 func TestVMService_PowerOn_AlreadyRunning(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: true})
 		},
 	}))
 
@@ -423,7 +423,7 @@ func TestVMService_PowerOn(t *testing.T) {
 			getCalls++
 			// First call: stopped. Subsequent calls: running.
 			running := getCalls > 1
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: running})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: running})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
@@ -467,7 +467,7 @@ func TestVMService_PowerOn_NotFound(t *testing.T) {
 func TestVMService_PowerOff_AlreadyStopped(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: false})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: false})
 		},
 	}))
 
@@ -484,7 +484,7 @@ func TestVMService_PowerOff(t *testing.T) {
 			getCalls++
 			// First call: running. Subsequent calls: stopped.
 			running := getCalls <= 1
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: running})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: running})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
@@ -505,7 +505,7 @@ func TestVMService_PowerOff(t *testing.T) {
 func TestVMService_PowerOffWithOptions_NilOpts(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: false})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: false})
 		},
 	}))
 
@@ -517,7 +517,7 @@ func TestVMService_PowerOffWithOptions_NilOpts(t *testing.T) {
 func TestVMService_PowerOff_UsesClientPowerWait(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: true})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
@@ -540,7 +540,7 @@ func TestVMService_PowerOff_UsesClientPowerWait(t *testing.T) {
 func TestVMService_PowerOffWithOptions_ExtendsClientTimeout(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: true})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
@@ -578,7 +578,7 @@ func TestVMService_PowerOffWithOptions_PollInterval(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
 			reads = append(reads, time.Now())
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: true})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
@@ -617,7 +617,7 @@ func TestVMService_PowerOffWithOptions_TimeoutDoesNotKill(t *testing.T) {
 	var actions []string
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: true})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
@@ -653,7 +653,7 @@ func TestVMService_PowerOffWithOptions_ForceAfterTimeout(t *testing.T) {
 					killed = true
 				}
 			}
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: !killed})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: !killed})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
@@ -680,7 +680,7 @@ func TestVMService_PowerOffWithOptions_ForceAfterTimeout_KillAlsoTimesOut(t *tes
 	var actions []string
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: true})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
@@ -720,7 +720,7 @@ func TestVMService_PowerOffWithOptions_CancelledContextDoesNotKill(t *testing.T)
 			if getCalls >= 2 {
 				cancel()
 			}
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: true})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
@@ -757,7 +757,7 @@ func TestVMService_PowerOffWithOptions_NegativeTimeout(t *testing.T) {
 func TestVMService_PowerOn_UsesClientPowerWait(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: false})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: false})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
@@ -788,7 +788,7 @@ func TestVMService_PowerOn_UsesClientPowerWait(t *testing.T) {
 func TestVMService_Kill_AlreadyStopped(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: false})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: false})
 		},
 	}))
 
@@ -803,7 +803,7 @@ func TestVMService_Kill(t *testing.T) {
 		"GET /api/v4/vms/4": func(w http.ResponseWriter, r *http.Request) {
 			getCalls++
 			running := getCalls <= 1
-			jsonResponse(w, 200, VM{ID: 4, Name: "vm", PowerState: running})
+			jsonResponse(w, 200, VM{Key: 4, Name: "vm", PowerState: running})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
@@ -1082,7 +1082,7 @@ func TestVMService_Snapshot(t *testing.T) {
 	var actionCalled bool
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 2, Name: "vm-beta", Machine: 99})
+			jsonResponse(w, 200, VM{Key: 2, Name: "vm-beta", Machine: 99})
 		},
 		"POST /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
 			json.NewDecoder(r.Body).Decode(&created)
@@ -1145,7 +1145,7 @@ func TestVMService_Snapshot_NilOpts(t *testing.T) {
 	var created map[string]any
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 2, Machine: 99})
+			jsonResponse(w, 200, VM{Key: 2, Machine: 99})
 		},
 		"POST /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
 			json.NewDecoder(r.Body).Decode(&created)
@@ -1185,7 +1185,7 @@ func TestVMService_Snapshot_WithQuiesce(t *testing.T) {
 	var action map[string]any
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 2, Machine: 99})
+			jsonResponse(w, 200, VM{Key: 2, Machine: 99})
 		},
 		"POST /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
 			json.NewDecoder(r.Body).Decode(&created)
@@ -1228,7 +1228,7 @@ func TestVMService_Snapshot_WithQuiesce(t *testing.T) {
 func TestVMService_Snapshot_QuiesceActionError(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 2, Machine: 99})
+			jsonResponse(w, 200, VM{Key: 2, Machine: 99})
 		},
 		"POST /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, apiResponse{Key: float64(8)})
@@ -1254,7 +1254,7 @@ func TestVMService_Snapshot_ServerError(t *testing.T) {
 	var actionCalled bool
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 2, Machine: 99})
+			jsonResponse(w, 200, VM{Key: 2, Machine: 99})
 		},
 		"POST /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 500, map[string]string{"err": "internal error"})
@@ -1296,7 +1296,7 @@ func TestVMService_Snapshot_VMNotFound(t *testing.T) {
 func TestVMService_Snapshot_MissingMachine(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 2, Name: "vm-beta"})
+			jsonResponse(w, 200, VM{Key: 2, Name: "vm-beta"})
 		},
 	}))
 
@@ -1408,7 +1408,7 @@ func TestVMService_Migrate_ServerError(t *testing.T) {
 func TestVMService_GetConsoleURL(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: true})
 		},
 	}))
 
@@ -1424,7 +1424,7 @@ func TestVMService_GetConsoleURL(t *testing.T) {
 func TestVMService_GetConsoleURL_VMStopped(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: false})
+			jsonResponse(w, 200, VM{Key: 1, Name: "vm", PowerState: false})
 		},
 	}))
 
