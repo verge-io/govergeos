@@ -13,7 +13,7 @@ Built for infrastructure administrators and Go developers who want to automate V
 ## Key Features
 
 - **Complete VM Management** - Create, configure, power, clone, and snapshot virtual machines with full drive and NIC control
-- **Advanced Networking** - Virtual networks, firewall rules, DHCP, DNS views/zones/records, WireGuard and IPSec VPNs
+- **Advanced Networking** - Virtual networks, firewall rules, DHCP, DNS views/zones/records, BGP/OSPF/EIGRP, WireGuard and IPSec VPNs
 - **NAS & Storage** - Volume management, CIFS/NFS shares, async volume browsing, snapshot profiles
 - **Multi-Tenancy** - Tenant provisioning, resource allocation, node management for MSPs and enterprises
 - **Disaster Recovery** - Cloud snapshots, remote site synchronization, backup scheduling
@@ -171,6 +171,13 @@ rule, err := client.VNetRules.Create(ctx, &vergeos.VNetRuleCreateRequest{
 
 // Apply rules to the network
 err = client.Networks.ApplyRules(ctx, networkID)
+
+// Dynamic routing takes effect when the network restarts.
+cfg, _, err := client.VNetBGP.GetOrCreate(ctx, networkID)
+router, status, err := client.VNetBGPRouters.Create(ctx, &vergeos.VNetBGPRouterCreateRequest{
+    BGP: int(cfg.Key), ASN: 65000,
+}, vergeos.WithRestartNetwork())
+fmt.Println(status.Pending, status.Restarted, router.ASN)
 ```
 
 ### Bulk Operations with Goroutines
@@ -233,6 +240,24 @@ devClient, _ := vergeos.NewClient(
 | `VNetDNSZones` | DNS zone management |
 | `VNetDNSRecords` | DNS record management (A, AAAA, CNAME, MX, TXT) |
 | `VNetHosts` | DHCP reservations and host overrides |
+
+### Dynamic Routing
+
+BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.GetOrCreate`). Create, update, and delete return `RoutingRestartStatus`. `Pending` is the network's `need_restart` flag. Pass `WithRestartNetwork` to restart the network in that call (`Networks.Reset`). Routing changes take effect on the restart.
+
+| Service | Description |
+|---------|-------------|
+| `VNetBGP` | Per-network routing record (`vnet_bgp`), including get-or-create |
+| `VNetBGPRouters` | BGP routers (`vnet_bgp_routers`) |
+| `VNetBGPRouterCommands` | BGP router commands (`vnet_bgp_router_commands`) |
+| `VNetBGPInterfaces` | BGP interfaces (`vnet_bgp_interfaces`) |
+| `VNetBGPInterfaceCommands` | BGP interface commands (`vnet_bgp_interface_commands`) |
+| `VNetBGPRouteMaps` | BGP route map entries (`vnet_bgp_routemaps`) |
+| `VNetBGPRouteMapCommands` | BGP route map commands (`vnet_bgp_routemap_commands`) |
+| `VNetBGPIPCommands` | BGP IP commands such as prefix-lists (`vnet_bgp_ip`) |
+| `VNetOSPFCommands` | OSPF commands (`vnet_ospf_commands`) |
+| `VNetEIGRPRouters` | EIGRP routers (`vnet_eigrp_routers`) |
+| `VNetEIGRPRouterCommands` | EIGRP router commands (`vnet_eigrp_router_commands`) |
 
 ### VPN
 
