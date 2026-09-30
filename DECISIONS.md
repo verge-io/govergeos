@@ -596,6 +596,8 @@ client, err := vergeos.NewClient(
 
 **Amendment:** `VERGEOS_HOST` may be a bare host or IP. A value with no scheme is read as `https://`; a scheme other than `http` or `https` is rejected and the error names `VERGEOS_HOST`. `VERGEOS_INSECURE` is accepted so an Ansible env file can drive the client. `true` (also `yes`, `on`, or `1`) skips certificate verification. If `VERGEOS_INSECURE` and `VERGEOS_VERIFY_SSL` are both set and disagree, `WithEnvConfig` returns an error.
 
+**Amendment:** HTTP settings are collected while options run and applied once, to a copy of the base client. `WithHTTPClient` only supplies that base. Timeout, TLS, and rate limit still apply when it is passed before or after `WithEnvConfig`, `WithTimeout`, or `WithInsecureTLS`. A later timeout or TLS option replaces an earlier one. The caller's `*http.Client` and its transport are not modified. Skipping verification clones an `*http.Transport`; any other transport type is an error from `NewClient`.
+
 **Consequences:**
 - New `WithEnvConfig()` option function added to `client.go`
 - Environment variables use `VERGEOS_` prefix (matching existing convention)

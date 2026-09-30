@@ -335,9 +335,11 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | `WithInsecureTLS(bool)` | Skip TLS certificate verification | `false` |
 | `WithTimeout(duration)` | HTTP request timeout, including retries | `30s` |
 | `WithPowerWait(timeout, interval)` | Default VM power-wait budget and poll interval (`PowerOn`, `PowerOff`, `Kill`) | `150s`, every `5s` |
-| `WithHTTPClient(client)` | Custom `*http.Client`. Its `Transport` is wrapped; the value you pass is left as-is | Default client |
+| `WithHTTPClient(client)` | Base `*http.Client`. Timeout, TLS, and rate limit are applied to a copy; the value you pass is not modified | Default client |
 | `WithRetry(policy)` | Retry GET, PUT, and DELETE when the connection fails before a response, and on HTTP 429, 502, and 503 | 3 attempts, 100ms backoff doubling to 2s with jitter |
 | `WithRateLimit(interval)` | Minimum time between request starts, including retries | off |
+
+`WithHTTPClient` supplies the base client. `WithTimeout`, `WithInsecureTLS`, `WithEnvConfig`, and `WithRateLimit` are applied to a copy after every option has run, so putting `WithHTTPClient` before or after them does not drop those settings. A later `WithTimeout` or `WithInsecureTLS` still replaces an earlier one. Skipping certificate verification clones an `*http.Transport`. Any other transport type cannot take that change, and `NewClient` returns an error.
 
 `WithRetry(RetryPolicy{MaxAttempts: 1})` turns retries off. A zero `MaxAttempts` keeps the default of 3. POST is not retried: creates and actions are not idempotent, and a POST that fails before a response is returned to the caller. HTTP 401 is never retried, because another attempt with the same rejected password counts toward account lockout.
 

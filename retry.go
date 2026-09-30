@@ -68,7 +68,8 @@ func WithRetry(policy RetryPolicy) ClientOption {
 //
 // The spacing applies to every attempt, including retries. The client does
 // not rate-limit unless this option is set. A zero or negative interval
-// leaves spacing off.
+// leaves spacing off. The limit is installed on a copy of the base HTTP
+// client after every option has run, including WithHTTPClient.
 //
 // VergeOS drops connections when a session exceeds its webserver API rate
 // limit (50 requests by default) instead of returning 429. An interval
@@ -103,19 +104,22 @@ func defaultRetryPolicy() RetryPolicy {
 	return (RetryPolicy{}).normalized()
 }
 
-// applyTransportPolicy installs retry and optional rate limiting.
+// applyTransportPolicy copies the base HTTP client, applies the recorded
+// timeout and TLS settings to that copy, then installs retry and optional
+// rate limiting.
 //
-// The caller's *http.Client is copied first so its Transport field is not
-// replaced. The copy shares the underlying RoundTripper, which keeps the
-// connection pool, then the copy's Transport is wrapped.
-func (c *Client) applyTransportPolicy() {
-	if c.transportReady || c.httpClient == nil {
-		return
+// The *http.Client stored by WithHTTPClient is not modified. Its transport
+// is cloned when certificate verification has to change. Otherwise the copy
+// shares that transport, which keeps the connection pool, and the copy's
+// Transport field is the one that gets wrapped.
+func (c *Client) applyTransportPolicy() error {
+	if c.transportReady {
+		return nil
+	}
+	if err := c.prepareHTTPClient(); err != nil {
+		return err
 	}
 	c.transportReady = true
-
-	cloned := *c.httpClient
-	c.httpClient = &cloned
 
 	policy := defaultRetryPolicy()
 	if c.retryConfigured {
@@ -130,6 +134,7 @@ func (c *Client) applyTransportPolicy() {
 		base = &rateLimitTransport{base: base, interval: c.rateLimit}
 	}
 	c.httpClient.Transport = &retryTransport{base: base, policy: policy}
+	return nil
 }
 
 type retryTransport struct {

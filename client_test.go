@@ -296,12 +296,7 @@ func TestWithEnvConfigVerifySSL(t *testing.T) {
 				t.Fatalf("WithEnvConfig() returned error: %v", err)
 			}
 
-			// Check if transport was modified for insecure TLS
-			transport, ok := c.httpClient.Transport.(*http.Transport)
-			if !ok {
-				t.Fatal("expected http.Transport")
-			}
-
+			transport := configuredTransport(t, c)
 			gotInsecure := transport.TLSClientConfig != nil && transport.TLSClientConfig.InsecureSkipVerify
 			if gotInsecure != tt.insecure {
 				t.Errorf("InsecureSkipVerify = %v, want %v", gotInsecure, tt.insecure)
@@ -408,10 +403,7 @@ func TestWithEnvConfigTLSCombinations(t *testing.T) {
 				t.Fatalf("WithEnvConfig() returned error: %v", err)
 			}
 
-			transport, ok := c.httpClient.Transport.(*http.Transport)
-			if !ok {
-				t.Fatal("expected http.Transport")
-			}
+			transport := configuredTransport(t, c)
 			gotSkip := transport.TLSClientConfig != nil && transport.TLSClientConfig.InsecureSkipVerify
 			if gotSkip != tt.wantSkip {
 				t.Errorf("InsecureSkipVerify = %v, want %v", gotSkip, tt.wantSkip)
@@ -466,6 +458,9 @@ func TestWithEnvConfigTimeout(t *testing.T) {
 
 			if err != nil {
 				t.Fatalf("WithEnvConfig() returned error: %v", err)
+			}
+			if err := c.applyTransportPolicy(); err != nil {
+				t.Fatalf("apply transport: %v", err)
 			}
 
 			if c.httpClient.Timeout != tt.want {
