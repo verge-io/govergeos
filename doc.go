@@ -58,6 +58,15 @@
 //	    vergeos.WithLimit(50),
 //	)
 //
+// # Retries
+//
+// GET, PUT, and DELETE are retried on a connection reset, a timeout before
+// any response, and HTTP 429, 502, and 503. The default is 3 attempts with
+// exponential backoff and jitter. POST is not retried. HTTP 401 is never
+// retried, because a repeated failed login locks the account.
+// WithRetry changes or disables the policy. WithRateLimit spaces request
+// starts and is off unless set.
+//
 // # Error Handling
 //
 // The library provides typed errors and helper functions:
