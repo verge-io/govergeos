@@ -78,6 +78,9 @@ func (s *CloudSnapshotService) GetByName(ctx context.Context, name string) (*Clo
 	if len(snapshots) == 0 {
 		return nil, &NotFoundError{Resource: "CloudSnapshot", ID: name}
 	}
+	if err := requireUniqueName("CloudSnapshot", name, snapshots, func(snap CloudSnapshot) any { return snap.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("CloudSnapshot", name, snapshots[0].Name, name); err != nil {
 		return nil, err
 	}

@@ -56,6 +56,9 @@ func (s *SnapshotProfileService) GetByName(ctx context.Context, name string) (*S
 	if len(profiles) == 0 {
 		return nil, &NotFoundError{Resource: "SnapshotProfile", ID: name}
 	}
+	if err := requireUniqueName("SnapshotProfile", name, profiles, func(p SnapshotProfile) any { return p.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("SnapshotProfile", name, profiles[0].Name, name); err != nil {
 		return nil, err
 	}
@@ -181,6 +184,9 @@ func (s *SnapshotProfilePeriodService) GetByName(ctx context.Context, profileID 
 	}
 	if len(periods) == 0 {
 		return nil, &NotFoundError{Resource: "SnapshotProfilePeriod", ID: name}
+	}
+	if err := requireUniqueName("SnapshotProfilePeriod", name, periods, func(p SnapshotProfilePeriod) any { return p.Key }); err != nil {
+		return nil, err
 	}
 	if err := requireExactName("SnapshotProfilePeriod", name, periods[0].Name, name); err != nil {
 		return nil, err

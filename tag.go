@@ -47,15 +47,21 @@ func (s *TagService) Get(ctx context.Context, id int) (*Tag, error) {
 	return &tag, nil
 }
 
-// GetByName returns a tag by name.
-func (s *TagService) GetByName(ctx context.Context, name string) (*Tag, error) {
-	tags, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
+// GetByName returns the tag named name in categoryID.
+// The same name may exist in another category, so the category is required.
+// Returns NotFoundError when nothing matches, and AmbiguousNameError when
+// more than one row matches.
+func (s *TagService) GetByName(ctx context.Context, categoryID int, name string) (*Tag, error) {
+	tags, err := s.List(ctx, WithFilter(fmt.Sprintf("category eq %d and name eq '%s'", categoryID, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
 
 	if len(tags) == 0 {
 		return nil, &NotFoundError{Resource: "Tag", ID: name}
+	}
+	if err := requireUniqueName("Tag", name, tags, func(t Tag) any { return t.Key }); err != nil {
+		return nil, err
 	}
 	if err := requireExactName("Tag", name, tags[0].Name, name); err != nil {
 		return nil, err

@@ -55,6 +55,9 @@ func (s *SiteService) GetByName(ctx context.Context, name string) (*Site, error)
 	if len(sites) == 0 {
 		return nil, &NotFoundError{Resource: "Site", ID: name}
 	}
+	if err := requireUniqueName("Site", name, sites, func(site Site) any { return site.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("Site", name, sites[0].Name, name); err != nil {
 		return nil, err
 	}
@@ -253,6 +256,9 @@ func (s *SiteSyncIncomingService) GetByName(ctx context.Context, siteID int, nam
 	if len(syncs) == 0 {
 		return nil, &NotFoundError{Resource: "SiteSyncIncoming", ID: name}
 	}
+	if err := requireUniqueName("SiteSyncIncoming", name, syncs, func(sync SiteSyncIncoming) any { return sync.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("SiteSyncIncoming", name, syncs[0].Name, name); err != nil {
 		return nil, err
 	}
@@ -414,6 +420,9 @@ func (s *SiteSyncOutgoingService) GetByName(ctx context.Context, siteID int, nam
 	}
 	if len(syncs) == 0 {
 		return nil, &NotFoundError{Resource: "SiteSyncOutgoing", ID: name}
+	}
+	if err := requireUniqueName("SiteSyncOutgoing", name, syncs, func(sync SiteSyncOutgoing) any { return sync.Key }); err != nil {
+		return nil, err
 	}
 	if err := requireExactName("SiteSyncOutgoing", name, syncs[0].Name, name); err != nil {
 		return nil, err

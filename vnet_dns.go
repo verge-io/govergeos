@@ -62,6 +62,9 @@ func (s *VNetDNSViewService) GetByName(ctx context.Context, vnetID int, name str
 	if len(views) == 0 {
 		return nil, &NotFoundError{Resource: "VNetDNSView", ID: name}
 	}
+	if err := requireUniqueName("VNetDNSView", name, views, func(v VNetDNSView) any { return v.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("VNetDNSView", name, views[0].Name, name); err != nil {
 		return nil, err
 	}

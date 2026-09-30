@@ -61,6 +61,9 @@ func (s *VolumeCIFSShareService) GetByName(ctx context.Context, volumeID, name s
 	if len(shares) == 0 {
 		return nil, &NotFoundError{Resource: "VolumeCIFSShare", ID: name}
 	}
+	if err := requireUniqueName("VolumeCIFSShare", name, shares, func(share VolumeCIFSShare) any { return share.ID }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("VolumeCIFSShare", name, shares[0].Name, name); err != nil {
 		return nil, err
 	}
@@ -192,6 +195,9 @@ func (s *VolumeNFSShareService) GetByName(ctx context.Context, volumeID, name st
 	}
 	if len(shares) == 0 {
 		return nil, &NotFoundError{Resource: "VolumeNFSShare", ID: name}
+	}
+	if err := requireUniqueName("VolumeNFSShare", name, shares, func(share VolumeNFSShare) any { return share.ID }); err != nil {
+		return nil, err
 	}
 	if err := requireExactName("VolumeNFSShare", name, shares[0].Name, name); err != nil {
 		return nil, err

@@ -143,3 +143,19 @@ func requireExactName(resource string, id any, got, want string) error {
 	}
 	return &NotFoundError{Resource: resource, ID: id}
 }
+
+// requireUniqueName returns AmbiguousNameError when a name lookup matched
+// more than one row. key reads the resource key listed on that error.
+// Zero or one row is not an error here; the caller still applies NotFoundError
+// and requireExactName. GetByName does not choose among matches. Use List
+// for that.
+func requireUniqueName[T any](resource, name string, rows []T, key func(T) any) error {
+	if len(rows) <= 1 {
+		return nil
+	}
+	keys := make([]any, len(rows))
+	for i := range rows {
+		keys[i] = key(rows[i])
+	}
+	return &AmbiguousNameError{Resource: resource, Name: name, Keys: keys}
+}

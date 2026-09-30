@@ -165,6 +165,9 @@ func (s *VNetIPSecPhase1Service) GetByName(ctx context.Context, ipsecID int, nam
 	if len(phase1s) == 0 {
 		return nil, &NotFoundError{Resource: "VNetIPSecPhase1", ID: name}
 	}
+	if err := requireUniqueName("VNetIPSecPhase1", name, phase1s, func(p VNetIPSecPhase1) any { return p.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("VNetIPSecPhase1", name, phase1s[0].Name, name); err != nil {
 		return nil, err
 	}
@@ -290,6 +293,9 @@ func (s *VNetIPSecPhase2Service) GetByName(ctx context.Context, phase1ID int, na
 	}
 	if len(phase2s) == 0 {
 		return nil, &NotFoundError{Resource: "VNetIPSecPhase2", ID: name}
+	}
+	if err := requireUniqueName("VNetIPSecPhase2", name, phase2s, func(p VNetIPSecPhase2) any { return p.Key }); err != nil {
+		return nil, err
 	}
 	if err := requireExactName("VNetIPSecPhase2", name, phase2s[0].Name, name); err != nil {
 		return nil, err

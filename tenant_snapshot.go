@@ -70,6 +70,9 @@ func (s *TenantSnapshotService) GetByName(ctx context.Context, tenantID int, nam
 	if len(snapshots) == 0 {
 		return nil, &NotFoundError{Resource: "TenantSnapshot", ID: name}
 	}
+	if err := requireUniqueName("TenantSnapshot", name, snapshots, func(snap TenantSnapshot) any { return snap.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("TenantSnapshot", name, snapshots[0].Name, name); err != nil {
 		return nil, err
 	}

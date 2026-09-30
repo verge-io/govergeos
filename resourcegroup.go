@@ -56,6 +56,9 @@ func (s *ResourceGroupService) GetByName(ctx context.Context, name string) (*Res
 	if len(groups) == 0 {
 		return nil, &NotFoundError{Resource: "ResourceGroup", ID: name}
 	}
+	if err := requireUniqueName("ResourceGroup", name, groups, func(g ResourceGroup) any { return g.ID }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("ResourceGroup", name, groups[0].Name, name); err != nil {
 		return nil, err
 	}

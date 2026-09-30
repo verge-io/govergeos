@@ -390,6 +390,9 @@ if err != nil {
     if vergeos.IsConflictError(err) {
         // Conflicts with existing state, such as a name already taken (HTTP 409)
     }
+    if vergeos.IsAmbiguousNameError(err) {
+        // GetByName matched more than one object. Use List and choose a key.
+    }
     if vergeos.IsValidationError(err) {
         // Invalid request parameters
     }

@@ -32,6 +32,60 @@ func TestNotFoundError_Error_StringID(t *testing.T) {
 	}
 }
 
+func TestAmbiguousNameError_Error(t *testing.T) {
+	err := &AmbiguousNameError{Resource: "Tag", Name: "zzgo-dup", Keys: []any{FlexInt(5), FlexInt(6)}}
+	want := `vergeos: Tag name "zzgo-dup" matches 2 objects with keys 5, 6`
+	if err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+}
+
+func TestAmbiguousNameError_Error_StringKeys(t *testing.T) {
+	err := &AmbiguousNameError{Resource: "Volume", Name: "data", Keys: []any{"abc", "def"}}
+	want := `vergeos: Volume name "data" matches 2 objects with keys abc, def`
+	if err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+}
+
+func TestIsAmbiguousNameError_Nil(t *testing.T) {
+	if IsAmbiguousNameError(nil) {
+		t.Error("expected false for nil error")
+	}
+}
+
+func TestIsAmbiguousNameError_Direct(t *testing.T) {
+	err := &AmbiguousNameError{Resource: "Tag", Name: "zzgo-dup", Keys: []any{5, 6}}
+	if !IsAmbiguousNameError(err) {
+		t.Error("expected true for AmbiguousNameError")
+	}
+}
+
+func TestIsAmbiguousNameError_Wrapped(t *testing.T) {
+	inner := &AmbiguousNameError{Resource: "Group", Name: "admins", Keys: []any{1, 2}}
+	err := fmt.Errorf("lookup: %w", inner)
+	if !IsAmbiguousNameError(err) {
+		t.Error("expected true for wrapped AmbiguousNameError")
+	}
+}
+
+func TestIsAmbiguousNameError_OtherError(t *testing.T) {
+	if IsAmbiguousNameError(&NotFoundError{Resource: "Tag", ID: "zzgo-dup"}) {
+		t.Error("expected false for NotFoundError")
+	}
+}
+
+func TestErrorsAs_AmbiguousNameError(t *testing.T) {
+	err := fmt.Errorf("outer: %w", &AmbiguousNameError{Resource: "Tag", Name: "zzgo-dup", Keys: []any{5, 6}})
+	var target *AmbiguousNameError
+	if !errors.As(err, &target) {
+		t.Fatal("errors.As should match wrapped AmbiguousNameError")
+	}
+	if target.Resource != "Tag" || target.Name != "zzgo-dup" || len(target.Keys) != 2 || target.Keys[0] != 5 || target.Keys[1] != 6 {
+		t.Fatalf("unexpected details: %+v", target)
+	}
+}
+
 func TestAuthError_Error(t *testing.T) {
 	err := &AuthError{Message: "invalid credentials"}
 	want := "vergeos: authentication failed: invalid credentials"

@@ -149,7 +149,7 @@ func testTagsCRUD(t *testing.T, ctx context.Context, client *vergeos.Client, cat
 	}
 
 	// Test GetByName
-	byName, err := client.Tags.GetByName(ctx, tagName)
+	byName, err := client.Tags.GetByName(ctx, categoryID, tagName)
 	if err != nil {
 		t.Errorf("Tags.GetByName failed: %v", err)
 	} else {

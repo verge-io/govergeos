@@ -91,6 +91,9 @@ func (s *TaskService) GetByName(ctx context.Context, owner, name string) (*Task,
 	if len(tasks) == 0 {
 		return nil, &NotFoundError{Resource: "Task", ID: name}
 	}
+	if err := requireUniqueName("Task", name, tasks, func(task Task) any { return task.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("Task", name, tasks[0].Name, name); err != nil {
 		return nil, err
 	}

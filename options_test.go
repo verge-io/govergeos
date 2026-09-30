@@ -220,3 +220,27 @@ func TestRequireExactName(t *testing.T) {
 		t.Fatalf("unexpected not-found details: %+v", notFound)
 	}
 }
+
+func TestRequireUniqueName(t *testing.T) {
+	type row struct {
+		Key  any
+		Name string
+	}
+	key := func(r row) any { return r.Key }
+
+	if err := requireUniqueName("Thing", "a", []row(nil), key); err != nil {
+		t.Fatalf("empty list: %v", err)
+	}
+	if err := requireUniqueName("Thing", "a", []row{{Key: 1, Name: "a"}}, key); err != nil {
+		t.Fatalf("single row: %v", err)
+	}
+
+	err := requireUniqueName("Thing", "a", []row{{Key: 5, Name: "a"}, {Key: "six", Name: "a"}}, key)
+	amb, ok := err.(*AmbiguousNameError)
+	if !ok {
+		t.Fatalf("expected *AmbiguousNameError, got %T: %v", err, err)
+	}
+	if amb.Resource != "Thing" || amb.Name != "a" || len(amb.Keys) != 2 || amb.Keys[0] != 5 || amb.Keys[1] != "six" {
+		t.Fatalf("unexpected details: %+v", amb)
+	}
+}

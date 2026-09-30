@@ -57,6 +57,9 @@ func (s *TagCategoryService) GetByName(ctx context.Context, name string) (*TagCa
 	if len(categories) == 0 {
 		return nil, &NotFoundError{Resource: "TagCategory", ID: name}
 	}
+	if err := requireUniqueName("TagCategory", name, categories, func(c TagCategory) any { return c.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("TagCategory", name, categories[0].Name, name); err != nil {
 		return nil, err
 	}
