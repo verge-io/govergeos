@@ -85,6 +85,47 @@ type VMDeviceServiceInterface interface {
 	Delete(ctx context.Context, deviceID int) error
 }
 
+// VMImportServiceInterface defines VM import jobs.
+// Create accepts a media-catalog file or a URL (OVA or disk image).
+// Wait returns as soon as the import row reports a failure.
+// DeleteByName removes every finished row with that name.
+type VMImportServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VMImport, error)
+	Get(ctx context.Context, id string) (*VMImport, error)
+	GetByName(ctx context.Context, name string) (*VMImport, error)
+	Create(ctx context.Context, req *VMImportCreateRequest) (*VMImport, error)
+	Update(ctx context.Context, id string, req *VMImportUpdateRequest) (*VMImport, error)
+	Delete(ctx context.Context, id string) error
+	DeleteByName(ctx context.Context, name string) error
+	Start(ctx context.Context, id string) error
+	Abort(ctx context.Context, id string) error
+	Wait(ctx context.Context, id string, opts *VMImportWaitOptions) (*VMImport, error)
+	Logs(ctx context.Context, importID string, opts ...ListOption) ([]VMImportLog, error)
+}
+
+// VMImportLogServiceInterface defines VM import log reads.
+type VMImportLogServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VMImportLog, error)
+	ListByImport(ctx context.Context, importID string, opts ...ListOption) ([]VMImportLog, error)
+	Get(ctx context.Context, id int) (*VMImportLog, error)
+}
+
+// VMExportServiceInterface defines VM export to a NAS volume.
+type VMExportServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VMExport, error)
+	Get(ctx context.Context, id int) (*VMExport, error)
+	GetByVolume(ctx context.Context, volumeID string) (*VMExport, error)
+	Create(ctx context.Context, req *VMExportCreateRequest) (*VMExport, error)
+	Update(ctx context.Context, id int, req *VMExportUpdateRequest) (*VMExport, error)
+	Delete(ctx context.Context, id int) error
+	Run(ctx context.Context, req *VMExportRunRequest) (*VMExport, error)
+	Start(ctx context.Context, id int, run *VMExportStart) error
+	Stop(ctx context.Context, id int) error
+	Cleanup(ctx context.Context, id int) error
+	Wait(ctx context.Context, id int, opts *VMExportWaitOptions) (*VMExport, error)
+	Stats(ctx context.Context, id int, opts ...ListOption) ([]VMExportStat, error)
+}
+
 // CatalogServiceInterface defines the interface for catalog reads.
 type CatalogServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]Catalog, error)
@@ -1007,6 +1048,9 @@ var (
 	_ VMNICServiceInterface                   = (*VMNICService)(nil)
 	_ VMDriveServiceInterface                 = (*VMDriveService)(nil)
 	_ VMDeviceServiceInterface                = (*VMDeviceService)(nil)
+	_ VMImportServiceInterface                = (*VMImportService)(nil)
+	_ VMImportLogServiceInterface             = (*VMImportLogService)(nil)
+	_ VMExportServiceInterface                = (*VMExportService)(nil)
 	_ CatalogServiceInterface                 = (*CatalogService)(nil)
 	_ VMRecipeServiceInterface                = (*VMRecipeService)(nil)
 	_ VMRecipeInstanceServiceInterface        = (*VMRecipeInstanceService)(nil)

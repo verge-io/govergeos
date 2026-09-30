@@ -82,6 +82,9 @@ type Client struct {
 	VMNICs                  VMNICServiceInterface
 	VMDrives                VMDriveServiceInterface
 	VMDevices               VMDeviceServiceInterface
+	VMImports               VMImportServiceInterface
+	VMImportLogs            VMImportLogServiceInterface
+	VMExports               VMExportServiceInterface
 	Catalogs                CatalogServiceInterface
 	VMRecipes               VMRecipeServiceInterface
 	VMRecipeInstances       VMRecipeInstanceServiceInterface
@@ -654,6 +657,9 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.VMNICs = &VMNICService{client: c}
 	c.VMDrives = &VMDriveService{client: c}
 	c.VMDevices = &VMDeviceService{client: c}
+	c.VMImports = &VMImportService{client: c}
+	c.VMImportLogs = &VMImportLogService{client: c}
+	c.VMExports = &VMExportService{client: c}
 	c.Catalogs = &CatalogService{client: c}
 	c.VMRecipes = &VMRecipeService{client: c}
 	c.VMRecipeInstances = &VMRecipeInstanceService{client: c}

@@ -77,6 +77,46 @@ consoleURL, err := client.VMs.GetConsoleURL(ctx, vmID)
 
 ---
 
+## VM Import and Export
+
+Import an OVA or a disk image (qcow2, vmdk, vhd, raw) from a file already in the media catalog, or from an http(s) URL. The URL is downloaded into the catalog and then imported. `Wait` returns as soon as the import reports an error, an abort, or a failed drive. It does not sit through the rest of the timeout.
+
+VergeOS keeps every import row and does not require those names to be unique. `Create` does not post again when a VM with that name already exists (`AlreadyExisted`). `GetByName` returns `AmbiguousNameError` when two rows share a name. `DeleteByName` removes every finished row with the name, and leaves them all in place when one of several rows is still importing.
+
+```go
+fileID := 41
+imp, err := client.VMImports.Create(ctx, &vergeos.VMImportCreateRequest{
+    Name: "imported-vm",
+    File: &fileID,
+})
+if !imp.AlreadyExisted {
+    imp, err = client.VMImports.Wait(ctx, imp.Key, nil)
+}
+logs, err := client.VMImports.Logs(ctx, imp.Key)
+
+imp, err = client.VMImports.Create(ctx, &vergeos.VMImportCreateRequest{
+    Name: "cloud-image",
+    URL:  "https://example.com/images/disk.qcow2",
+})
+
+err = client.VMImports.DeleteByName(ctx, "imported-vm")
+```
+
+Export writes a VM onto a NAS volume. `Run` creates the volume's export configuration when it does not exist, then starts the export. `Wait` returns as soon as the export reports an error.
+
+```go
+volumeKey := "c3437883534918dcf2abbb3e9b9622b865226c68"
+exp, err := client.VMExports.Run(ctx, &vergeos.VMExportRunRequest{
+    Volume: volumeKey,
+    VMs:    vmIDs,
+    Name:   "nightly",
+})
+exp, err = client.VMExports.Wait(ctx, exp.Key.Int(), nil)
+stats, err := client.VMExports.Stats(ctx, exp.Key.Int())
+```
+
+---
+
 ## VM Snapshots
 
 Manage point-in-time snapshots of virtual machines.
