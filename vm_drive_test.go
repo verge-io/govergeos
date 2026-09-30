@@ -102,8 +102,11 @@ func TestVMDriveService_ApplyUniversalVars_Error(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected ApplyUniversalVars to return an error")
 	}
-	if !IsAuthError(err) {
-		t.Fatalf("expected 403 AuthError, got %T: %v", err, err)
+	if !IsPermissionError(err) {
+		t.Fatalf("expected 403 PermissionError, got %T: %v", err, err)
+	}
+	if IsAuthError(err) {
+		t.Fatalf("403 reported as authentication failure: %v", err)
 	}
 }
 

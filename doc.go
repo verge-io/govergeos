@@ -67,6 +67,12 @@
 //	    // Handle not found
 //	}
 //	if vergeos.IsAuthError(err) {
-//	    // Handle authentication failure
+//	    // Authentication failed (HTTP 401)
+//	}
+//	if vergeos.IsPermissionError(err) {
+//	    // Authenticated, but not allowed (HTTP 403)
+//	}
+//	if vergeos.IsConflictError(err) {
+//	    // Conflicts with existing state (HTTP 409)
 //	}
 package vergeos

@@ -374,7 +374,13 @@ if err != nil {
         // Resource doesn't exist
     }
     if vergeos.IsAuthError(err) {
-        // Authentication failure
+        // Authentication failed (HTTP 401)
+    }
+    if vergeos.IsPermissionError(err) {
+        // Authenticated, but not allowed (HTTP 403)
+    }
+    if vergeos.IsConflictError(err) {
+        // Conflicts with existing state, such as a name already taken (HTTP 409)
     }
     if vergeos.IsValidationError(err) {
         // Invalid request parameters
