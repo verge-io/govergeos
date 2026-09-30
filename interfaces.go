@@ -841,6 +841,26 @@ type TenantLayer2NetworkServiceInterface interface {
 	Unassign(ctx context.Context, tenantID, vnetID int) error
 }
 
+// TenantNetworkBlockServiceInterface defines the interface for tenant network block operations (vnet_cidrs).
+type TenantNetworkBlockServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantNetworkBlock, error)
+	ListByTenant(ctx context.Context, tenantID int, opts ...ListOption) ([]TenantNetworkBlock, error)
+	Get(ctx context.Context, id int) (*TenantNetworkBlock, error)
+	GetByTenantAndCIDR(ctx context.Context, tenantID int, cidr string) (*TenantNetworkBlock, error)
+	Create(ctx context.Context, req *TenantNetworkBlockCreateRequest, opts ...ParentFirewallOption) (*TenantNetworkBlock, *ParentFirewallStatus, error)
+	Delete(ctx context.Context, id int, opts ...ParentFirewallOption) (*ParentFirewallStatus, error)
+}
+
+// TenantExternalIPServiceInterface defines the interface for tenant external IP operations (vnet_addresses).
+type TenantExternalIPServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantExternalIP, error)
+	ListByTenant(ctx context.Context, tenantID int, opts ...ListOption) ([]TenantExternalIP, error)
+	Get(ctx context.Context, id int) (*TenantExternalIP, error)
+	GetByTenantAndIP(ctx context.Context, tenantID int, ip string) (*TenantExternalIP, error)
+	Create(ctx context.Context, req *TenantExternalIPCreateRequest, opts ...ParentFirewallOption) (*TenantExternalIP, *ParentFirewallStatus, error)
+	Delete(ctx context.Context, id int, opts ...ParentFirewallOption) (*ParentFirewallStatus, error)
+}
+
 // StorageTierServiceInterface defines the interface for storage tier operations (read-only).
 // Storage tiers provide system-wide VSAN storage capacity and usage information.
 type StorageTierServiceInterface interface {
@@ -998,6 +1018,8 @@ var (
 	_ TenantSnapshotServiceInterface          = (*TenantSnapshotService)(nil)
 	_ LogServiceInterface                     = (*LogService)(nil)
 	_ TenantLayer2NetworkServiceInterface     = (*TenantLayer2NetworkService)(nil)
+	_ TenantNetworkBlockServiceInterface      = (*TenantNetworkBlockService)(nil)
+	_ TenantExternalIPServiceInterface        = (*TenantExternalIPService)(nil)
 	_ StorageTierServiceInterface             = (*StorageTierService)(nil)
 	_ ClusterTierServiceInterface             = (*ClusterTierService)(nil)
 	_ MachineDrivePhysServiceInterface        = (*MachineDrivePhysService)(nil)

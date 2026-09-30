@@ -29,7 +29,7 @@ Integration tests use `//go:build integration` build constraint and require `VER
 
 **Single flat package** (`vergeos`) — all code lives at the repository root. No nested packages.
 
-### Core Pattern: Service-Oriented Design (77 services)
+### Core Pattern: Service-Oriented Design (79 services)
 
 Each VergeOS resource has three pieces:
 
