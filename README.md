@@ -217,6 +217,9 @@ devClient, _ := vergeos.NewClient(
 | `Catalogs` | Recipe catalogs (read) |
 | `VMRecipes` | VM recipes and their questions (read) |
 | `VMRecipeInstances` | Deploy a VM from a recipe, or preview that deploy |
+| `VMImports` | Import an OVA or disk image from a file or URL, with status, logs, and delete |
+| `VMImportLogs` | Log lines for VM imports |
+| `VMExports` | Export a VM to a NAS volume |
 
 ### Networking
 
@@ -349,6 +352,7 @@ devClient, _ := vergeos.NewClient(
 | [apikey-auth](./examples/apikey-auth/) | API key authentication |
 | [vm-lifecycle](./examples/vm-lifecycle/) | VM create, configure, power, delete |
 | [vm-recipes](./examples/vm-recipes/) | List catalogs, VM recipes, and recipe questions |
+| [vm-import-export](./examples/vm-import-export/) | List VM imports, their logs, and VM exports |
 | [vm-snapshots](./examples/vm-snapshots/) | VM snapshots, tags, and migration |
 | [network-management](./examples/network-management/) | Create and manage virtual networks |
 | [tenants](./examples/tenants/) | Multi-tenant management for MSPs |
@@ -559,6 +563,7 @@ go test -tags=integration -v ./test/integration/ -run "CRUD"
 | `snapshot_profiles_test.go` | Snapshot Profiles |
 | `tags_test.go` | Tags, Tag Categories |
 | `tenants_test.go` | Tenants, Nodes, Storage, Snapshots, Layer2 |
+| `vm_imports_test.go` | VM Imports, Import Logs, VM Exports |
 | `vm_recipes_test.go` | Catalogs, VM Recipes, Recipe Questions |
 | `vm_snapshots_test.go` | VM Snapshots |
 | `volumes_test.go` | Volumes |

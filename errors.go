@@ -144,12 +144,132 @@ func (e *ValidationError) Error() string {
 type TimeoutError struct {
 	Resource string
 	ID       int
-	Action   string
+	// Key is the resource id when it is a string, such as a VM import key.
+	// ID stays 0 in that case.
+	Key    string
+	Action string
 }
 
 // Error implements the error interface.
 func (e *TimeoutError) Error() string {
-	return fmt.Sprintf("vergeos: timeout waiting for %s %d to %s", e.Resource, e.ID, e.Action)
+	id := any(e.ID)
+	if e.Key != "" {
+		id = e.Key
+	}
+	return fmt.Sprintf("vergeos: timeout waiting for %s %v to %s", e.Resource, id, e.Action)
+}
+
+// VMImportFailedError is returned when a VM import has already failed.
+// Wait returns it as soon as the import row reports the failure. The
+// caller does not sit through the rest of the timeout.
+type VMImportFailedError struct {
+	Key          string
+	Name         string
+	Status       string
+	StatusInfo   string
+	FailedDrives int
+	LogLines     []string
+}
+
+// Error implements the error interface.
+func (e *VMImportFailedError) Error() string {
+	status := e.Status
+	if status == "" {
+		status = "error"
+	}
+	msg := fmt.Sprintf("vergeos: VM import %s failed with status %s", e.Key, status)
+	if e.FailedDrives == 1 {
+		msg += " (1 failed drive)"
+	} else if e.FailedDrives > 0 {
+		msg += fmt.Sprintf(" (%d failed drives)", e.FailedDrives)
+	}
+	if e.StatusInfo != "" {
+		msg += ": " + e.StatusInfo
+	}
+	if len(e.LogLines) > 0 {
+		msg += ": " + strings.Join(e.LogLines, "; ")
+	}
+	return msg
+}
+
+// IsVMImportFailed reports whether err is a VMImportFailedError.
+func IsVMImportFailed(err error) bool {
+	if err == nil {
+		return false
+	}
+	var failed *VMImportFailedError
+	return errors.As(err, &failed)
+}
+
+// VMImportInProgressError is returned by DeleteByName when several import
+// rows share a name and at least one of them is still importing.
+// DeleteByName does not delete any of them in that case.
+type VMImportInProgressError struct {
+	Name string
+	Keys []string
+}
+
+// Error implements the error interface.
+func (e *VMImportInProgressError) Error() string {
+	if len(e.Keys) == 1 {
+		return fmt.Sprintf("vergeos: VM import %s named %q is still importing", e.Keys[0], e.Name)
+	}
+	return fmt.Sprintf("vergeos: %d VM import records named %q are still importing (keys: %s)", len(e.Keys), e.Name, strings.Join(e.Keys, ", "))
+}
+
+// IsVMImportInProgress reports whether err is a VMImportInProgressError.
+func IsVMImportInProgress(err error) bool {
+	if err == nil {
+		return false
+	}
+	var inProgress *VMImportInProgressError
+	return errors.As(err, &inProgress)
+}
+
+// VMExportFailedError is returned when a VM export has already failed.
+// Wait returns it as soon as the export row reports status error, or when
+// the newest statistics row records errors.
+type VMExportFailedError struct {
+	ID              int
+	Status          string
+	StatusInfo      string
+	Errors          int
+	VirtualMachines int
+	FileName        string
+}
+
+// Error implements the error interface.
+func (e *VMExportFailedError) Error() string {
+	if e.Errors > 0 {
+		errWord := "errors"
+		if e.Errors == 1 {
+			errWord = "error"
+		}
+		msg := fmt.Sprintf("vergeos: VM export %d finished with %d %s", e.ID, e.Errors, errWord)
+		if e.VirtualMachines == 1 {
+			msg += " across 1 VM"
+		} else if e.VirtualMachines > 1 {
+			msg += fmt.Sprintf(" across %d VMs", e.VirtualMachines)
+		}
+		if e.FileName != "" {
+			msg += " in " + e.FileName
+		}
+		return msg
+	}
+	msg := fmt.Sprintf("vergeos: VM export %d failed with status %s", e.ID, e.Status)
+	if e.StatusInfo != "" {
+		msg += ": " + e.StatusInfo
+	}
+	return msg
+}
+
+// IsVMExportFailed reports whether err is a VMExportFailedError.
+func IsVMExportFailed(err error) bool {
+	if err == nil {
+		return false
+	}
+	var failed *VMExportFailedError
+	return errors.As(err, &failed)
 }
 
 // IsTimeoutError returns true if the error is a TimeoutError.

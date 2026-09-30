@@ -842,3 +842,30 @@ The platform's dry run is a POST to the same collection with `simulate: true`. I
 - Table-backed choices (a storage tier, for example) are still checked by the platform. Preview is how to see that failure before Deploy.
 - Tenant recipes are not part of this surface.
 
+## ADR-025: VM Import Wait Fails Fast, and a Repeated Name Is Idempotent
+
+**Date:** 2026-09-30
+
+**Status:** Accepted
+
+**Context:** Importing an OVA or a disk image, and exporting a VM to a NAS volume, are the paths automation uses when a catalog recipe is not the source (issue #59). Both already exist on the platform as `vm_imports` and `volume_vm_exports`.
+
+Two behaviors in the Ansible collection are wrong for a client library. A failed import can stay in a status the waiter still treats as unfinished, so the caller sits through the whole timeout after the platform has already recorded the failure. Drive failures show up as `failed_drive_count` while status is still `importing`. Separately, `vm_imports` names are not unique and the platform keeps finished rows. Deleting by name has to remove every finished row, and it has to refuse the sweep when one of several rows with that name is still importing. A second create for a VM name that already exists is rejected by the platform, because the VM name is taken.
+
+**Decision:** `VMImports` creates an import from one source: a media-catalog file, an http(s) URL, a NAS volume path, or a shared object. A URL is stored with `Files.Create` and the import then uses that file id. OVA, OVF, and disk images use the same create. `Importing` defaults to true. `Wait` returns `VMImportFailedError` as soon as the row is `error` or `aborted`, the aborted flag is set, or `failed_drive_count` is greater than zero. Status `complete` and `warning` are success even when a stale failed-drive count is still set. The error includes `status_info` and up to ten error or critical log lines from `VMImportLogs`. The default wait is 10 minutes, polled every 5 seconds.
+
+`Create` does not post when a non-snapshot VM with that name already exists. It returns the single matching import row, or a row with an empty key when there are zero or several, and sets `AlreadyExisted`. A 409 from the post is adopted the same way when the VM is present. `GetByName` still returns `AmbiguousNameError` when two rows share a name. `DeleteByName` is success when no row matches. One row is deleted even if it is still importing. Two or more rows are deleted only when every one has finished. If any of them is still importing, `DeleteByName` returns `VMImportInProgressError` and deletes nothing.
+
+`VMExports` is the configuration on `volume_vm_exports`, one row per NAS volume. The volume key is the volume's SHA1, quoted in filters. The export row id is an integer. `Run` creates that configuration when the volume does not have one, updates settings that differ, and starts the export. `Wait` returns `VMExportFailedError` as soon as status is `error`. Status `building` and `cleaning` keep polling. Any other non-empty status is done, and the newest `volume_vm_export_stats` row then fails the wait when its error count is greater than zero. The default export wait is 1 hour, polled every 5 seconds. `Run` does not wait.
+
+**Rationale:**
+- The failure the platform has already recorded is the result. Waiting out the timeout hides it.
+- A duplicate VM name cannot create a second VM, so a second post is not a useful retry.
+- Name-only delete has to be safe when several historical rows share the name and one of them is live.
+
+**Consequences:**
+- Callers that need a specific import row use its hex key. `GetByName` will not pick one of several.
+- `Delete` by key still removes a live import. `DeleteByName` will not, when other rows share the name.
+- Deleting an import row leaves the VM. Deleting an export configuration leaves files already written to the volume.
+- The file download started for a URL import is not polled. A download that fails is reported by `Wait` on the import.
+

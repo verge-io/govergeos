@@ -12,6 +12,8 @@ Behavior change for the next minor release.
 
 ### Added
 
+- `VMImports` creates a VM import from a media-catalog file or an http(s) URL (OVA, OVF, or a disk image such as qcow2, vmdk, vhd, or raw), and can also import from a NAS volume path or a shared object. `Wait` returns as soon as the import reports an error, an abort, or a failed drive, including `status_info` and the error log lines. `Create` does not post another import when a VM with that name already exists. `DeleteByName` removes every finished row with the name. When several rows share the name and one is still importing, it deletes none. `VMImportLogs` reads `vm_import_logs`.
+- `VMExports` exports a VM to a NAS volume. `Run` ensures the volume's export configuration and starts the export. `Wait` returns as soon as the export reports an error, or when the newest statistics row recorded errors.
 - `VMService.GetByName` looks up a VM by name. The `vms` table also stores snapshots, so the lookup filters `is_snapshot eq false`. Snapshot lookup stays on `VMSnapshots.GetByName`.
 - `NetworkService.GetByName` looks up a network by name. Both lookups use the shared exact-name and ambiguous-name checks.
 - `TenantNetworkBlocks` manages tenant CIDR blocks on `vnet_cidrs` (`List`, `ListByTenant`, `Get`, `GetByTenantAndCIDR`, `Create`, `Delete`).
