@@ -278,6 +278,7 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | Service | Description |
 |---------|-------------|
 | `NASServices` | NAS service VM management and configuration |
+| `NASServiceAntivirus` | Antivirus settings on a NAS service (`vm_service_antivirus`) |
 | `NASServiceUsers` | NAS service user accounts (uses SHA1 string IDs) |
 | `Volumes` | NAS volume management (uses SHA1 string IDs) |
 | `VolumeSnapshots` | NAS volume snapshot management |
@@ -297,6 +298,7 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | `TenantLayer2Networks` | Layer 2 network assignments to tenants |
 | `TenantNetworkBlocks` | CIDR blocks assigned to a tenant (`vnet_cidrs`) |
 | `TenantExternalIPs` | Virtual IPs given to a tenant (`vnet_addresses`) |
+| `SharedObjects` | VMs shared with a tenant (`shared_objects`), including import and refresh |
 
 ### Users & Groups
 
@@ -332,6 +334,7 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | `Schema` | API schema introspection |
 | `System` | System version and info |
 | `Logs` | System logs (audit, errors, warnings) |
+| `Billing` | Usage and billing records (`billing`), including report generation |
 
 ### Monitoring & Tasks
 

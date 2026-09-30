@@ -369,6 +369,16 @@ type SystemServiceInterface interface {
 	GetVersion(ctx context.Context) (string, error)
 }
 
+// BillingServiceInterface defines billing record reads and report generation.
+type BillingServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]BillingRecord, error)
+	ListCreated(ctx context.Context, since, until int64, opts ...ListOption) ([]BillingRecord, error)
+	Get(ctx context.Context, id int) (*BillingRecord, error)
+	GetLatest(ctx context.Context, opts ...ListOption) (*BillingRecord, error)
+	Generate(ctx context.Context) error
+	GetSummary(ctx context.Context, since, until int64) (*BillingSummary, error)
+}
+
 // SchemaServiceInterface defines the interface for Schema operations.
 type SchemaServiceInterface interface {
 	GetTableSchema(ctx context.Context, resource string) (*TableSchema, error)
@@ -1091,6 +1101,16 @@ type NASServiceUserServiceInterface interface {
 	Disable(ctx context.Context, id string) error
 }
 
+// NASServiceAntivirusServiceInterface defines antivirus settings on a NAS service
+// (vm_service_antivirus).
+type NASServiceAntivirusServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]NASServiceAntivirus, error)
+	ListByService(ctx context.Context, serviceID int, opts ...ListOption) ([]NASServiceAntivirus, error)
+	Get(ctx context.Context, id int) (*NASServiceAntivirus, error)
+	GetByService(ctx context.Context, serviceID int) (*NASServiceAntivirus, error)
+	Update(ctx context.Context, id int, req *NASServiceAntivirusUpdateRequest) (*NASServiceAntivirus, error)
+}
+
 // VolumeSyncServiceInterface defines the interface for volume sync operations.
 // Note: Like volumes, volume syncs use SHA1 hash strings as IDs instead of integers.
 type VolumeSyncServiceInterface interface {
@@ -1206,6 +1226,19 @@ type TenantExternalIPServiceInterface interface {
 	GetByTenantAndIP(ctx context.Context, tenantID int, ip string) (*TenantExternalIP, error)
 	Create(ctx context.Context, req *TenantExternalIPCreateRequest, opts ...ParentFirewallOption) (*TenantExternalIP, *ParentFirewallStatus, error)
 	Delete(ctx context.Context, id int, opts ...ParentFirewallOption) (*ParentFirewallStatus, error)
+}
+
+// SharedObjectServiceInterface defines VM shares sent to a tenant (shared_objects).
+type SharedObjectServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]SharedObject, error)
+	ListByTenant(ctx context.Context, tenantID int, opts ...ListOption) ([]SharedObject, error)
+	ListInbox(ctx context.Context, opts ...ListOption) ([]SharedObject, error)
+	Get(ctx context.Context, id int) (*SharedObject, error)
+	GetByName(ctx context.Context, tenantID int, name string) (*SharedObject, error)
+	Create(ctx context.Context, req *SharedObjectCreateRequest) (*SharedObject, error)
+	Import(ctx context.Context, id int) error
+	Refresh(ctx context.Context, id int) error
+	Delete(ctx context.Context, id int) error
 }
 
 // VNetProxyServiceInterface defines the interface for network proxy configuration (vnet_proxy).
@@ -1431,6 +1464,9 @@ var (
 	_ UpdateSettingsServiceInterface          = (*UpdateSettingsService)(nil)
 	_ UpdateBranchServiceInterface            = (*UpdateBranchService)(nil)
 	_ UpdateSourcePackageServiceInterface     = (*UpdateSourcePackageService)(nil)
+	_ BillingServiceInterface                 = (*BillingService)(nil)
+	_ NASServiceAntivirusServiceInterface     = (*NASServiceAntivirusService)(nil)
+	_ SharedObjectServiceInterface            = (*SharedObjectService)(nil)
 	_ TenantStatusServiceInterface            = (*TenantStatusService)(nil)
 	_ TenantStatsHistoryShortServiceInterface = (*TenantStatsHistoryShortService)(nil)
 )

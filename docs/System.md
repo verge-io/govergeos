@@ -106,6 +106,24 @@ err = client.Clusters.Delete(ctx, clusterID)
 
 ---
 
+## Billing
+
+Usage records live on `billing`. `List` returns the newest record first. `Generate` posts action `generate` to `billing_actions`. RAM on the record is megabytes. Tier storage is bytes.
+
+```go
+records, err := client.Billing.ListCreated(ctx, since, 0)
+
+latest, err := client.Billing.GetLatest(ctx)
+fmt.Printf("CPU %.1f%%  RAM %.1fGB\n", latest.CPUUtilization(), latest.UsedRAMGB())
+
+err = client.Billing.Generate(ctx)
+
+summary, err := client.Billing.GetSummary(ctx, since, 0)
+fmt.Printf("%d records, peak %d cores\n", summary.RecordCount, summary.PeakCPUCores)
+```
+
+---
+
 ## Settings
 
 ```go

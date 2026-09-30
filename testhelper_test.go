@@ -144,6 +144,9 @@ func initServices(c *Client) {
 	c.UpdateSettings = &UpdateSettingsService{client: c}
 	c.UpdateBranches = &UpdateBranchService{client: c}
 	c.UpdateSourcePackages = &UpdateSourcePackageService{client: c}
+	c.Billing = &BillingService{client: c}
+	c.NASServiceAntivirus = &NASServiceAntivirusService{client: c}
+	c.SharedObjects = &SharedObjectService{client: c}
 }
 
 // stubVM handles GET /vms/{id} and reports the VM's machine key.

@@ -29,7 +29,7 @@ Integration tests use `//go:build integration` build constraint and require `VER
 
 **Single flat package** (`vergeos`) — all code lives at the repository root. No nested packages.
 
-### Core Pattern: Service-Oriented Design (114 services)
+### Core Pattern: Service-Oriented Design (117 services)
 
 Each VergeOS resource has three pieces:
 
@@ -59,6 +59,7 @@ Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-027). The critical one
 - **Dynamic routing restart**: BGP, OSPF, and EIGRP are flat services on `Client` (`VNetBGP` plus routers, interfaces, route maps, IP commands, OSPF commands, and EIGRP). `VNetBGP.GetOrCreate` is the per-network `vnet_bgp` row the other tables reference. Create, update, and delete return `RoutingRestartStatus`. `Pending` is `need_restart`. `WithRestartNetwork` calls `Networks.Reset` so the change takes effect.
 - **Task engine**: `TaskSchedules`, `TaskScheduleTriggers`, `TaskEvents`, and `TaskScripts` follow the pyVergeOS tables. Schedule create posts the same defaults pyVergeOS sends. Upcoming runs, a manual trigger, and a script run are row actions: `PUT /{table}/{key}?action=...`.
 - **Hardware inventory**: GPUs, DIMMs, and LLDP neighbors are flat services on `Client`. `VGPUProfiles` is the NVIDIA catalog (`nvidia_vgpu_profiles`). `NodeGPUs` is `node_gpus` and is the table whose mode is updated (`none`, `gpu`, `nvidia_vgpu`). `NodeVGPUProfiles` is the per-GPU profile list (`node_nvidia_vgpu_profiles`). `NodeGPUStats` reads `node_gpu_stats` and the short and long history tables. `NodeMemory` is `node_memory`. `NodeLLDPNeighbors` is `node_lldp_neighbors`.
+- **Billing, NAS antivirus, and shared objects**: `Billing` reads `billing` and posts `generate` to `billing_actions`. `NASServiceAntivirus` is `vm_service_antivirus` (the settings row `NASService.Antivirus` points at). `SharedObjects` shares a VM by posting a non-expiring `machine_snapshots` row, then `shared_objects`. Import and refresh post `shared_object_actions`.
 
 ### Adding a New Service
 

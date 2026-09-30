@@ -1,7 +1,7 @@
 ---
 title: Tenants
-description: Manage multi-tenant virtual data centers, nodes, storage, snapshots, Layer 2 networks, and the tenant UI proxy
-tags: [tenant, multi-tenant, vdc, tenant-node, tenant-storage, tenant-snapshot, layer2, isolation, clone, vnet-proxy]
+description: Manage multi-tenant virtual data centers, nodes, storage, snapshots, Layer 2 networks, shared objects, and the tenant UI proxy
+tags: [tenant, multi-tenant, vdc, tenant-node, tenant-storage, tenant-snapshot, layer2, isolation, clone, vnet-proxy, shared-object]
 categories: [Tenants]
 ---
 
@@ -228,4 +228,26 @@ if err != nil {
 }
 
 vms, err := tenantClient.VMs.List(ctx)
+```
+
+---
+
+## Shared objects
+
+A parent system shares a VM with a tenant by snapshotting it and posting a `shared_objects` row. The snapshot does not expire. `Import` copies the VM into the tenant. `Delete` removes the share and leaves an already imported VM in place.
+
+```go
+shared, err := client.SharedObjects.Create(ctx, &vergeos.SharedObjectCreateRequest{
+    Tenant:      tenantID,
+    VM:          vmID,
+    Name:        "Ubuntu Template",
+    Description: "Pre-configured Ubuntu server",
+})
+
+shares, err := client.SharedObjects.ListByTenant(ctx, tenantID)
+inbox, err := client.SharedObjects.ListInbox(ctx)
+
+err = client.SharedObjects.Import(ctx, int(shared.Key))
+err = client.SharedObjects.Refresh(ctx, int(shared.Key))
+err = client.SharedObjects.Delete(ctx, int(shared.Key))
 ```
