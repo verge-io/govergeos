@@ -14,11 +14,17 @@ const (
 	vmActionReset    = "reset"
 	vmActionKill     = "kill"
 	vmActionClone    = "clone"
+	// vmActionSnapshot asks the guest agent to freeze filesystems. It does
+	// not insert a machine_snapshots row; VMSnapshots.Create does that.
 	vmActionSnapshot = "quiesce_snapshot"
 
 	// Polling configuration
 	powerStateMaxRetries   = 30
 	powerStatePollInterval = 5 * time.Second
+
+	// vmSnapshotDefaultRetention is the snapshot lifetime, in seconds, used
+	// when VMSnapshotOptions.Retention is not set (24 hours).
+	vmSnapshotDefaultRetention = 86400
 )
 
 // VMService handles VM operations.
@@ -290,20 +296,74 @@ func (s *VMService) Clone(ctx context.Context, id int, opts *VMCloneOptions) err
 
 // VMSnapshotOptions contains options for taking a VM snapshot.
 type VMSnapshotOptions struct {
-	// Retention is the snapshot retention duration in seconds. Defaults to 86400 (24 hours).
+	// Name is the snapshot name. When empty, a name of the form
+	// snapshot-YYYYMMDD-HHMMSS (UTC) is generated.
+	Name string
+	// Retention is how long to keep the snapshot, in seconds.
+	// Zero or negative uses vmSnapshotDefaultRetention (24 hours). The
+	// duration is sent as an absolute expires timestamp. machine_snapshots
+	// ignores a retention field.
 	Retention int
-	// Quiesce indicates whether to quiesce the filesystem before snapshot (requires guest agent).
+	// Quiesce freezes guest filesystems while the snapshot is taken.
+	// It requires a running guest agent in the VM. When false, no quiesce
+	// request is sent and the snapshot is still created.
 	Quiesce bool
 }
 
-// Snapshot takes a snapshot of a VM.
-func (s *VMService) Snapshot(ctx context.Context, id int, opts *VMSnapshotOptions) error {
-	params := map[string]any{}
+// Snapshot creates a VM snapshot and returns it.
+//
+// id is the VM $key used by Get and the power methods. The row is inserted
+// with VMSnapshots.Create (POST /machine_snapshots) using the VM's machine
+// key, a name, and an expires timestamp of now + Retention. The
+// quiesce_snapshot VM action does not create that row.
+//
+// When Quiesce is true, the create request sets quiesce and the
+// quiesce_snapshot action is sent afterward so the guest agent can freeze
+// filesystems. The action is not sent when Quiesce is false, which is what
+// lets a VM without a guest agent still get a snapshot. The action requires
+// a guest agent. If the row is created but that action fails, Snapshot
+// returns the snapshot together with the error.
+func (s *VMService) Snapshot(ctx context.Context, id int, opts *VMSnapshotOptions) (*VMSnapshot, error) {
+	vm, err := s.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if vm.Machine <= 0 {
+		return nil, &ValidationError{Field: "machine", Message: fmt.Sprintf("VM %d has no machine key", id)}
+	}
+
+	retention := vmSnapshotDefaultRetention
+	name := ""
+	quiesce := false
 	if opts != nil {
 		if opts.Retention > 0 {
-			params["retention"] = opts.Retention
+			retention = opts.Retention
 		}
-		params["quiesce"] = opts.Quiesce
+		name = opts.Name
+		quiesce = opts.Quiesce
+	}
+	if name == "" {
+		name = "snapshot-" + time.Now().UTC().Format("20060102-150405")
+	}
+
+	expires := time.Now().Unix() + int64(retention)
+	req := &VMSnapshotCreateRequest{
+		Machine:     vm.Machine,
+		Name:        name,
+		ExpiresType: "date",
+		Expires:     &expires,
+	}
+	if quiesce {
+		q := true
+		req.Quiesce = &q
+	}
+
+	snap, err := s.client.VMSnapshots.Create(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("vergeos: failed to snapshot VM %d: %w", id, err)
+	}
+	if !quiesce {
+		return snap, nil
 	}
 
 	action := struct {
@@ -313,13 +373,12 @@ func (s *VMService) Snapshot(ctx context.Context, id int, opts *VMSnapshotOption
 	}{
 		VM:     id,
 		Action: vmActionSnapshot,
-		Params: params,
+		Params: map[string]any{"quiesce": true},
 	}
-
 	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
-		return fmt.Errorf("vergeos: failed to snapshot VM %d: %w", id, err)
+		return snap, fmt.Errorf("vergeos: snapshot %d created for VM %d but quiesce failed (guest agent required): %w", int(snap.Key), id, err)
 	}
-	return nil
+	return snap, nil
 }
 
 // VMMigrateOptions contains options for migrating a VM to another node.

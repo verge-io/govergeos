@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 )
 
 // ---------------------------------------------------------------------------
@@ -648,77 +649,235 @@ func TestVMService_Clone_ServerError(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestVMService_Snapshot(t *testing.T) {
+	const retention = 3600
+	var created map[string]any
+	var actionCalled bool
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 2, Name: "vm-beta", Machine: 99})
+		},
+		"POST /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
+			json.NewDecoder(r.Body).Decode(&created)
+			jsonResponse(w, 200, apiResponse{Key: float64(5)})
+		},
+		"GET /api/v4/machine_snapshots/5": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(5), Machine: FlexInt(99), Name: "pre-upgrade"})
+		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]any
-			json.NewDecoder(r.Body).Decode(&body)
-			if body["action"] != "quiesce_snapshot" {
-				t.Errorf("expected action 'quiesce_snapshot', got %v", body["action"])
-			}
-			if int(body["vm"].(float64)) != 2 {
-				t.Errorf("expected vm 2, got %v", body["vm"])
-			}
-			params := body["params"].(map[string]any)
-			if int(params["retention"].(float64)) != 3600 {
-				t.Errorf("expected retention 3600, got %v", params["retention"])
-			}
+			actionCalled = true
 			w.WriteHeader(200)
 		},
 	}))
 
-	err := client.VMs.Snapshot(context.Background(), 2, &VMSnapshotOptions{Retention: 3600})
+	before := time.Now().Unix()
+	snap, err := client.VMs.Snapshot(context.Background(), 2, &VMSnapshotOptions{
+		Name:      "pre-upgrade",
+		Retention: retention,
+	})
+	after := time.Now().Unix()
 	if err != nil {
 		t.Fatalf("Snapshot failed: %v", err)
+	}
+	if snap == nil || snap.Key.Int() != 5 {
+		t.Fatalf("expected snapshot key 5, got %#v", snap)
+	}
+	if snap.Name != "pre-upgrade" {
+		t.Errorf("expected name %q, got %q", "pre-upgrade", snap.Name)
+	}
+	if actionCalled {
+		t.Error("quiesce_snapshot action must not be sent when Quiesce is false")
+	}
+	if _, has := created["retention"]; has {
+		t.Error("machine_snapshots body must not include retention")
+	}
+	if created["machine"] != float64(99) {
+		t.Errorf("expected machine key 99, got %v", created["machine"])
+	}
+	if created["name"] != "pre-upgrade" {
+		t.Errorf("expected name pre-upgrade, got %v", created["name"])
+	}
+	if created["expires_type"] != "date" {
+		t.Errorf("expected expires_type date, got %v", created["expires_type"])
+	}
+	if _, has := created["quiesce"]; has {
+		t.Error("quiesce must be omitted when Quiesce is false")
+	}
+	expires, ok := created["expires"].(float64)
+	if !ok {
+		t.Fatalf("expected numeric expires, got %T", created["expires"])
+	}
+	minExpires := float64(before + retention)
+	maxExpires := float64(after + retention)
+	if expires < minExpires || expires > maxExpires {
+		t.Errorf("expires %v outside [%v, %v]", expires, minExpires, maxExpires)
 	}
 }
 
 func TestVMService_Snapshot_NilOpts(t *testing.T) {
+	var created map[string]any
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]any
-			json.NewDecoder(r.Body).Decode(&body)
-			if body["action"] != "quiesce_snapshot" {
-				t.Errorf("expected action 'quiesce_snapshot', got %v", body["action"])
-			}
-			w.WriteHeader(200)
+		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 2, Machine: 99})
+		},
+		"POST /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
+			json.NewDecoder(r.Body).Decode(&created)
+			jsonResponse(w, 200, apiResponse{Key: float64(6)})
+		},
+		"GET /api/v4/machine_snapshots/6": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(6), Machine: FlexInt(99), Name: "generated"})
 		},
 	}))
 
-	err := client.VMs.Snapshot(context.Background(), 2, nil)
+	before := time.Now().Unix()
+	snap, err := client.VMs.Snapshot(context.Background(), 2, nil)
+	after := time.Now().Unix()
 	if err != nil {
 		t.Fatalf("Snapshot with nil opts failed: %v", err)
+	}
+	if snap == nil || snap.Key.Int() != 6 {
+		t.Fatalf("expected snapshot key 6, got %#v", snap)
+	}
+	name, _ := created["name"].(string)
+	if len(name) < len("snapshot-") || name[:len("snapshot-")] != "snapshot-" {
+		t.Errorf("expected generated snapshot- name, got %q", name)
+	}
+	expires, ok := created["expires"].(float64)
+	if !ok {
+		t.Fatalf("expected numeric expires, got %T", created["expires"])
+	}
+	minExpires := float64(before + vmSnapshotDefaultRetention)
+	maxExpires := float64(after + vmSnapshotDefaultRetention)
+	if expires < minExpires || expires > maxExpires {
+		t.Errorf("default expires %v outside [%v, %v]", expires, minExpires, maxExpires)
 	}
 }
 
 func TestVMService_Snapshot_WithQuiesce(t *testing.T) {
+	var created map[string]any
+	var action map[string]any
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 2, Machine: 99})
+		},
+		"POST /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
+			json.NewDecoder(r.Body).Decode(&created)
+			jsonResponse(w, 200, apiResponse{Key: float64(7)})
+		},
+		"GET /api/v4/machine_snapshots/7": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(7), Machine: FlexInt(99), Name: "q"})
+		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body map[string]any
-			json.NewDecoder(r.Body).Decode(&body)
-			params := body["params"].(map[string]any)
-			if params["quiesce"] != true {
-				t.Errorf("expected quiesce true, got %v", params["quiesce"])
-			}
+			json.NewDecoder(r.Body).Decode(&action)
 			w.WriteHeader(200)
 		},
 	}))
 
-	err := client.VMs.Snapshot(context.Background(), 2, &VMSnapshotOptions{Quiesce: true})
+	snap, err := client.VMs.Snapshot(context.Background(), 2, &VMSnapshotOptions{Name: "q", Quiesce: true})
 	if err != nil {
 		t.Fatalf("Snapshot with quiesce failed: %v", err)
+	}
+	if snap == nil || snap.Key.Int() != 7 {
+		t.Fatalf("expected snapshot key 7, got %#v", snap)
+	}
+	if created["quiesce"] != true {
+		t.Errorf("expected quiesce true on machine_snapshots, got %v", created["quiesce"])
+	}
+	if action == nil {
+		t.Fatal("expected quiesce_snapshot action when Quiesce is true")
+	}
+	if action["action"] != vmActionSnapshot {
+		t.Errorf("expected action %q, got %v", vmActionSnapshot, action["action"])
+	}
+	if action["vm"] != float64(2) {
+		t.Errorf("expected vm 2, got %v", action["vm"])
+	}
+	params, _ := action["params"].(map[string]any)
+	if params["quiesce"] != true {
+		t.Errorf("expected quiesce true on action, got %v", params["quiesce"])
+	}
+}
+
+func TestVMService_Snapshot_QuiesceActionError(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 2, Machine: 99})
+		},
+		"POST /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, apiResponse{Key: float64(8)})
+		},
+		"GET /api/v4/machine_snapshots/8": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(8), Machine: FlexInt(99), Name: "q"})
+		},
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 500, map[string]string{"err": "guest agent unavailable"})
+		},
+	}))
+
+	snap, err := client.VMs.Snapshot(context.Background(), 2, &VMSnapshotOptions{Quiesce: true})
+	if err == nil {
+		t.Fatal("expected error when quiesce action fails")
+	}
+	if snap == nil || snap.Key.Int() != 8 {
+		t.Fatalf("expected created snapshot alongside quiesce error, got %#v", snap)
 	}
 }
 
 func TestVMService_Snapshot_ServerError(t *testing.T) {
+	var actionCalled bool
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 2, Machine: 99})
+		},
+		"POST /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 500, map[string]string{"err": "internal error"})
+		},
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			actionCalled = true
+			w.WriteHeader(200)
 		},
 	}))
 
-	err := client.VMs.Snapshot(context.Background(), 2, nil)
+	snap, err := client.VMs.Snapshot(context.Background(), 2, nil)
 	if err == nil {
 		t.Fatal("expected error for server error")
+	}
+	if snap != nil {
+		t.Errorf("expected nil snapshot on create failure, got %#v", snap)
+	}
+	if actionCalled {
+		t.Error("quiesce action must not be sent when snapshot creation fails")
+	}
+}
+
+func TestVMService_Snapshot_VMNotFound(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/999": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 404, map[string]string{"err": "not found"})
+		},
+	}))
+
+	_, err := client.VMs.Snapshot(context.Background(), 999, nil)
+	if err == nil {
+		t.Fatal("expected error for missing VM")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	}
+}
+
+func TestVMService_Snapshot_MissingMachine(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 2, Name: "vm-beta"})
+		},
+	}))
+
+	_, err := client.VMs.Snapshot(context.Background(), 2, nil)
+	if err == nil {
+		t.Fatal("expected error when VM has no machine key")
+	}
+	if !IsValidationError(err) {
+		t.Errorf("expected ValidationError, got %T: %v", err, err)
 	}
 }
 

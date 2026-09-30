@@ -22,7 +22,7 @@ type VMServiceInterface interface {
 	GuestReboot(ctx context.Context, id int) error
 	GuestShutdown(ctx context.Context, id int) error
 	Clone(ctx context.Context, id int, opts *VMCloneOptions) error
-	Snapshot(ctx context.Context, id int, opts *VMSnapshotOptions) error
+	Snapshot(ctx context.Context, id int, opts *VMSnapshotOptions) (*VMSnapshot, error)
 	Migrate(ctx context.Context, id int, opts *VMMigrateOptions) error
 	GetConsoleURL(ctx context.Context, id int) (string, error)
 	GetGuestAgentInfo(ctx context.Context, id int) (*GuestInfo, error)
