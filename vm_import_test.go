@@ -55,10 +55,7 @@ func TestVMImportServiceListGetAndName(t *testing.T) {
 				jsonResponse(w, 200, []VMImport{{Key: sampleImportKey, ID: sampleImportKey, Name: "imported-vm", Status: VMImportStatusComplete}})
 			case "name eq 'imported-vm'":
 				jsonResponse(w, 200, []VMImport{{Key: sampleImportKey, ID: sampleImportKey, Name: "imported-vm"}})
-			case "name eq 'O'\\''Brien'":
-				if !strings.Contains(r.URL.RawQuery, `O%5C%27Brien`) && !strings.Contains(r.URL.RawQuery, `O\\'Brien`) && !strings.Contains(r.URL.Query().Get("filter"), `O\'Brien`) {
-					t.Errorf("filter = %q", r.URL.Query().Get("filter"))
-				}
+			case "name eq 'O\\'Brien'":
 				jsonResponse(w, 200, []VMImport{})
 			case "name eq 'dup'":
 				jsonResponse(w, 200, []VMImport{

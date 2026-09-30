@@ -108,7 +108,7 @@ Export writes a VM onto a NAS volume. `Run` creates the volume's export configur
 volumeKey := "c3437883534918dcf2abbb3e9b9622b865226c68"
 exp, err := client.VMExports.Run(ctx, &vergeos.VMExportRunRequest{
     Volume: volumeKey,
-    VMs:    []int{vmID},
+    VMs:    vmIDs,
     Name:   "nightly",
 })
 exp, err = client.VMExports.Wait(ctx, exp.Key.Int(), nil)
