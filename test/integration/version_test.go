@@ -12,7 +12,7 @@ import (
 )
 
 // TestVersionEnforcement tests the mandatory version and credential checks in NewClient (ADR-016).
-// This test verifies that the SDK validates the server is running VergeOS 26.x and accepts the supplied credentials.
+// This test verifies that the SDK accepts VergeOS 26 or later and accepts the supplied credentials.
 //
 // Run with:
 //
@@ -28,7 +28,7 @@ func TestVersionEnforcement(t *testing.T) {
 			t.Skip("Skipping integration test: VERGEOS_HOST, VERGEOS_USERNAME, and VERGEOS_PASSWORD must be set")
 		}
 
-		// NewClient should succeed because the server is running v26
+		// NewClient should succeed because the server is running v26 or later
 		client, err := vergeos.NewClient(
 			vergeos.WithBaseURL(host),
 			vergeos.WithCredentials(username, password),
@@ -37,7 +37,7 @@ func TestVersionEnforcement(t *testing.T) {
 		)
 		if err != nil {
 			if vergeos.IsUnsupportedVersionError(err) {
-				t.Fatalf("NewClient returned UnsupportedVersionError - server is not v26: %v", err)
+				t.Fatalf("NewClient returned UnsupportedVersionError - server is older than the minimum: %v", err)
 			}
 			t.Fatalf("NewClient failed with unexpected error: %v", err)
 		}
@@ -46,7 +46,7 @@ func TestVersionEnforcement(t *testing.T) {
 			t.Fatal("NewClient returned nil client without error")
 		}
 
-		t.Log("NewClient succeeded - server version check passed (v26 confirmed)")
+		t.Log("NewClient succeeded - server version check passed")
 
 		// Verify client is functional by making a simple API call
 		version, err := client.System.GetVersion(context.Background())
@@ -88,7 +88,7 @@ func TestVersionEnforcement(t *testing.T) {
 			Required:      26,
 		}
 
-		expected := "unsupported server version 4.2.0: this SDK requires VergeOS 26.x"
+		expected := "unsupported server version 4.2.0: this SDK requires VergeOS 26.0 or later"
 		if err.Error() != expected {
 			t.Errorf("UnsupportedVersionError.Error() = %q, want %q", err.Error(), expected)
 		}

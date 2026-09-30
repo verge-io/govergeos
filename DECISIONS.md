@@ -454,21 +454,30 @@ func (s *VNetRuleService) setEnabled(ctx context.Context, id int, enabled bool, 
 
 **Date:** 2026-01-29
 
+**Revised:** 2026-09-30
+
 **Status:** Accepted
 
 **Context:** The VergeOS API uses `/api/v4/` for all endpoints regardless of the actual software version. This means a server running VergeOS 4.x and one running 26.x both expose the same `/api/v4/` path, making it impossible to detect version mismatches from API paths alone.
 
-The SDK targets VergeOS 26 and relies on features, fields, and behaviors specific to that version. Using the SDK against an older VergeOS installation may result in:
+The SDK targets VergeOS 26 and later. It relies on features, fields, and behaviors introduced in 26. Using the SDK against an older VergeOS installation may result in:
 - Missing fields in API responses
 - Endpoints that don't exist
 - Different behavior for existing endpoints
 - Confusing partial failures that are hard to diagnose
 
+VergeOS major versions are year-based. Requiring an exact match on major 26 would make `NewClient` fail for every consumer the day 27 ships, even when the API those consumers use did not change. Individual features that appeared after 26.0 gate themselves with `isVersionAtLeast` against the version recorded at startup (for example, the drive field added in 26.1.5).
+
 `/version.json` answers without credentials. A version check alone lets `NewClient()` succeed with a wrong password, and the `AuthError` (`Login required`) appears only on the first real API call. Terraform then reports a successful `configure` and fails halfway through a plan. A long-running exporter starts cleanly and fails every scrape.
 
-**Decision:** Perform a blocking version check in `NewClient()` that fetches `/version.json` and validates the server is running VergeOS 26.x. If the major version is not 26, client creation fails immediately with an `UnsupportedVersionError`.
+**Decision:** Perform a blocking version check in `NewClient()` that fetches `/version.json` and accepts VergeOS 26 and every later major. A major older than 26 fails client creation with an `UnsupportedVersionError`. The comparison is a minimum, not an equality check.
 
-Credentials are validated too. After the version check, `NewClient()` makes one cheap authenticated request: `GET /api/v4/clusters?limit=1&fields=$key`. Clusters is a small table present on every system. If that request fails authentication, `NewClient()` returns the `AuthError`.
+Two options adjust that floor:
+
+- `WithMinimumVersion(major)` replaces the default floor of 26. A caller can raise it when their application needs a newer major, or lower it to keep talking to an older server.
+- `WithSkipVersionCheck()` still reads and stores the server version, so feature gates keep working, but does not reject the major. The credential check still runs. This is the escape hatch for a deployment that must keep running if a later SDK release narrows the accepted range.
+
+Credentials are validated too. After the version check, `NewClient()` makes one cheap authenticated request: `GET /api/v4/clusters?limit=1&fields=$key`. Clusters is a small table present on every system. If that request fails authentication, `NewClient()` returns the `AuthError`. The credential check is skipped when the version check already failed.
 
 The credential check is exactly one attempt and is never retried. VergeOS locks an account after a configurable number of failed logins (five on the system this was measured against). Retrying a bad password locks the account for every client that shares it, including its API keys. The version request does not send an `Authorization` header, so a bad password is presented only on that one authenticated read.
 
@@ -479,11 +488,18 @@ client, err := vergeos.NewClient(
 )
 if err != nil {
     // Unsupported version:
-    // "unsupported server version 4.2.0: this SDK requires VergeOS 26.x"
+    // "unsupported server version 4.2.0: this SDK requires VergeOS 26.0 or later"
     // Wrong password:
     // "vergeos: authentication failed: Login required"
     log.Fatal(err)
 }
+
+// Keep running if a future release rejects this server's major.
+client, err = vergeos.NewClient(
+    vergeos.WithBaseURL("https://host"),
+    vergeos.WithCredentials("user", "pass"),
+    vergeos.WithSkipVersionCheck(),
+)
 ```
 
 **Alternatives Considered:**
@@ -494,10 +510,14 @@ if err != nil {
 4. **Warning instead of error** - Rejected because warnings are easily ignored and don't prevent the underlying compatibility issues
 5. **Retry the credential check** - Rejected because each failed login counts toward account lockout
 6. **Authenticate by calling `/version.json`** - Rejected because that endpoint does not require credentials
+7. **Exact major match (26.x only)** - Rejected because a year-based major would break every consumer on the day the next major ships, including when the API did not change
+8. **Cap the newest accepted major** - Rejected because it recreates the same outage for the next major. New behavior is gated per feature with `isVersionAtLeast`
 
 **Rationale:**
-- **Fail fast** - Users get immediate, clear feedback if the server version is incompatible or the credentials are rejected
-- **No ambiguity** - The SDK either works fully or doesn't work at all; no partial compatibility
+- **Fail fast on known-old servers** - Users get immediate, clear feedback if the server is older than 26 or the credentials are rejected
+- **Later majors keep working** - A new major does not require a govergeos release, or a release of every consumer, before `NewClient` succeeds
+- **Feature gates stay precise** - Code that depends on a specific minor still checks `serverVersion` with `isVersionAtLeast`
+- **Escape hatch** - `WithSkipVersionCheck` and `WithMinimumVersion` let a caller proceed when the default floor does not match their server
 - **Simple implementation** - Two checks at startup, no caching or repeated checks needed
 - **Clear error message** - Users know exactly what's wrong and what version is required
 - **Choke point** - `NewClient()` is the natural place to validate prerequisites before any API calls
@@ -505,9 +525,10 @@ if err != nil {
 
 **Consequences:**
 - `NewClient()` requests `/version.json` without credentials, then one authenticated `clusters` row, before returning
-- Client creation fails if the server is not running VergeOS 26.x
+- Client creation fails if the server major is older than 26, unless `WithMinimumVersion` or `WithSkipVersionCheck` says otherwise
+- Client creation succeeds on VergeOS 27 and later without an SDK release
 - Client creation fails with an `AuthError` when the credentials are rejected
-- Users connecting to older VergeOS installations must use an older SDK version
+- Users connecting to older VergeOS installations must use an older SDK version, lower the floor with `WithMinimumVersion`, or skip the check
 - New `UnsupportedVersionError` type and `IsUnsupportedVersionError()` helper added
 - Adds `getAbsolute()` internal method for fetching non-API paths
 - A principal that cannot read `clusters` cannot construct a client, because that read is the credential check

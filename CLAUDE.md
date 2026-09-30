@@ -45,10 +45,10 @@ Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-018). The critical one
 
 - **FlexInt** (`types.go`): Custom type handling VergeOS API returning IDs as int or string. Exception: Volume service uses `string` keys (SHA1 hashes).
 - **Pointer fields** in Update requests: `*int`, `*bool` etc. distinguish "not provided" (nil) from "set to zero value".
-- **Functional options**: `WithBaseURL()`, `WithCredentials()`, `WithAPIKey()`, `WithEnvConfig()`, etc.
+- **Functional options**: `WithBaseURL()`, `WithCredentials()`, `WithAPIKey()`, `WithEnvConfig()`, `WithMinimumVersion()`, `WithSkipVersionCheck()`, etc.
 - **Context-first**: All API methods take `context.Context` as first parameter.
 - **Actions return error only**: Clone, snapshot, power operations don't return the new resource.
-- **Mandatory version and credential check**: `NewClient()` validates the server version and the supplied credentials during initialization. The credential check is a single request and is not retried.
+- **Mandatory version and credential check**: `NewClient()` accepts VergeOS 26 and later (older majors are rejected) and validates the supplied credentials during initialization. The credential check is a single request and is not retried. `WithMinimumVersion` changes the floor. `WithSkipVersionCheck` records the server version but does not reject it. Features that need a specific minor gate on `serverVersion` with `isVersionAtLeast`.
 - **WithEnvConfig() is opt-in**: Environment variables are not auto-read.
 
 ### Adding a New Service

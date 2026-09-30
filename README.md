@@ -52,6 +52,8 @@ client, err := vergeos.NewClient(
 )
 ```
 
+`NewClient` accepts VergeOS 26 and every later major, and rejects anything older. `WithMinimumVersion` changes that floor. `WithSkipVersionCheck` still reads the server version (so per-feature gates keep working) and still checks credentials, but does not reject the major.
+
 ### Environment Configuration
 
 Configure the client from environment variables using `WithEnvConfig()`:
