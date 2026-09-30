@@ -9,13 +9,12 @@ import (
 
 const (
 	// Power action constants
-	vmActionPowerOn     = "poweron"
-	vmActionPowerOff    = "poweroff"
-	vmActionReset       = "reset"
-	vmActionKill        = "kill"
-	vmActionClone       = "clone"
-	vmActionSnapshot    = "quiesce_snapshot"
-	vmActionGuestReboot = "guestreboot"
+	vmActionPowerOn  = "poweron"
+	vmActionPowerOff = "poweroff"
+	vmActionReset    = "reset"
+	vmActionKill     = "kill"
+	vmActionClone    = "clone"
+	vmActionSnapshot = "quiesce_snapshot"
 
 	// Polling configuration
 	powerStateMaxRetries   = 30
@@ -226,12 +225,13 @@ func (s *VMService) Reset(ctx context.Context, id int) error {
 	return nil
 }
 
-// GuestReboot sends a reboot request to the guest OS via ACPI.
+// GuestReboot asks the guest OS to reboot cleanly.
+// VergeOS accepts this as a reset action with params.graceful set.
 func (s *VMService) GuestReboot(ctx context.Context, id int) error {
 	action := vmAction{
 		VM:     id,
-		Action: vmActionGuestReboot,
-		Params: vmActionParams{},
+		Action: vmActionReset,
+		Params: vmActionParams{Graceful: true},
 	}
 
 	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
@@ -273,8 +273,8 @@ func (s *VMService) Clone(ctx context.Context, id int, opts *VMCloneOptions) err
 	}
 
 	action := struct {
-		VM     int                    `json:"vm"`
-		Action string                 `json:"action"`
+		VM     int            `json:"vm"`
+		Action string         `json:"action"`
 		Params map[string]any `json:"params"`
 	}{
 		VM:     id,
@@ -307,8 +307,8 @@ func (s *VMService) Snapshot(ctx context.Context, id int, opts *VMSnapshotOption
 	}
 
 	action := struct {
-		VM     int                    `json:"vm"`
-		Action string                 `json:"action"`
+		VM     int            `json:"vm"`
+		Action string         `json:"action"`
 		Params map[string]any `json:"params"`
 	}{
 		VM:     id,
@@ -352,8 +352,8 @@ func (s *VMService) Migrate(ctx context.Context, id int, opts *VMMigrateOptions)
 	}
 
 	action := struct {
-		VM     int                    `json:"vm"`
-		Action string                 `json:"action"`
+		VM     int            `json:"vm"`
+		Action string         `json:"action"`
 		Params map[string]any `json:"params"`
 	}{
 		VM:     id,

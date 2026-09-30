@@ -112,22 +112,16 @@ func (s *WebhookURLService) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-// webhookURLAction represents a webhook URL action request.
-type webhookURLAction struct {
-	WebhookURL int    `json:"webhook_url"`
-	Action     string `json:"action"`
-	Message    string `json:"message,omitempty"`
-}
-
-// Send sends a test message to the webhook URL.
+// Send queues a message for delivery to the webhook URL.
 func (s *WebhookURLService) Send(ctx context.Context, id int, message string) error {
-	action := webhookURLAction{
-		WebhookURL: id,
-		Action:     "send",
-		Message:    message,
+	body := struct {
+		Message string `json:"message"`
+	}{
+		Message: message,
 	}
 
-	if err := s.client.post(ctx, "/webhook_url_actions", action, nil); err != nil {
+	endpoint := fmt.Sprintf("/webhook_urls/%d/send", id)
+	if err := s.client.post(ctx, endpoint, body, nil); err != nil {
 		return fmt.Errorf("vergeos: failed to send test webhook %d: %w", id, err)
 	}
 	return nil

@@ -453,6 +453,11 @@ func TestVMService_Reset(t *testing.T) {
 			if int(body["vm"].(float64)) != 1 {
 				t.Errorf("expected vm 1, got %v", body["vm"])
 			}
+			if params, ok := body["params"].(map[string]any); ok {
+				if _, set := params["graceful"]; set {
+					t.Errorf("hard reset must not set graceful, got %v", params)
+				}
+			}
 			w.WriteHeader(200)
 		},
 	}))
@@ -485,11 +490,18 @@ func TestVMService_GuestReboot(t *testing.T) {
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			if body["action"] != "guestreboot" {
-				t.Errorf("expected action 'guestreboot', got %v", body["action"])
+			if body["action"] != "reset" {
+				t.Errorf("expected action 'reset', got %v", body["action"])
 			}
 			if int(body["vm"].(float64)) != 5 {
 				t.Errorf("expected vm 5, got %v", body["vm"])
+			}
+			params, ok := body["params"].(map[string]any)
+			if !ok {
+				t.Fatal("expected params in body")
+			}
+			if params["graceful"] != true {
+				t.Errorf("expected params.graceful true, got %v", params["graceful"])
 			}
 			w.WriteHeader(200)
 		},

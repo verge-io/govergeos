@@ -384,8 +384,9 @@ type vmAction struct {
 
 // vmActionParams contains parameters for VM actions.
 type vmActionParams struct {
-	Device string `json:"device,omitempty"`
-	Unplug bool   `json:"unplug,omitempty"`
+	Device   string `json:"device,omitempty"`
+	Unplug   bool   `json:"unplug,omitempty"`
+	Graceful bool   `json:"graceful,omitempty"`
 }
 
 // vmDashboardResponse is the internal response structure for the dashboard

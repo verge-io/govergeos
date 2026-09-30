@@ -906,8 +906,8 @@ func TestSiteSyncOutgoingService_Throttle(t *testing.T) {
 		"POST /api/v4/site_syncs_outgoing_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			if body["action"] != "throttle" {
-				t.Errorf("expected action 'throttle', got %v", body["action"])
+			if body["action"] != "throttle_sync" {
+				t.Errorf("expected action 'throttle_sync', got %v", body["action"])
 			}
 			params, ok := body["params"].(map[string]any)
 			if !ok {
@@ -931,8 +931,15 @@ func TestSiteSyncOutgoingService_DisableThrottle(t *testing.T) {
 		"POST /api/v4/site_syncs_outgoing_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			if body["action"] != "throttle_disable" {
-				t.Errorf("expected action 'throttle_disable', got %v", body["action"])
+			if body["action"] != "throttle_sync" {
+				t.Errorf("expected action 'throttle_sync', got %v", body["action"])
+			}
+			params, ok := body["params"].(map[string]any)
+			if !ok {
+				t.Fatal("expected params in body")
+			}
+			if params["throttle"] != float64(0) {
+				t.Errorf("expected throttle 0, got %v", params["throttle"])
 			}
 			w.WriteHeader(200)
 		},

@@ -116,3 +116,12 @@ func TestNodes(t *testing.T) {
 		}
 	})
 }
+
+// TestNodeMaintenanceManual documents the live check for node maintenance.
+// EnableMaintenance and DisableMaintenance migrate workloads, and ClearPStore
+// submits a destructive clear-pstore query, so this suite does not call them.
+// On a lab node, call Nodes.EnableMaintenance, Nodes.DisableMaintenance, and
+// Nodes.ClearPStore directly.
+func TestNodeMaintenanceManual(t *testing.T) {
+	t.Skip("manual check: node maintenance migrates workloads and clear-pstore is destructive")
+}

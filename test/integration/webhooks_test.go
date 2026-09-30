@@ -194,6 +194,12 @@ func TestWebhookURLsCRUD(t *testing.T) {
 		t.Errorf("Expected ID %d, got %d", webhookID, byName.Key)
 	}
 
+	// Send queues a message; delivery is asynchronous.
+	t.Logf("Sending test message to webhook URL: %d", webhookID)
+	if err := client.WebhookURLs.Send(ctx, webhookID, `{"text":"sdk test"}`); err != nil {
+		t.Fatalf("Failed to send webhook test message: %v", err)
+	}
+
 	// Update
 	newTimeout := 15
 	t.Logf("Updating webhook URL timeout to: %d", newTimeout)

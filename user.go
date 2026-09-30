@@ -6,19 +6,6 @@ import (
 	"net/url"
 )
 
-const (
-	// User action constants
-	userActionEnable  = "enable"
-	userActionDisable = "disable"
-)
-
-// userAction represents a user action request.
-type userAction struct {
-	User   int         `json:"user"`
-	Action string      `json:"action"`
-	Params any `json:"params"`
-}
-
 // UserService handles user operations.
 type UserService struct {
 	client *Client
@@ -134,32 +121,26 @@ func (s *UserService) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-// Enable enables a user account.
+// Enable enables a user account by setting enabled on the user record.
 func (s *UserService) Enable(ctx context.Context, id int) error {
-	action := userAction{
-		User:   id,
-		Action: userActionEnable,
-		Params: struct{}{},
-	}
-
-	if err := s.client.post(ctx, "/user_actions", action, nil); err != nil {
-		return fmt.Errorf("vergeos: failed to enable user %d: %w", id, err)
-	}
-
-	return nil
+	return s.setEnabled(ctx, id, true)
 }
 
-// Disable disables a user account.
+// Disable disables a user account by setting enabled on the user record.
 func (s *UserService) Disable(ctx context.Context, id int) error {
-	action := userAction{
-		User:   id,
-		Action: userActionDisable,
-		Params: struct{}{},
+	return s.setEnabled(ctx, id, false)
+}
+
+func (s *UserService) setEnabled(ctx context.Context, id int, enabled bool) error {
+	verb := "enable"
+	if !enabled {
+		verb = "disable"
 	}
 
-	if err := s.client.post(ctx, "/user_actions", action, nil); err != nil {
-		return fmt.Errorf("vergeos: failed to disable user %d: %w", id, err)
+	endpoint := fmt.Sprintf("/users/%d", id)
+	req := &UserUpdateRequest{Enabled: &enabled}
+	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to %s user %d: %w", verb, id, err)
 	}
-
 	return nil
 }
