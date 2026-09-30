@@ -71,20 +71,21 @@ client, err := vergeos.NewClient(
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `VERGEOS_HOST` | Yes | - | Base URL (e.g., `https://vergeos.example.com`) |
+| `VERGEOS_HOST` | Yes | - | Host or base URL. A value with no scheme is treated as `https://`. `http` and `https` are accepted |
 | `VERGEOS_USERNAME` | No* | - | Username for basic auth |
 | `VERGEOS_PASSWORD` | No* | - | Password for basic auth |
-| `VERGEOS_API_KEY` | No* | - | API key for bearer auth |
-| `VERGEOS_VERIFY_SSL` | No | `true` | Verify TLS certificates (`true`/`false`) |
+| `VERGEOS_API_KEY` | No* | - | API key for bearer auth. Used when set, even if username and password are also set |
+| `VERGEOS_VERIFY_SSL` | No | `true` | Verify TLS certificates (`true`/`false`). `false` and `0` skip verification |
+| `VERGEOS_INSECURE` | No | `false` | Skip TLS verification when `true` (also `yes`, `on`, or `1`). Same as `VERGEOS_VERIFY_SSL=false`. An error if the two disagree |
 | `VERGEOS_TIMEOUT` | No | `30` | Request timeout in seconds |
 
-*One of (USERNAME+PASSWORD) or API_KEY is required.
+*One of (USERNAME+PASSWORD) or API_KEY is required. When both are set, the API key is used.
 
 ```bash
-export VERGEOS_HOST=https://vergeos.example.com
+export VERGEOS_HOST=vergeos.example.com   # https:// is assumed
 export VERGEOS_USERNAME=admin
 export VERGEOS_PASSWORD=secret
-export VERGEOS_VERIFY_SSL=false  # For self-signed certs
+export VERGEOS_INSECURE=true              # same as VERGEOS_VERIFY_SSL=false
 ```
 
 ### Virtual Machine Operations
@@ -329,8 +330,8 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 |--------|-------------|---------|
 | `WithEnvConfig()` | Configure from environment variables | - |
 | `WithBaseURL(url)` | VergeOS API base URL | Required |
-| `WithCredentials(user, pass)` | Username and password authentication | - |
-| `WithAPIKey(token)` | API key authentication | - |
+| `WithCredentials(user, pass)` | Username and password authentication. Ignored when an API key is also set | - |
+| `WithAPIKey(token)` | API key authentication. Takes precedence over username and password | - |
 | `WithInsecureTLS(bool)` | Skip TLS certificate verification | `false` |
 | `WithTimeout(duration)` | HTTP request timeout, including retries | `30s` |
 | `WithPowerWait(timeout, interval)` | Default VM power-wait budget and poll interval (`PowerOn`, `PowerOff`, `Kill`) | `150s`, every `5s` |
@@ -349,7 +350,7 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 The library supports HTTP Basic Authentication and API key authentication:
 
 - **Basic Auth**: User must have list and read permissions; MFA must be disabled
-- **API Keys**: Created via `UserAPIKeys` service; token shown only on creation
+- **API Keys**: Created via `UserAPIKeys` service; token shown only on creation. When an API key and username/password are both configured, the API key is used
 
 ## Query Options
 

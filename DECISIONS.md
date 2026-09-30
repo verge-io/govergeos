@@ -584,14 +584,17 @@ client, err := vergeos.NewClient(
 **Environment Variables Supported:**
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `VERGEOS_HOST` | Yes | - | Base URL |
+| `VERGEOS_HOST` | Yes | - | Host or base URL. No scheme means `https://` |
 | `VERGEOS_USERNAME` | No* | - | Basic auth username |
 | `VERGEOS_PASSWORD` | No* | - | Basic auth password |
-| `VERGEOS_API_KEY` | No* | - | Bearer token auth |
+| `VERGEOS_API_KEY` | No* | - | Bearer token auth. Wins when username and password are also set |
 | `VERGEOS_VERIFY_SSL` | No | `true` | TLS certificate verification |
+| `VERGEOS_INSECURE` | No | `false` | `true` skips TLS verification, same as `VERGEOS_VERIFY_SSL=false`. An error if they disagree |
 | `VERGEOS_TIMEOUT` | No | `30` | Request timeout (seconds) |
 
-*One of (USERNAME+PASSWORD) or API_KEY required.
+*One of (USERNAME+PASSWORD) or API_KEY required. When both are set, the API key is used, matching `WithAPIKey` together with `WithCredentials`.
+
+**Amendment:** `VERGEOS_HOST` may be a bare host or IP. A value with no scheme is read as `https://`; a scheme other than `http` or `https` is rejected and the error names `VERGEOS_HOST`. `VERGEOS_INSECURE` is accepted so an Ansible env file can drive the client. `true` (also `yes`, `on`, or `1`) skips certificate verification. If `VERGEOS_INSECURE` and `VERGEOS_VERIFY_SSL` are both set and disagree, `WithEnvConfig` returns an error.
 
 **Consequences:**
 - New `WithEnvConfig()` option function added to `client.go`

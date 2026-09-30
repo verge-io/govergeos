@@ -37,16 +37,18 @@
 //	client, err := vergeos.NewClient(vergeos.WithEnvConfig())
 //
 // Environment variables:
-//   - VERGEOS_HOST: Base URL (required)
+//   - VERGEOS_HOST: Host or base URL (required). A host with no scheme is treated as https.
 //   - VERGEOS_USERNAME + VERGEOS_PASSWORD: Basic authentication
-//   - VERGEOS_API_KEY: Bearer token authentication
+//   - VERGEOS_API_KEY: Bearer token authentication. Used when set, even if username and password are also set.
 //   - VERGEOS_VERIFY_SSL: TLS verification, "true" or "false" (default: "true")
+//   - VERGEOS_INSECURE: Skip TLS verification when "true". Same as VERGEOS_VERIFY_SSL=false. An error if the two disagree.
 //   - VERGEOS_TIMEOUT: Request timeout in seconds (default: "30")
 //
 // # Authentication
 //
 // The library supports HTTP Basic Authentication and API key authentication.
-// For basic auth, MFA must be disabled for the user account.
+// When both are configured, the API key is used. For basic auth, MFA must be
+// disabled for the user account.
 //
 // # Query Options
 //

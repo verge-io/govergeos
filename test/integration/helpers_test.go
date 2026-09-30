@@ -26,17 +26,18 @@ var (
 // The client is created once and reused across all tests to reduce connection overhead.
 //
 // Required environment variables:
-//   - VERGEOS_HOST: Base URL for the VergeOS API
+//   - VERGEOS_HOST: Host or base URL. A host with no scheme is treated as https.
 //   - VERGEOS_USERNAME + VERGEOS_PASSWORD: Basic authentication
 //     OR
-//   - VERGEOS_API_KEY: Bearer token authentication
+//   - VERGEOS_API_KEY: Bearer token authentication. Used when both are set.
 //
 // Optional environment variables:
 //   - VERGEOS_VERIFY_SSL: Verify TLS certificates (default: "true")
+//   - VERGEOS_INSECURE: Skip TLS verification when "true" (same as VERGEOS_VERIFY_SSL=false)
 //   - VERGEOS_TIMEOUT: Request timeout in seconds (default: "30")
 //
-// For integration tests, VERGEOS_VERIFY_SSL defaults to "false" if not set,
-// since most test environments use self-signed certificates.
+// For integration tests, VERGEOS_VERIFY_SSL defaults to "false" if neither
+// TLS variable is set, since most test environments use self-signed certificates.
 func setupTestClient(t *testing.T) *vergeos.Client {
 	t.Helper()
 
@@ -46,8 +47,9 @@ func setupTestClient(t *testing.T) *vergeos.Client {
 	}
 
 	// Default VERGEOS_VERIFY_SSL to false for integration tests
-	// (most test environments use self-signed certs)
-	if os.Getenv("VERGEOS_VERIFY_SSL") == "" {
+	// (most test environments use self-signed certs). Leave it unset when
+	// VERGEOS_INSECURE is already set so the two variables cannot contradict.
+	if os.Getenv("VERGEOS_VERIFY_SSL") == "" && os.Getenv("VERGEOS_INSECURE") == "" {
 		os.Setenv("VERGEOS_VERIFY_SSL", "false")
 	}
 

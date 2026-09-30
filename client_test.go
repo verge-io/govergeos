@@ -24,6 +24,7 @@ func clearEnvVars() {
 	_ = os.Unsetenv("VERGEOS_PASSWORD")
 	_ = os.Unsetenv("VERGEOS_API_KEY")
 	_ = os.Unsetenv("VERGEOS_VERIFY_SSL")
+	_ = os.Unsetenv("VERGEOS_INSECURE")
 	_ = os.Unsetenv("VERGEOS_TIMEOUT")
 }
 
@@ -83,15 +84,16 @@ func TestWithEnvConfigAPIKey(t *testing.T) {
 	}
 }
 
-// TestWithEnvConfigBasicAuthTakesPrecedence tests that username/password is preferred over API key
-func TestWithEnvConfigBasicAuthTakesPrecedence(t *testing.T) {
+// TestWithEnvConfigAPIKeyTakesPrecedence tests that an API key is used when
+// username and password are also set.
+func TestWithEnvConfigAPIKeyTakesPrecedence(t *testing.T) {
 	clearEnvVars()
 	defer clearEnvVars()
 
 	_ = os.Setenv("VERGEOS_HOST", "https://example.com")
 	_ = os.Setenv("VERGEOS_USERNAME", "testuser")
 	_ = os.Setenv("VERGEOS_PASSWORD", "testpass")
-	_ = os.Setenv("VERGEOS_API_KEY", "should-not-use-this")
+	_ = os.Setenv("VERGEOS_API_KEY", "preferred-key")
 
 	c := &Client{
 		httpClient: &http.Client{Timeout: defaultTimeout},
@@ -102,11 +104,126 @@ func TestWithEnvConfigBasicAuthTakesPrecedence(t *testing.T) {
 		t.Fatalf("WithEnvConfig() returned error: %v", err)
 	}
 
-	if c.username != "testuser" || c.password != "testpass" {
-		t.Errorf("expected username/password to be set")
+	if c.apiKey != "preferred-key" {
+		t.Errorf("apiKey = %q, want %q", c.apiKey, "preferred-key")
 	}
-	if c.apiKey != "" {
-		t.Errorf("apiKey = %q, expected empty when username/password provided", c.apiKey)
+	if c.username != "" || c.password != "" {
+		t.Errorf("username/password = %q/%q, want empty when an API key is set", c.username, c.password)
+	}
+}
+
+// TestWithEnvConfigCredentialCombinations covers each way the auth
+// environment variables can be combined.
+func TestWithEnvConfigCredentialCombinations(t *testing.T) {
+	tests := []struct {
+		name     string
+		username string
+		password string
+		apiKey   string
+		wantUser string
+		wantPass string
+		wantKey  string
+	}{
+		{name: "username and password", username: "user", password: "pass", wantUser: "user", wantPass: "pass"},
+		{name: "api key only", apiKey: "key", wantKey: "key"},
+		{name: "both, api key wins", username: "user", password: "pass", apiKey: "key", wantKey: "key"},
+		{name: "api key and username without password", username: "user", apiKey: "key", wantKey: "key"},
+		{name: "api key and password without username", password: "pass", apiKey: "key", wantKey: "key"},
+		{name: "username without password", username: "user"},
+		{name: "password without username", password: "pass"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearEnvVars()
+			defer clearEnvVars()
+
+			_ = os.Setenv("VERGEOS_HOST", "https://example.com")
+			if tt.username != "" {
+				_ = os.Setenv("VERGEOS_USERNAME", tt.username)
+			}
+			if tt.password != "" {
+				_ = os.Setenv("VERGEOS_PASSWORD", tt.password)
+			}
+			if tt.apiKey != "" {
+				_ = os.Setenv("VERGEOS_API_KEY", tt.apiKey)
+			}
+
+			c := &Client{httpClient: &http.Client{Timeout: defaultTimeout}}
+			if err := WithEnvConfig()(c); err != nil {
+				t.Fatalf("WithEnvConfig() returned error: %v", err)
+			}
+			if c.username != tt.wantUser || c.password != tt.wantPass || c.apiKey != tt.wantKey {
+				t.Fatalf("got user=%q pass=%q key=%q, want user=%q pass=%q key=%q",
+					c.username, c.password, c.apiKey, tt.wantUser, tt.wantPass, tt.wantKey)
+			}
+		})
+	}
+}
+
+// TestWithEnvConfigHostScheme covers hosts with and without a scheme.
+func TestWithEnvConfigHostScheme(t *testing.T) {
+	tests := []struct {
+		name    string
+		host    string
+		want    string
+		wantErr []string
+	}{
+		{name: "https url", host: "https://example.com", want: "https://example.com"},
+		{name: "https url trailing slash", host: "https://example.com/", want: "https://example.com"},
+		{name: "http url", host: "http://example.com", want: "http://example.com"},
+		{name: "http url with port", host: "http://example.com:8000", want: "http://example.com:8000"},
+		{name: "https url with port", host: "https://10.1.2.3:8443/", want: "https://10.1.2.3:8443"},
+		{name: "uppercase scheme", host: "HTTPS://example.com", want: "https://example.com"},
+		{name: "mixed case http", host: "HtTp://example.com", want: "http://example.com"},
+		{name: "bare hostname", host: "vergeos.example.com", want: "https://vergeos.example.com"},
+		{name: "bare hostname trailing slash", host: "vergeos.example.com/", want: "https://vergeos.example.com"},
+		{name: "bare ip", host: "10.0.0.5", want: "https://10.0.0.5"},
+		{name: "bare host and port", host: "vergeos.example.com:8443", want: "https://vergeos.example.com:8443"},
+		{name: "bare ipv4 and port", host: "10.0.0.5:8443", want: "https://10.0.0.5:8443"},
+		{name: "bare ipv6", host: "[2001:db8::1]", want: "https://[2001:db8::1]"},
+		{name: "bare ipv6 and port", host: "[2001:db8::1]:8443", want: "https://[2001:db8::1]:8443"},
+		{name: "surrounding space", host: "  example.com  ", want: "https://example.com"},
+		{name: "ftp scheme", host: "ftp://example.com", wantErr: []string{"VERGEOS_HOST", "unsupported protocol scheme", "ftp"}},
+		{name: "file scheme", host: "file:///tmp/x", wantErr: []string{"VERGEOS_HOST", "unsupported protocol scheme", "file"}},
+		{name: "ssh scheme", host: "ssh://example.com", wantErr: []string{"VERGEOS_HOST", "unsupported protocol scheme", "ssh"}},
+		{name: "scheme only", host: "https://", wantErr: []string{"VERGEOS_HOST", "missing host"}},
+		{name: "whitespace only", host: "   ", wantErr: []string{"VERGEOS_HOST", "missing host"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearEnvVars()
+			defer clearEnvVars()
+
+			_ = os.Setenv("VERGEOS_HOST", tt.host)
+			_ = os.Setenv("VERGEOS_API_KEY", "key")
+
+			c := &Client{
+				httpClient: &http.Client{
+					Timeout:   defaultTimeout,
+					Transport: &http.Transport{},
+				},
+			}
+			err := WithEnvConfig()(c)
+			if len(tt.wantErr) > 0 {
+				if err == nil {
+					t.Fatal("expected error")
+				}
+				for _, part := range tt.wantErr {
+					if !strings.Contains(err.Error(), part) {
+						t.Errorf("error = %q, want it to contain %q", err.Error(), part)
+					}
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("WithEnvConfig() returned error: %v", err)
+			}
+			if c.baseURL != tt.want {
+				t.Errorf("baseURL = %q, want %q", c.baseURL, tt.want)
+			}
+		})
 	}
 }
 
@@ -188,6 +305,116 @@ func TestWithEnvConfigVerifySSL(t *testing.T) {
 			gotInsecure := transport.TLSClientConfig != nil && transport.TLSClientConfig.InsecureSkipVerify
 			if gotInsecure != tt.insecure {
 				t.Errorf("InsecureSkipVerify = %v, want %v", gotInsecure, tt.insecure)
+			}
+		})
+	}
+}
+
+// TestWithEnvConfigTLSCombinations covers VERGEOS_VERIFY_SSL and VERGEOS_INSECURE
+// alone, in agreement, and in contradiction.
+func TestWithEnvConfigTLSCombinations(t *testing.T) {
+	tests := []struct {
+		name      string
+		verifySSL string
+		insecure  string
+		setVerify bool
+		setInsec  bool
+		wantSkip  bool
+		wantErr   []string
+	}{
+		{name: "neither set", wantSkip: false},
+		{name: "verify true", setVerify: true, verifySSL: "true", wantSkip: false},
+		{name: "verify TRUE", setVerify: true, verifySSL: "TRUE", wantSkip: false},
+		{name: "verify 1", setVerify: true, verifySSL: "1", wantSkip: false},
+		{name: "verify yes", setVerify: true, verifySSL: "yes", wantSkip: false},
+		{name: "verify false", setVerify: true, verifySSL: "false", wantSkip: true},
+		{name: "verify FALSE", setVerify: true, verifySSL: "FALSE", wantSkip: true},
+		{name: "verify 0", setVerify: true, verifySSL: "0", wantSkip: true},
+		{name: "verify False", setVerify: true, verifySSL: "False", wantSkip: true},
+		{name: "insecure true", setInsec: true, insecure: "true", wantSkip: true},
+		{name: "insecure TRUE", setInsec: true, insecure: "TRUE", wantSkip: true},
+		{name: "insecure yes", setInsec: true, insecure: "yes", wantSkip: true},
+		{name: "insecure on", setInsec: true, insecure: "on", wantSkip: true},
+		{name: "insecure 1", setInsec: true, insecure: "1", wantSkip: true},
+		{name: "insecure y", setInsec: true, insecure: "y", wantSkip: true},
+		{name: "insecure t", setInsec: true, insecure: "t", wantSkip: true},
+		{name: "insecure false", setInsec: true, insecure: "false", wantSkip: false},
+		{name: "insecure FALSE", setInsec: true, insecure: "FALSE", wantSkip: false},
+		{name: "insecure no", setInsec: true, insecure: "no", wantSkip: false},
+		{name: "insecure off", setInsec: true, insecure: "off", wantSkip: false},
+		{name: "insecure 0", setInsec: true, insecure: "0", wantSkip: false},
+		{name: "insecure n", setInsec: true, insecure: "n", wantSkip: false},
+		{name: "insecure f", setInsec: true, insecure: "f", wantSkip: false},
+		{name: "insecure with spaces", setInsec: true, insecure: "  true  ", wantSkip: true},
+		{name: "agree skip", setVerify: true, verifySSL: "false", setInsec: true, insecure: "true", wantSkip: true},
+		{name: "agree skip numeric", setVerify: true, verifySSL: "0", setInsec: true, insecure: "1", wantSkip: true},
+		{name: "agree verify", setVerify: true, verifySSL: "true", setInsec: true, insecure: "false", wantSkip: false},
+		{name: "agree verify numeric", setVerify: true, verifySSL: "1", setInsec: true, insecure: "0", wantSkip: false},
+		{
+			name: "contradict both true", setVerify: true, verifySSL: "true", setInsec: true, insecure: "true",
+			wantErr: []string{"VERGEOS_VERIFY_SSL", "VERGEOS_INSECURE", "contradict"},
+		},
+		{
+			name: "contradict both false", setVerify: true, verifySSL: "false", setInsec: true, insecure: "false",
+			wantErr: []string{"VERGEOS_VERIFY_SSL", "VERGEOS_INSECURE", "contradict"},
+		},
+		{
+			name: "contradict verify on and insecure yes", setVerify: true, verifySSL: "1", setInsec: true, insecure: "yes",
+			wantErr: []string{"VERGEOS_VERIFY_SSL", "VERGEOS_INSECURE", "contradict"},
+		},
+		{
+			name: "contradict verify off and insecure no", setVerify: true, verifySSL: "0", setInsec: true, insecure: "no",
+			wantErr: []string{"VERGEOS_VERIFY_SSL", "VERGEOS_INSECURE", "contradict"},
+		},
+		{
+			name: "invalid insecure", setInsec: true, insecure: "maybe",
+			wantErr: []string{"VERGEOS_INSECURE", "maybe"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearEnvVars()
+			defer clearEnvVars()
+
+			_ = os.Setenv("VERGEOS_HOST", "https://example.com")
+			_ = os.Setenv("VERGEOS_API_KEY", "key")
+			if tt.setVerify {
+				_ = os.Setenv("VERGEOS_VERIFY_SSL", tt.verifySSL)
+			}
+			if tt.setInsec {
+				_ = os.Setenv("VERGEOS_INSECURE", tt.insecure)
+			}
+
+			c := &Client{
+				httpClient: &http.Client{
+					Timeout:   defaultTimeout,
+					Transport: &http.Transport{},
+				},
+			}
+			err := WithEnvConfig()(c)
+			if len(tt.wantErr) > 0 {
+				if err == nil {
+					t.Fatal("expected error")
+				}
+				for _, part := range tt.wantErr {
+					if !strings.Contains(err.Error(), part) {
+						t.Errorf("error = %q, want it to contain %q", err.Error(), part)
+					}
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("WithEnvConfig() returned error: %v", err)
+			}
+
+			transport, ok := c.httpClient.Transport.(*http.Transport)
+			if !ok {
+				t.Fatal("expected http.Transport")
+			}
+			gotSkip := transport.TLSClientConfig != nil && transport.TLSClientConfig.InsecureSkipVerify
+			if gotSkip != tt.wantSkip {
+				t.Errorf("InsecureSkipVerify = %v, want %v", gotSkip, tt.wantSkip)
 			}
 		})
 	}
@@ -471,6 +698,112 @@ func TestNewClientInvalidAPIKeyReturnsAuthError(t *testing.T) {
 	}
 	if (*seen)[0].authorization != "" {
 		t.Fatalf("version check sent Authorization %q", (*seen)[0].authorization)
+	}
+}
+
+func TestNewClientAPIKeyWinsOverCredentials(t *testing.T) {
+	orders := []struct {
+		name string
+		opts []ClientOption
+	}{
+		{
+			name: "credentials then api key",
+			opts: []ClientOption{
+				WithCredentials("admin", "correct-password"),
+				WithAPIKey("preferred-key"),
+			},
+		},
+		{
+			name: "api key then credentials",
+			opts: []ClientOption{
+				WithAPIKey("preferred-key"),
+				WithCredentials("admin", "correct-password"),
+			},
+		},
+	}
+
+	for _, order := range orders {
+		t.Run(order.name, func(t *testing.T) {
+			server, seen := newStartupServer(t, "26.1.8", http.StatusOK, `[]`)
+			opts := []ClientOption{
+				WithBaseURL(server.URL),
+				WithHTTPClient(server.Client()),
+			}
+			opts = append(opts, order.opts...)
+
+			client, err := NewClient(opts...)
+			if err != nil {
+				t.Fatalf("NewClient returned error: %v", err)
+			}
+			if client == nil {
+				t.Fatal("NewClient returned a nil client")
+			}
+
+			checks := credentialChecks(*seen)
+			if len(checks) != 1 {
+				t.Fatalf("credential checks = %d, want exactly one", len(checks))
+			}
+			if checks[0].authorization != "Bearer preferred-key" {
+				t.Fatalf("Authorization = %q, want %q", checks[0].authorization, "Bearer preferred-key")
+			}
+			if checks[0].hasBasicAuth {
+				t.Fatal("basic auth was sent alongside the API key")
+			}
+		})
+	}
+}
+
+func TestNewClientEnvAPIKeyWinsOverPassword(t *testing.T) {
+	clearEnvVars()
+	defer clearEnvVars()
+
+	server, seen := newStartupServer(t, "26.1.8", http.StatusOK, `[]`)
+	_ = os.Setenv("VERGEOS_HOST", server.URL)
+	_ = os.Setenv("VERGEOS_USERNAME", "admin")
+	_ = os.Setenv("VERGEOS_PASSWORD", "secret")
+	_ = os.Setenv("VERGEOS_API_KEY", "preferred-key")
+
+	client, err := NewClient(
+		WithEnvConfig(),
+		WithHTTPClient(server.Client()),
+	)
+	if err != nil {
+		t.Fatalf("NewClient returned error: %v", err)
+	}
+	if client == nil {
+		t.Fatal("NewClient returned a nil client")
+	}
+
+	checks := credentialChecks(*seen)
+	if len(checks) != 1 {
+		t.Fatalf("credential checks = %d, want exactly one", len(checks))
+	}
+	if checks[0].authorization != "Bearer preferred-key" {
+		t.Fatalf("Authorization = %q, want %q", checks[0].authorization, "Bearer preferred-key")
+	}
+	if checks[0].hasBasicAuth {
+		t.Fatal("basic auth was sent alongside the API key")
+	}
+}
+
+func TestNewClientEnvRejectsUnsupportedScheme(t *testing.T) {
+	clearEnvVars()
+	defer clearEnvVars()
+
+	_ = os.Setenv("VERGEOS_HOST", "ftp://example.com")
+	_ = os.Setenv("VERGEOS_API_KEY", "key")
+
+	client, err := NewClient(WithEnvConfig())
+	if client != nil {
+		t.Fatal("NewClient returned a client for an unsupported host scheme")
+	}
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	for _, part := range []string{"VERGEOS_HOST", "unsupported protocol scheme", "ftp"} {
+		if !strings.Contains(err.Error(), part) {
+			t.Errorf("error = %q, want it to contain %q", err.Error(), part)
+		}
 	}
 }
 
