@@ -123,7 +123,8 @@ func main() {
 		fmt.Printf("  - %s: %s (VNET: %d)\n", n.Name, n.MAC, n.VNET)
 	}
 
-	// Power off the VM
+	// Power off the VM. PowerOff asks the guest to shut down and waits
+	// until the VM stops. Kill is the immediate power-off.
 	fmt.Println("\nPowering off VM...")
 	if err := client.VMs.PowerOff(ctx, vm.ID.Int()); err != nil {
 		log.Fatalf("Failed to power off VM: %v", err)

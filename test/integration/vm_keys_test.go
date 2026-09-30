@@ -69,7 +69,7 @@ func TestVMKeyAndMachineKeyDiffer(t *testing.T) {
 			if err := client.VMs.PowerOn(ctx, vmID); err != nil {
 				t.Logf("restore power on: %v", err)
 			}
-		} else if err := client.VMs.PowerOff(ctx, vmID); err != nil {
+		} else if err := client.VMs.Kill(ctx, vmID); err != nil {
 			t.Logf("restore power off: %v", err)
 		}
 	}()
@@ -268,8 +268,10 @@ func TestVMKeyAndMachineKeyDiffer(t *testing.T) {
 		if _, err := client.VMs.Update(ctx, vmID, &vergeos.VMUpdateRequest{Description: &after}); err != nil {
 			t.Fatalf("change description: %v", err)
 		}
-		if err := client.VMs.PowerOff(ctx, vmID); err != nil {
-			t.Fatalf("PowerOff(%d) before restore failed: %v", vmID, err)
+		// Kill stops the VM when the guest ignores a shutdown request.
+		// Restore runs against a powered-off VM.
+		if err := client.VMs.Kill(ctx, vmID); err != nil {
+			t.Fatalf("Kill(%d) before restore failed: %v", vmID, err)
 		}
 		if err := client.VMSnapshots.Restore(ctx, snapshotID, nil); err != nil {
 			t.Fatalf("Restore(%d) failed: %v", snapshotID, err)

@@ -755,3 +755,33 @@ A response body that cannot be replayed (`GetBody` is nil) is not retried. `requ
 - `IsAmbiguousNameError` identifies the new error. `Keys` is the list of matching resource keys.
 - A single exact match is unchanged, including the name check from the filter-escaping fix.
 
+---
+
+## ADR-022: VM PowerOff Is a Graceful Shutdown That Waits
+
+**Date:** 2026-09-30
+
+**Status:** Accepted
+
+**Context:** `VMService.PowerOff` sent the `kill` action and then polled until the VM stopped. `kill` is a hard power-off. The graceful action, `poweroff`, was only available from `GuestShutdown`, which returns as soon as the request is accepted. Callers had to choose a shutdown that can corrupt a guest, or a shutdown they could not wait on.
+
+`PowerOff` is the method the README and the VM docs show for an ordinary stop. The Terraform provider's v3 port is moving onto this SDK, and a hard kill on `powerstate = false` is the bug that port is meant to leave behind. The wait itself was also fixed at 30 polls of 5 seconds (150 seconds). A context deadline can shorten that wait. It cannot make it longer. A busy Windows guest can take longer than 150 seconds to shut down.
+
+`NetworkService.Kill` and `TenantNodeService.Kill` already name the hard stop `Kill`. `docker-machine-driver-vergeos` calls `PowerOff` for its force stop and before deleting a VM, and `GuestShutdown` for a graceful stop that does not wait.
+
+**Decision:** `PowerOff` sends `poweroff` and waits until the VM stops. `Kill` sends `kill` and waits the same way. `GuestShutdown` still sends `poweroff` and returns immediately.
+
+`PowerOffWithOptions` takes a timeout, a poll interval, and `ForceAfterTimeout`. When the graceful wait hits its timeout and `ForceAfterTimeout` is set, the call sends `kill` and waits again. A cancelled context does not escalate to `kill`.
+
+`WithPowerWait` sets the default timeout and poll interval used by `PowerOn`, `PowerOff`, and `Kill`. The default stays 150 seconds polled every 5 seconds. A per-call timeout longer than that default extends the wait. A context deadline can still end it sooner.
+
+**Rationale:**
+- The method people already call for "stop this VM" should be the one that asks the guest to shut down and then waits.
+- The hard stop keeps a name, `Kill`, that the network and tenant-node services already use, so a force stop stays explicit.
+- A fixed 150-second budget cannot cover a slow guest, and a context deadline cannot raise it.
+- `ForceAfterTimeout` lets a caller escalate on purpose, instead of every shutdown being a kill.
+
+**Consequences:**
+- This is a behavior change for the next minor release. Code that used `PowerOff` as a hard kill, including the docker-machine driver's force stop, must call `Kill`.
+- `PowerOff` can now return `TimeoutError` when the guest ignores the shutdown. `Kill`, or `PowerOffWithOptions` with `ForceAfterTimeout`, is how to stop that VM anyway.
+

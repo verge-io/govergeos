@@ -18,9 +18,10 @@ const (
 	// not insert a machine_snapshots row; VMSnapshots.Create does that.
 	vmActionSnapshot = "quiesce_snapshot"
 
-	// Polling configuration
-	powerStateMaxRetries   = 30
-	powerStatePollInterval = 5 * time.Second
+	// Default VM power-wait budget: 30 polls, 5 seconds apart.
+	// WithPowerWait and VMPowerOffOptions replace this for one client or one call.
+	defaultPowerWaitTimeout  = 150 * time.Second
+	defaultPowerWaitInterval = 5 * time.Second
 
 	// vmSnapshotDefaultRetention is the snapshot lifetime, in seconds, used
 	// when VMSnapshotOptions.Retention is not set (24 hours).
@@ -147,74 +148,196 @@ func (s *VMService) PowerOn(ctx context.Context, id int) error {
 		return nil
 	}
 
-	// Send power on action
-	action := vmAction{
-		VM:     id,
-		Action: vmActionPowerOn,
-		Params: vmActionParams{},
-	}
-
-	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
+	if err := s.postVMPowerAction(ctx, id, vmActionPowerOn); err != nil {
 		return fmt.Errorf("vergeos: failed to power on VM %d: %w", id, err)
 	}
 
 	// Wait for VM to start
-	return s.waitForPowerState(ctx, id, true)
+	timeout, interval := s.client.vmPowerWait()
+	return s.waitForPowerState(ctx, id, true, timeout, interval)
 }
 
-// PowerOff powers off a VM and waits for it to stop.
+// PowerOff asks the guest to shut down and waits until the VM stops.
+//
+// It sends the poweroff action. Kill sends kill, which stops the VM
+// immediately. GuestShutdown sends poweroff and returns without waiting.
+//
+// The wait uses the client power-wait timeout and poll interval (150
+// seconds and 5 seconds, unless WithPowerWait changed them).
+// PowerOffWithOptions overrides that wait for one call. A context
+// deadline can still end the wait sooner.
 func (s *VMService) PowerOff(ctx context.Context, id int) error {
-	// Get current state
-	vm, err := s.Get(ctx, id)
+	return s.PowerOffWithOptions(ctx, id, nil)
+}
+
+// VMPowerOffOptions configures one graceful VM shutdown.
+type VMPowerOffOptions struct {
+	// Timeout is how long to wait for the VM to stop after poweroff.
+	// Zero uses the client default (150 seconds, or the WithPowerWait
+	// timeout). A longer value extends the wait. The context can still
+	// end it sooner.
+	Timeout time.Duration
+
+	// PollInterval is how often to read the VM while waiting.
+	// Zero uses the client default (5 seconds, or the WithPowerWait
+	// interval).
+	PollInterval time.Duration
+
+	// ForceAfterTimeout sends kill when the VM is still running at
+	// Timeout, then waits again for the same Timeout. A cancelled
+	// context does not escalate to kill.
+	ForceAfterTimeout bool
+}
+
+// PowerOffWithOptions asks the guest to shut down, waits for it to stop,
+// and applies opts. A nil opts value is the same as PowerOff.
+func (s *VMService) PowerOffWithOptions(ctx context.Context, id int, opts *VMPowerOffOptions) error {
+	var requestedTimeout, requestedInterval time.Duration
+	force := false
+	if opts != nil {
+		requestedTimeout = opts.Timeout
+		requestedInterval = opts.PollInterval
+		force = opts.ForceAfterTimeout
+	}
+	timeout, interval, err := s.resolvePowerWait(requestedTimeout, requestedInterval)
 	if err != nil {
 		return err
 	}
 
-	// Already stopped
+	vm, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
 	if !vm.PowerState {
 		return nil
 	}
 
-	// Send kill action
-	action := vmAction{
-		VM:     id,
-		Action: vmActionKill,
-		Params: vmActionParams{},
-	}
-
-	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
+	if err := s.postVMPowerAction(ctx, id, vmActionPowerOff); err != nil {
 		return fmt.Errorf("vergeos: failed to power off VM %d: %w", id, err)
 	}
 
-	// Wait for VM to stop
-	return s.waitForPowerState(ctx, id, false)
+	err = s.waitForPowerState(ctx, id, false, timeout, interval)
+	if err == nil || !force || !IsTimeoutError(err) {
+		return err
+	}
+
+	// The guest did not stop in time. Re-read in case it stopped
+	// between the deadline and this escalation.
+	vm, err = s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !vm.PowerState {
+		return nil
+	}
+
+	if err := s.postVMPowerAction(ctx, id, vmActionKill); err != nil {
+		return fmt.Errorf("vergeos: failed to kill VM %d after power off timed out: %w", id, err)
+	}
+	if err := s.waitForPowerState(ctx, id, false, timeout, interval); err != nil {
+		if IsTimeoutError(err) {
+			return &TimeoutError{Resource: "VM", ID: id, Action: "become stopped after kill"}
+		}
+		return err
+	}
+	return nil
+}
+
+// Kill powers the VM off immediately and waits until it stops.
+//
+// It sends the kill action, the same hard stop NetworkService.Kill and
+// TenantNodeService.Kill send. PowerOff is the guest shutdown. A VM that
+// is already stopped is left alone.
+//
+// The wait uses the client power-wait settings. WithPowerWait changes
+// the timeout and poll interval. A context deadline can end the wait sooner.
+func (s *VMService) Kill(ctx context.Context, id int) error {
+	timeout, interval := s.client.vmPowerWait()
+
+	vm, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !vm.PowerState {
+		return nil
+	}
+
+	if err := s.postVMPowerAction(ctx, id, vmActionKill); err != nil {
+		return fmt.Errorf("vergeos: failed to kill VM %d: %w", id, err)
+	}
+	return s.waitForPowerState(ctx, id, false, timeout, interval)
+}
+
+// resolvePowerWait turns call-level durations into the wait budget.
+// Zero selects the client default. Negative values are rejected.
+func (s *VMService) resolvePowerWait(timeout, interval time.Duration) (time.Duration, time.Duration, error) {
+	if timeout < 0 {
+		return 0, 0, &ValidationError{Field: "timeout", Message: "timeout must be >= 0"}
+	}
+	if interval < 0 {
+		return 0, 0, &ValidationError{Field: "poll_interval", Message: "poll_interval must be >= 0"}
+	}
+	defTimeout, defInterval := s.client.vmPowerWait()
+	if timeout == 0 {
+		timeout = defTimeout
+	}
+	if interval == 0 {
+		interval = defInterval
+	}
+	return timeout, interval, nil
+}
+
+// postVMPowerAction posts a VM power action with empty params.
+func (s *VMService) postVMPowerAction(ctx context.Context, id int, action string) error {
+	return s.client.post(ctx, "/vm_actions", vmAction{
+		VM:     id,
+		Action: action,
+		Params: vmActionParams{},
+	}, nil)
 }
 
 // waitForPowerState waits for a VM to reach the desired power state.
-func (s *VMService) waitForPowerState(ctx context.Context, id int, desiredState bool) error {
+// timeout is the wall-clock budget. interval is the pause between reads.
+// The first read happens immediately. A cancelled context ends the wait
+// with ctx.Err() and does not report TimeoutError.
+func (s *VMService) waitForPowerState(ctx context.Context, id int, desiredState bool, timeout, interval time.Duration) error {
 	stateStr := "stopped"
 	if desiredState {
 		stateStr = "running"
 	}
 
-	for i := 0; i < powerStateMaxRetries; i++ {
+	deadline := time.Now().Add(timeout)
+	for {
 		vm, err := s.Get(ctx, id)
 		if err != nil {
 			return err
 		}
-
 		if vm.PowerState == desiredState {
 			return nil
 		}
+		// A caller that cancelled wants that error, including when the
+		// budget is also exhausted. ForceAfterTimeout keys off TimeoutError.
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return &TimeoutError{Resource: "VM", ID: id, Action: "become " + stateStr}
+		}
+
+		sleep := interval
+		if sleep > remaining {
+			sleep = remaining
+		}
+		timer := time.NewTimer(sleep)
 		select {
 		case <-ctx.Done():
+			timer.Stop()
 			return ctx.Err()
-		case <-time.After(powerStatePollInterval):
+		case <-timer.C:
 		}
 	}
-
-	return &TimeoutError{Resource: "VM", ID: id, Action: "become " + stateStr}
 }
 
 // Reset sends a reset signal to a running VM (equivalent to pressing the reset button).
@@ -246,15 +369,11 @@ func (s *VMService) GuestReboot(ctx context.Context, id int) error {
 	return nil
 }
 
-// GuestShutdown sends a graceful shutdown request to the guest OS via ACPI (poweroff action).
+// GuestShutdown sends a graceful shutdown request to the guest OS via ACPI
+// (poweroff action) and returns without waiting. PowerOff sends the same
+// action and waits until the VM stops.
 func (s *VMService) GuestShutdown(ctx context.Context, id int) error {
-	action := vmAction{
-		VM:     id,
-		Action: vmActionPowerOff,
-		Params: vmActionParams{},
-	}
-
-	if err := s.client.post(ctx, "/vm_actions", action, nil); err != nil {
+	if err := s.postVMPowerAction(ctx, id, vmActionPowerOff); err != nil {
 		return fmt.Errorf("vergeos: failed to guest shutdown VM %d: %w", id, err)
 	}
 	return nil
