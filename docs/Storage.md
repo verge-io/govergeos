@@ -1,7 +1,7 @@
 ---
 title: Storage
-description: Manage NAS services, users, volumes, snapshots, syncs, CIFS/NFS shares, and volume browsing
-tags: [nas, volume, storage, cifs, nfs, share, sync, snapshot, browse, replication, backup]
+description: Manage NAS services, antivirus settings, users, volumes, snapshots, syncs, CIFS/NFS shares, and volume browsing
+tags: [nas, volume, storage, cifs, nfs, share, sync, snapshot, browse, replication, backup, antivirus]
 categories: [Storage]
 ---
 
@@ -43,6 +43,22 @@ service, err := client.NASServices.Update(ctx, serviceID, &vergeos.NASServiceUpd
 
 // Delete a NAS service
 err = client.NASServices.Delete(ctx, serviceID)
+```
+
+---
+
+## NAS service antivirus
+
+Antivirus settings for a NAS service live on `vm_service_antivirus`. The service needs 8GB of RAM or more before antivirus can run. `max_recursion` is 0 through 100.
+
+```go
+cfg, err := client.NASServiceAntivirus.GetByService(ctx, serviceID)
+
+recursion := 20
+cfg, err = client.NASServiceAntivirus.Update(ctx, int(cfg.Key), &vergeos.NASServiceAntivirusUpdateRequest{
+    Enabled:      ptr(true),
+    MaxRecursion: &recursion,
+})
 ```
 
 ---

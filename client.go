@@ -191,6 +191,9 @@ type Client struct {
 	UpdateSettings           UpdateSettingsServiceInterface
 	UpdateBranches           UpdateBranchServiceInterface
 	UpdateSourcePackages     UpdateSourcePackageServiceInterface
+	Billing                  BillingServiceInterface
+	NASServiceAntivirus      NASServiceAntivirusServiceInterface
+	SharedObjects            SharedObjectServiceInterface
 }
 
 // ClientOption is a function that configures a Client.
@@ -792,6 +795,9 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.UpdateSettings = &UpdateSettingsService{client: c}
 	c.UpdateBranches = &UpdateBranchService{client: c}
 	c.UpdateSourcePackages = &UpdateSourcePackageService{client: c}
+	c.Billing = &BillingService{client: c}
+	c.NASServiceAntivirus = &NASServiceAntivirusService{client: c}
+	c.SharedObjects = &SharedObjectService{client: c}
 
 	// Validate server version before returning client.
 	// /version.json is public, so this does not authenticate.

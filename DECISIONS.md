@@ -908,3 +908,23 @@ Two behaviors in the Ansible collection are wrong for a client library. A failed
 - A system with no update source configured cannot run the actions.
 - The platform `install` action runs its own pre-install check. There is no method for `POST /update_actions/runpreinstallcheck`.
 
+## ADR-028: Billing, NAS Antivirus, and Shared Objects
+
+**Date:** 2026-09-30
+
+**Status:** Accepted
+
+**Context:** pyVergeOS still had three managers with no Go service: billing records, antivirus settings on a NAS service, and VMs shared with a tenant. The table names are not the manager names. Billing rows live on `billing`, and a new sample is `POST /billing_actions` with action `generate`. NAS service antivirus is `vm_service_antivirus`, the row `NASService.Antivirus` already points at. A share is a `shared_objects` row whose snapshot is `machine_snapshots/{key}`. pyVergeOS creates that snapshot with `expires_type` `never` and `created_manually` true, then posts the share. Import and refresh are `POST /shared_object_actions`.
+
+**Decision:** `Billing`, `NASServiceAntivirus`, and `SharedObjects` are flat services on `Client`. `Billing.List` defaults to `sort=-created`. `ListCreated` turns a non-zero `since` or `until` into `created ge` and `created le`. `Generate` posts action `generate` and returns `error`. `GetSummary` averages the listed records. `NASServiceAntivirus` lists, gets, and updates `vm_service_antivirus`. `max_recursion` outside 0-100 is refused before the PUT. An update with no fields reads the row back. `SharedObjects.Create` resolves the VM `$key` to its machine key, posts the snapshot, then posts the share with `type` `vm`. A failed share deletes that snapshot. `Import` and `Refresh` post `import` and `refresh` and return `error`.
+
+**Rationale:**
+- The requests match pyVergeOS `BillingManager`, `NasServiceAntivirusManager`, and `SharedObjectManager`.
+- `vm_service_antivirus` is the settings table. Volume antivirus is a different set of tables.
+- The snapshot body is posted directly so `created_manually` is sent. `VMSnapshots.Create` does not send that field and defaults the expiry to a date.
+
+**Consequences:**
+- Callers read billing rows and ask VergeOS to write one. `GetSummary` does not add an endpoint.
+- Antivirus on a NAS volume stays on the volume tables. This service changes the NAS service settings row.
+- A share that is created and then fails its follow-up read leaves the snapshot in place. The snapshot is removed only when the `shared_objects` POST fails.
+
