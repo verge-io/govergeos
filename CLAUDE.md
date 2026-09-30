@@ -29,7 +29,7 @@ Integration tests use `//go:build integration` build constraint and require `VER
 
 **Single flat package** (`vergeos`) — all code lives at the repository root. No nested packages.
 
-### Core Pattern: Service-Oriented Design (99 services)
+### Core Pattern: Service-Oriented Design (103 services)
 
 Each VergeOS resource has three pieces:
 
@@ -56,6 +56,7 @@ Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-026). The critical one
 - **VM import wait fails fast, and a repeated name is idempotent**: `VMImports` creates an import from a media-catalog file or a URL. `Wait` returns when the row is `error` or `aborted`, or when `failed_drive_count` is set, instead of using the rest of the timeout. `Create` does not post when a VM with that name already exists. `DeleteByName` removes every finished row with the name, and deletes none when several rows share it and one is still importing. `VMExports.Run` exports a VM to a NAS volume.
 - **Recipe deploy checks answers, and preview is a different method**: `Catalogs` and `VMRecipes` read catalogs, recipes, and each recipe's questions. `VMRecipeInstances.Deploy` checks answers against those question types before POST. Bool values it does not recognize are refused. Disk sizes are bytes; a value above zero and under 1 MB is refused. `Preview` is the dry run. It cannot return an instance. A successful HTTP status on that POST is `RecipePreviewPersistedError`.
 - **Dynamic routing restart**: BGP, OSPF, and EIGRP are flat services on `Client` (`VNetBGP` plus routers, interfaces, route maps, IP commands, OSPF commands, and EIGRP). `VNetBGP.GetOrCreate` is the per-network `vnet_bgp` row the other tables reference. Create, update, and delete return `RoutingRestartStatus`. `Pending` is `need_restart`. `WithRestartNetwork` calls `Networks.Reset` so the change takes effect.
+- **Task engine**: `TaskSchedules`, `TaskScheduleTriggers`, `TaskEvents`, and `TaskScripts` follow the pyVergeOS tables. Schedule create posts the same defaults pyVergeOS sends. Upcoming runs, a manual trigger, and a script run are row actions: `PUT /{table}/{key}?action=...`.
 
 ### Adding a New Service
 

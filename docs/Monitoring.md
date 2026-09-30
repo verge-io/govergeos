@@ -1,7 +1,7 @@
 ---
 title: Monitoring
 description: Monitor system health with alarms, tasks, logs, and webhook notifications
-tags: [alarm, alarm-type, task, log, webhook, monitoring, health, audit, notification, alert]
+tags: [alarm, alarm-type, task, task-schedule, task-event, task-script, log, webhook, monitoring, health, audit, notification, alert]
 categories: [Monitoring]
 ---
 
@@ -102,6 +102,83 @@ err = client.Tasks.Disable(ctx, taskID)
 
 // Delete a task
 err = client.Tasks.Delete(ctx, taskID)
+```
+
+---
+
+## Task schedules
+
+Reusable schedules on `task_schedules`. A schedule is created once and linked to tasks through schedule triggers. Create fills the same defaults as pyVergeOS when a field is left unset: enabled, every day of the week, `repeat_every` hour, iteration 1, start of day through 86400 seconds, and `day_of_month` `start_date`.
+
+```go
+// Weekdays at 02:00 (7200 seconds from midnight)
+schedule, err := client.TaskSchedules.Create(ctx, &vergeos.TaskScheduleCreateRequest{
+    Name:           "Nightly",
+    RepeatEvery:    vergeos.TaskScheduleRepeatDay,
+    StartTimeOfDay: ptr(7200),
+    Saturday:       ptr(false),
+    Sunday:         ptr(false),
+})
+
+// Upcoming runs. Nil asks for 100. A set MaxResults is clamped to 1..1440.
+times, err := client.TaskSchedules.GetSchedule(ctx, schedule.Key.Int(), nil)
+
+schedule, err = client.TaskSchedules.Disable(ctx, schedule.Key.Int())
+err = client.TaskSchedules.Delete(ctx, schedule.Key.Int())
+```
+
+Repeat intervals: `TaskScheduleRepeatMinute`, `Hour`, `Day`, `Week`, `Month`, `Year`, and `Never`.
+
+---
+
+## Task schedule triggers
+
+A trigger on `task_schedule_triggers` links one task to one schedule. `Trigger` runs that task immediately (`PUT ...?action=trigger`).
+
+```go
+trigger, err := client.TaskScheduleTriggers.Create(ctx, &vergeos.TaskScheduleTriggerCreateRequest{
+    Task:     taskID,
+    Schedule: scheduleID,
+})
+
+rows, err := client.TaskScheduleTriggers.ListBySchedule(ctx, scheduleID)
+result, err := client.TaskScheduleTriggers.Trigger(ctx, trigger.Key.Int())
+err = client.TaskScheduleTriggers.Delete(ctx, trigger.Key.Int())
+```
+
+---
+
+## Task events
+
+An event on `task_events` runs a task when something happens. The platform fills `owner` from the task, so create does not send it.
+
+```go
+event, err := client.TaskEvents.Create(ctx, &vergeos.TaskEventCreateRequest{
+    Task:              taskID,
+    Table:             "alarms",
+    Event:             "lowered",
+    TableEventFilters: map[string]any{"level": "summary"},
+})
+
+rows, err := client.TaskEvents.ListByTask(ctx, taskID)
+result, err := client.TaskEvents.Trigger(ctx, event.Key.Int(), map[string]any{"custom": "data"})
+err = client.TaskEvents.Delete(ctx, event.Key.Int())
+```
+
+---
+
+## Task scripts
+
+GCS scripts on `task_scripts`. A create that omits settings sends `{"questions": []}`. `Run` is `PUT /task_scripts/{id}?action=run`. Parameters are the action body.
+
+```go
+script, err := client.TaskScripts.Create(ctx, &vergeos.TaskScriptCreateRequest{
+    Name:   "Cleanup",
+    Script: "log('Cleanup started')",
+})
+
+result, err := client.TaskScripts.Run(ctx, script.Key.Int(), map[string]any{"target_vm": 100})
+err = client.TaskScripts.Delete(ctx, script.Key.Int())
 ```
 
 ---

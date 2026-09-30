@@ -109,6 +109,41 @@ func (f FlexFK) Int() int {
 	return int(f)
 }
 
+// FlexString is a string that can be unmarshaled from a JSON string, number, or null.
+//
+// Reference columns such as owner and creator arrive as a "table/key" string
+// or as a bare key. A bare key is kept as its decimal text.
+type FlexString string
+
+// UnmarshalJSON implements json.Unmarshaler for FlexString.
+func (f *FlexString) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || string(data) == "null" {
+		*f = ""
+		return nil
+	}
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		*f = FlexString(s)
+		return nil
+	}
+	var n int64
+	if err := json.Unmarshal(data, &n); err == nil {
+		*f = FlexString(strconv.FormatInt(n, 10))
+		return nil
+	}
+	return fmt.Errorf("vergeos: cannot unmarshal %s into FlexString", data)
+}
+
+// MarshalJSON implements json.Marshaler for FlexString.
+func (f FlexString) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(f))
+}
+
+// String returns the reference text.
+func (f FlexString) String() string {
+	return string(f)
+}
+
 // redactedSecret is what formatting prints in place of a client secret.
 const redactedSecret = "[redacted]"
 

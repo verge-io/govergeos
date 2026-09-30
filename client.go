@@ -120,6 +120,10 @@ type Client struct {
 	Alarms                   AlarmServiceInterface
 	AlarmTypes               AlarmTypeServiceInterface
 	Tasks                    TaskServiceInterface
+	TaskSchedules            TaskScheduleServiceInterface
+	TaskScheduleTriggers     TaskScheduleTriggerServiceInterface
+	TaskEvents               TaskEventServiceInterface
+	TaskScripts              TaskScriptServiceInterface
 	VNetAddresses            VNetAddressServiceInterface
 	VNetDNSViews             VNetDNSViewServiceInterface
 	VNetDNSZones             VNetDNSZoneServiceInterface
@@ -706,6 +710,10 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Alarms = &AlarmService{client: c}
 	c.AlarmTypes = &AlarmTypeService{client: c}
 	c.Tasks = &TaskService{client: c}
+	c.TaskSchedules = &TaskScheduleService{client: c}
+	c.TaskScheduleTriggers = &TaskScheduleTriggerService{client: c}
+	c.TaskEvents = &TaskEventService{client: c}
+	c.TaskScripts = &TaskScriptService{client: c}
 	c.VNetAddresses = &VNetAddressService{client: c}
 	c.VNetDNSViews = &VNetDNSViewService{client: c}
 	c.VNetDNSZones = &VNetDNSZoneService{client: c}
@@ -914,6 +922,16 @@ func (c *Client) postStatus(ctx context.Context, endpoint string, body any) (int
 // put performs a PUT request.
 func (c *Client) put(ctx context.Context, endpoint string, body any, result any) error {
 	return c.do(ctx, http.MethodPut, endpoint, body, nil, result)
+}
+
+// putRaw performs a PUT and returns the response body unchanged.
+// An empty body is a nil slice.
+func (c *Client) putRaw(ctx context.Context, endpoint string, body any) (json.RawMessage, error) {
+	var raw json.RawMessage
+	if err := c.put(ctx, endpoint, body, &raw); err != nil {
+		return nil, err
+	}
+	return raw, nil
 }
 
 // delete performs a DELETE request.
