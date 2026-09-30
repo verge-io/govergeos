@@ -57,6 +57,9 @@ func (s *UserService) GetByName(ctx context.Context, name string) (*User, error)
 	if len(users) == 0 {
 		return nil, &NotFoundError{Resource: "User", ID: name}
 	}
+	if err := requireUniqueName("User", name, users, func(u User) any { return u.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("User", name, users[0].Name, name); err != nil {
 		return nil, err
 	}

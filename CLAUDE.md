@@ -62,7 +62,7 @@ Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-020). The critical one
 
 ### Error Types
 
-Defined in `errors.go`: `APIError`, `NotFoundError`, `AuthError`, `ValidationError`, `UnsupportedVersionError`. Check with `IsNotFoundError(err)`, `IsAuthError(err)`, etc.
+Defined in `errors.go`: `APIError`, `NotFoundError`, `AmbiguousNameError`, `AuthError`, `ValidationError`, `UnsupportedVersionError`. Check with `IsNotFoundError(err)`, `IsAmbiguousNameError(err)`, `IsAuthError(err)`, etc.
 
 ### Query Options
 

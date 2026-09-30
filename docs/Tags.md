@@ -18,8 +18,9 @@ tags, err := client.Tags.List(ctx)
 // Get a tag by ID
 tag, err := client.Tags.Get(ctx, tagID)
 
-// Get a tag by name
-tag, err := client.Tags.GetByName(ctx, "production")
+// Get a tag by name within a category.
+// The same name can exist in another category.
+tag, err := client.Tags.GetByName(ctx, categoryID, "production")
 
 // List tags in a specific category
 tags, err := client.Tags.ListByCategory(ctx, categoryID)

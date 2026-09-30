@@ -103,6 +103,29 @@ func TestVolumeService_GetByName(t *testing.T) {
 	}
 }
 
+func TestVolumeService_GetByName_Ambiguous(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/volumes": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, []Volume{
+				{Key: "abc", ID: "abc", Name: "vol1"},
+				{Key: "def", ID: "def", Name: "vol1"},
+			})
+		},
+		"GET /api/v4/volumes/abc": func(w http.ResponseWriter, r *http.Request) {
+			t.Error("GetByName fetched the first match")
+		},
+	}))
+
+	_, err := client.Volumes.GetByName(context.Background(), 5, "vol1")
+	amb, ok := err.(*AmbiguousNameError)
+	if !ok {
+		t.Fatalf("expected *AmbiguousNameError, got %T: %v", err, err)
+	}
+	if amb.Resource != "Volume" || len(amb.Keys) != 2 || amb.Keys[0] != "abc" || amb.Keys[1] != "def" {
+		t.Fatalf("unexpected details: %+v", amb)
+	}
+}
+
 func TestVolumeService_GetByName_NotFound(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/volumes": func(w http.ResponseWriter, r *http.Request) {

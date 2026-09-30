@@ -62,6 +62,9 @@ func (s *VNetWireGuardService) GetByName(ctx context.Context, vnetID int, name s
 	if len(wgs) == 0 {
 		return nil, &NotFoundError{Resource: "VNetWireGuard", ID: name}
 	}
+	if err := requireUniqueName("VNetWireGuard", name, wgs, func(w VNetWireGuard) any { return w.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("VNetWireGuard", name, wgs[0].Name, name); err != nil {
 		return nil, err
 	}
@@ -187,6 +190,9 @@ func (s *VNetWireGuardPeerService) GetByName(ctx context.Context, wireguardID in
 	}
 	if len(peers) == 0 {
 		return nil, &NotFoundError{Resource: "VNetWireGuardPeer", ID: name}
+	}
+	if err := requireUniqueName("VNetWireGuardPeer", name, peers, func(p VNetWireGuardPeer) any { return p.Key }); err != nil {
+		return nil, err
 	}
 	if err := requireExactName("VNetWireGuardPeer", name, peers[0].Name, name); err != nil {
 		return nil, err

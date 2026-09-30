@@ -70,6 +70,9 @@ func (s *NASServiceService) GetByName(ctx context.Context, name string) (*NASSer
 	if len(services) == 0 {
 		return nil, &NotFoundError{Resource: "NASService", ID: name}
 	}
+	if err := requireUniqueName("NASService", name, services, func(svc NASService) any { return svc.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("NASService", name, services[0].Name, name); err != nil {
 		return nil, err
 	}
@@ -189,6 +192,9 @@ func (s *NASServiceUserService) GetByName(ctx context.Context, serviceID int, na
 	}
 	if len(users) == 0 {
 		return nil, &NotFoundError{Resource: "NASServiceUser", ID: name}
+	}
+	if err := requireUniqueName("NASServiceUser", name, users, func(u NASServiceUser) any { return u.ID }); err != nil {
+		return nil, err
 	}
 	if err := requireExactName("NASServiceUser", name, users[0].Name, name); err != nil {
 		return nil, err

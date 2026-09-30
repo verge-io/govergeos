@@ -733,3 +733,25 @@ A response body that cannot be replayed (`GetBody` is nil) is not retried. `requ
 - ADR-016 (credential check and account lockout)
 - ADR-018 (the test transport this replaces)
 
+---
+
+## ADR-021: GetByName Returns One Object or an Error
+
+**Date:** 2026-09-30
+
+**Status:** Accepted
+
+**Context:** Every `GetByName` listed with a name filter and returned the first row. VergeOS allows the same tag name in two categories, so `Tags.GetByName("zzgo-dup")` returned one of them with a nil error. A later assign or delete then acted on the other tag. Tables that reject duplicate names today can stop doing so. The same class of lookup was treated as a correctness bug in the Ansible collection.
+
+**Decision:** When a name lookup matches more than one row, return `AmbiguousNameError` with the matching keys. Do not pick one. Callers that want a specific row use `List`. `Tags.GetByName` takes the category, the same way `SnapshotProfilePeriods.GetByName` takes the profile. The multi-match check stays on every `GetByName`, including tables the platform currently keeps unique.
+
+**Rationale:**
+- Returning the first row lets a caller update or delete an object it did not name.
+- A category argument makes the tag lookup name the object that was asked for. Names are unique inside a category.
+- One length check turns a later platform change into an error instead of a wrong object.
+
+**Consequences:**
+- `Tags.GetByName(ctx, categoryID, name)` replaces `Tags.GetByName(ctx, name)`.
+- `IsAmbiguousNameError` identifies the new error. `Keys` is the list of matching resource keys.
+- A single exact match is unchanged, including the name check from the filter-escaping fix.
+

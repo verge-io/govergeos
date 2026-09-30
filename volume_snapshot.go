@@ -77,6 +77,9 @@ func (s *VolumeSnapshotService) GetByName(ctx context.Context, volumeID int, nam
 	if len(snapshots) == 0 {
 		return nil, &NotFoundError{Resource: "VolumeSnapshot", ID: name}
 	}
+	if err := requireUniqueName("VolumeSnapshot", name, snapshots, func(snap VolumeSnapshot) any { return snap.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("VolumeSnapshot", name, snapshots[0].Name, name); err != nil {
 		return nil, err
 	}

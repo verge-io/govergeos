@@ -64,6 +64,9 @@ func (s *UserAPIKeyService) GetByName(ctx context.Context, userID int, name stri
 	if len(keys) == 0 {
 		return nil, &NotFoundError{Resource: "UserAPIKey", ID: name}
 	}
+	if err := requireUniqueName("UserAPIKey", name, keys, func(k UserAPIKey) any { return k.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("UserAPIKey", name, keys[0].Name, name); err != nil {
 		return nil, err
 	}

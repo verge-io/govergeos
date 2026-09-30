@@ -56,6 +56,9 @@ func (s *TenantService) GetByName(ctx context.Context, name string) (*Tenant, er
 	if len(tenants) == 0 {
 		return nil, &NotFoundError{Resource: "Tenant", ID: name}
 	}
+	if err := requireUniqueName("Tenant", name, tenants, func(t Tenant) any { return t.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("Tenant", name, tenants[0].Name, name); err != nil {
 		return nil, err
 	}
@@ -290,6 +293,9 @@ func (s *TenantNodeService) GetByName(ctx context.Context, tenantID int, name st
 	}
 	if len(nodes) == 0 {
 		return nil, &NotFoundError{Resource: "TenantNode", ID: name}
+	}
+	if err := requireUniqueName("TenantNode", name, nodes, func(n TenantNode) any { return n.Key }); err != nil {
+		return nil, err
 	}
 	if err := requireExactName("TenantNode", name, nodes[0].Name, name); err != nil {
 		return nil, err

@@ -115,6 +115,9 @@ func (s *VMSnapshotService) GetByName(ctx context.Context, vmID int, name string
 	if len(snapshots) == 0 {
 		return nil, &NotFoundError{Resource: "VMSnapshot", ID: name}
 	}
+	if err := requireUniqueName("VMSnapshot", name, snapshots, func(snap VMSnapshot) any { return snap.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("VMSnapshot", name, snapshots[0].Name, name); err != nil {
 		return nil, err
 	}

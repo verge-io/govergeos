@@ -62,6 +62,9 @@ func (s *VolumeService) GetByName(ctx context.Context, serviceID int, name strin
 	if len(volumes) == 0 {
 		return nil, &NotFoundError{Resource: "Volume", ID: name}
 	}
+	if err := requireUniqueName("Volume", name, volumes, func(v Volume) any { return v.ID }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("Volume", name, volumes[0].Name, name); err != nil {
 		return nil, err
 	}

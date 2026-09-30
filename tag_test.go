@@ -66,16 +66,68 @@ func TestTagService_Get(t *testing.T) {
 func TestTagService_GetByName(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/tags": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, []Tag{{Key: 1, Name: "production"}})
+			if got := r.URL.Query().Get("filter"); got != "category eq 3 and name eq 'production'" {
+				t.Errorf("filter = %q", got)
+			}
+			jsonResponse(w, 200, []Tag{{Key: 1, Name: "production", Category: 3}})
 		},
 	}))
 
-	tag, err := client.Tags.GetByName(context.Background(), "production")
+	tag, err := client.Tags.GetByName(context.Background(), 3, "production")
 	if err != nil {
 		t.Fatalf("GetByName failed: %v", err)
 	}
-	if tag.Name != "production" {
-		t.Errorf("expected name 'production', got %q", tag.Name)
+	if tag.Name != "production" || tag.Category != 3 || tag.Key != 1 {
+		t.Errorf("got %+v", tag)
+	}
+}
+
+func TestTagService_GetByName_ScopedToCategory(t *testing.T) {
+	// The same name exists in two categories. The lookup asks for category 4.
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/tags": func(w http.ResponseWriter, r *http.Request) {
+			if got := r.URL.Query().Get("filter"); got != "category eq 4 and name eq 'zzgo-dup'" {
+				t.Errorf("filter = %q", got)
+			}
+			jsonResponse(w, 200, []Tag{{Key: 6, Name: "zzgo-dup", Category: 4}})
+		},
+	}))
+
+	tag, err := client.Tags.GetByName(context.Background(), 4, "zzgo-dup")
+	if err != nil {
+		t.Fatalf("GetByName failed: %v", err)
+	}
+	if tag.Key != 6 || tag.Category != 4 {
+		t.Fatalf("got key %v category %v, want key 6 category 4", tag.Key, tag.Category)
+	}
+}
+
+func TestTagService_GetByName_Ambiguous(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/tags": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, []Tag{
+				{Key: 5, Name: "zzgo-dup", Category: 3},
+				{Key: 6, Name: "zzgo-dup", Category: 3},
+			})
+		},
+		"GET /api/v4/tags/5": func(w http.ResponseWriter, r *http.Request) {
+			t.Error("GetByName fetched the first match")
+		},
+	}))
+
+	_, err := client.Tags.GetByName(context.Background(), 3, "zzgo-dup")
+	amb, ok := err.(*AmbiguousNameError)
+	if !ok {
+		t.Fatalf("expected *AmbiguousNameError, got %T: %v", err, err)
+	}
+	if amb.Resource != "Tag" || amb.Name != "zzgo-dup" {
+		t.Fatalf("unexpected details: %+v", amb)
+	}
+	if len(amb.Keys) != 2 || amb.Keys[0] != FlexInt(5) || amb.Keys[1] != FlexInt(6) {
+		t.Fatalf("keys = %#v, want 5, 6", amb.Keys)
+	}
+	if !IsAmbiguousNameError(err) {
+		t.Fatal("IsAmbiguousNameError should match")
 	}
 }
 
@@ -86,7 +138,7 @@ func TestTagService_GetByName_NotFound(t *testing.T) {
 		},
 	}))
 
-	_, err := client.Tags.GetByName(context.Background(), "nonexistent")
+	_, err := client.Tags.GetByName(context.Background(), 3, "nonexistent")
 	if err == nil {
 		t.Fatal("expected error")
 	}

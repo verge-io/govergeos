@@ -3,6 +3,7 @@ package vergeos
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // APIError represents an error returned by the VergeOS API.
@@ -29,6 +30,37 @@ type NotFoundError struct {
 // Error implements the error interface.
 func (e *NotFoundError) Error() string {
 	return fmt.Sprintf("vergeos: %s with ID %v not found", e.Resource, e.ID)
+}
+
+// AmbiguousNameError is returned when a name lookup matches more than one row.
+// Keys lists those resource keys in list order. Callers that want one of the
+// matches should use List and choose.
+type AmbiguousNameError struct {
+	Resource string
+	Name     string
+	Keys     []any
+}
+
+// Error implements the error interface.
+func (e *AmbiguousNameError) Error() string {
+	return fmt.Sprintf("vergeos: %s name %q matches %d objects with keys %s", e.Resource, e.Name, len(e.Keys), formatNameKeys(e.Keys))
+}
+
+func formatNameKeys(keys []any) string {
+	parts := make([]string, len(keys))
+	for i, key := range keys {
+		parts[i] = fmt.Sprint(key)
+	}
+	return strings.Join(parts, ", ")
+}
+
+// IsAmbiguousNameError returns true if err is an AmbiguousNameError.
+func IsAmbiguousNameError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var ambiguous *AmbiguousNameError
+	return errors.As(err, &ambiguous)
 }
 
 // AuthError is returned when authentication fails (HTTP 401).

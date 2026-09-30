@@ -99,7 +99,7 @@ func main() {
 	fmt.Println("\n=== Tag Lookup Example ===")
 	if len(tags) > 0 {
 		lookupName := tags[0].Name
-		tag, err := client.Tags.GetByName(ctx, lookupName)
+		tag, err := client.Tags.GetByName(ctx, tags[0].Category.Int(), lookupName)
 		if err != nil {
 			log.Printf("Failed to get tag by name: %v", err)
 		} else {

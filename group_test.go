@@ -104,6 +104,26 @@ func TestGroupService_GetByName(t *testing.T) {
 	}
 }
 
+func TestGroupService_GetByName_Ambiguous(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/groups": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, []Group{
+				{ID: 1, Name: "admins"},
+				{ID: 2, Name: "admins"},
+			})
+		},
+	}))
+
+	_, err := client.Groups.GetByName(context.Background(), "admins")
+	amb, ok := err.(*AmbiguousNameError)
+	if !ok {
+		t.Fatalf("expected *AmbiguousNameError, got %T: %v", err, err)
+	}
+	if amb.Resource != "Group" || amb.Name != "admins" || len(amb.Keys) != 2 || amb.Keys[0] != FlexInt(1) || amb.Keys[1] != FlexInt(2) {
+		t.Fatalf("unexpected details: %+v", amb)
+	}
+}
+
 func TestGroupService_GetByName_NotFound(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/groups": func(w http.ResponseWriter, r *http.Request) {

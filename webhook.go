@@ -55,6 +55,9 @@ func (s *WebhookURLService) GetByName(ctx context.Context, name string) (*Webhoo
 	if len(webhooks) == 0 {
 		return nil, &NotFoundError{Resource: "WebhookURL", ID: name}
 	}
+	if err := requireUniqueName("WebhookURL", name, webhooks, func(w WebhookURL) any { return w.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("WebhookURL", name, webhooks[0].Name, name); err != nil {
 		return nil, err
 	}

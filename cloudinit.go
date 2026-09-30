@@ -70,6 +70,9 @@ func (s *CloudInitService) GetByName(ctx context.Context, name string) (*CloudIn
 	if len(files) == 0 {
 		return nil, &NotFoundError{Resource: "CloudInitFile", ID: name}
 	}
+	if err := requireUniqueName("CloudInitFile", name, files, func(f CloudInitFile) any { return f.ID }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("CloudInitFile", name, files[0].Name, name); err != nil {
 		return nil, err
 	}

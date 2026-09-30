@@ -87,6 +87,29 @@ func TestTenantService_GetByName(t *testing.T) {
 	}
 }
 
+func TestTenantService_GetByName_Ambiguous(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/tenants": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, []Tenant{
+				{Key: 1, Name: "tenant-a"},
+				{Key: 9, Name: "tenant-a"},
+			})
+		},
+		"GET /api/v4/tenants/1": func(w http.ResponseWriter, r *http.Request) {
+			t.Error("GetByName fetched the first match")
+		},
+	}))
+
+	_, err := client.Tenants.GetByName(context.Background(), "tenant-a")
+	amb, ok := err.(*AmbiguousNameError)
+	if !ok {
+		t.Fatalf("expected *AmbiguousNameError, got %T: %v", err, err)
+	}
+	if amb.Resource != "Tenant" || amb.Name != "tenant-a" || len(amb.Keys) != 2 || amb.Keys[0] != FlexInt(1) || amb.Keys[1] != FlexInt(9) {
+		t.Fatalf("unexpected details: %+v", amb)
+	}
+}
+
 func TestTenantService_GetByName_NotFound(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/tenants": func(w http.ResponseWriter, r *http.Request) {

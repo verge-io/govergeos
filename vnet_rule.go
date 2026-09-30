@@ -64,6 +64,9 @@ func (s *VNetRuleService) GetByName(ctx context.Context, vnetID int, name string
 	if len(rules) == 0 {
 		return nil, &NotFoundError{Resource: "VNetRule", ID: name}
 	}
+	if err := requireUniqueName("VNetRule", name, rules, func(r VNetRule) any { return r.Key }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("VNetRule", name, rules[0].Name, name); err != nil {
 		return nil, err
 	}
@@ -234,6 +237,9 @@ func (s *VNetRuleAliasService) GetByName(ctx context.Context, name string) (*VNe
 	}
 	if len(aliases) == 0 {
 		return nil, &NotFoundError{Resource: "VNetRuleAlias", ID: name}
+	}
+	if err := requireUniqueName("VNetRuleAlias", name, aliases, func(a VNetRuleAlias) any { return a.Key }); err != nil {
+		return nil, err
 	}
 	if err := requireExactName("VNetRuleAlias", name, aliases[0].Name, name); err != nil {
 		return nil, err

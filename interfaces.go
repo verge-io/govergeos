@@ -227,7 +227,7 @@ type SchemaServiceInterface interface {
 type TagServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]Tag, error)
 	Get(ctx context.Context, id int) (*Tag, error)
-	GetByName(ctx context.Context, name string) (*Tag, error)
+	GetByName(ctx context.Context, categoryID int, name string) (*Tag, error)
 	ListByCategory(ctx context.Context, categoryID int) ([]Tag, error)
 	Create(ctx context.Context, req *TagCreateRequest) (*Tag, error)
 	Update(ctx context.Context, id int, req *TagUpdateRequest) (*Tag, error)

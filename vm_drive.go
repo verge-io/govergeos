@@ -129,6 +129,9 @@ func (s *VMDriveService) GetByName(ctx context.Context, vmID int, name string) (
 	if len(drives) == 0 {
 		return nil, &NotFoundError{Resource: "VMDrive", ID: name}
 	}
+	if err := requireUniqueName("VMDrive", name, drives, func(d VMDrive) any { return d.ID }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("VMDrive", name, drives[0].Name, name); err != nil {
 		return nil, err
 	}

@@ -67,6 +67,9 @@ func (s *VolumeSyncService) GetByName(ctx context.Context, serviceID int, name s
 	if len(syncs) == 0 {
 		return nil, &NotFoundError{Resource: "VolumeSync", ID: name}
 	}
+	if err := requireUniqueName("VolumeSync", name, syncs, func(sync VolumeSync) any { return sync.ID }); err != nil {
+		return nil, err
+	}
 	if err := requireExactName("VolumeSync", name, syncs[0].Name, name); err != nil {
 		return nil, err
 	}
