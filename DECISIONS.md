@@ -450,7 +450,7 @@ func (s *VNetRuleService) setEnabled(ctx context.Context, id int, enabled bool, 
 
 ---
 
-## ADR-016: Mandatory Version Check in NewClient
+## ADR-016: Mandatory Version and Credential Check in NewClient
 
 **Date:** 2026-01-29
 
@@ -464,7 +464,13 @@ The SDK targets VergeOS 26 and relies on features, fields, and behaviors specifi
 - Different behavior for existing endpoints
 - Confusing partial failures that are hard to diagnose
 
+`/version.json` answers without credentials. A version check alone lets `NewClient()` succeed with a wrong password, and the `AuthError` (`Login required`) appears only on the first real API call. Terraform then reports a successful `configure` and fails halfway through a plan. A long-running exporter starts cleanly and fails every scrape.
+
 **Decision:** Perform a blocking version check in `NewClient()` that fetches `/version.json` and validates the server is running VergeOS 26.x. If the major version is not 26, client creation fails immediately with an `UnsupportedVersionError`.
+
+Credentials are validated too. After the version check, `NewClient()` makes one cheap authenticated request: `GET /api/v4/clusters?limit=1&fields=$key`. Clusters is a small table present on every system. If that request fails authentication, `NewClient()` returns the `AuthError`.
+
+The credential check is exactly one attempt and is never retried. VergeOS locks an account after a configurable number of failed logins (five on the system this was measured against). Retrying a bad password locks the account for every client that shares it, including its API keys. The version request does not send an `Authorization` header, so a bad password is presented only on that one authenticated read.
 
 ```go
 client, err := vergeos.NewClient(
@@ -472,7 +478,10 @@ client, err := vergeos.NewClient(
     vergeos.WithCredentials("user", "pass"),
 )
 if err != nil {
+    // Unsupported version:
     // "unsupported server version 4.2.0: this SDK requires VergeOS 26.x"
+    // Wrong password:
+    // "vergeos: authentication failed: Login required"
     log.Fatal(err)
 }
 ```
@@ -483,20 +492,25 @@ if err != nil {
 2. **Optional check via `WithVersionCheck()` option** - Rejected because it leads to confusing partial failures when users forget to enable it
 3. **No check at all** - Rejected because the SDK may silently malfunction on incompatible versions
 4. **Warning instead of error** - Rejected because warnings are easily ignored and don't prevent the underlying compatibility issues
+5. **Retry the credential check** - Rejected because each failed login counts toward account lockout
+6. **Authenticate by calling `/version.json`** - Rejected because that endpoint does not require credentials
 
 **Rationale:**
-- **Fail fast** - Users get immediate, clear feedback if the server version is incompatible
+- **Fail fast** - Users get immediate, clear feedback if the server version is incompatible or the credentials are rejected
 - **No ambiguity** - The SDK either works fully or doesn't work at all; no partial compatibility
-- **Simple implementation** - One check at startup, no caching or repeated checks needed
+- **Simple implementation** - Two checks at startup, no caching or repeated checks needed
 - **Clear error message** - Users know exactly what's wrong and what version is required
 - **Choke point** - `NewClient()` is the natural place to validate prerequisites before any API calls
+- **Lockout safety** - One presentation of the password cannot by itself exhaust the failed-login limit
 
 **Consequences:**
-- `NewClient()` makes a network request to `/version.json` before returning
+- `NewClient()` requests `/version.json` without credentials, then one authenticated `clusters` row, before returning
 - Client creation fails if the server is not running VergeOS 26.x
+- Client creation fails with an `AuthError` when the credentials are rejected
 - Users connecting to older VergeOS installations must use an older SDK version
 - New `UnsupportedVersionError` type and `IsUnsupportedVersionError()` helper added
 - Adds `getAbsolute()` internal method for fetching non-API paths
+- A principal that cannot read `clusters` cannot construct a client, because that read is the credential check
 
 ---
 
