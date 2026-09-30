@@ -138,6 +138,67 @@ func TestNetworkService_Get_NotFound(t *testing.T) {
 	}
 }
 
+func TestNetworkService_GetByName(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
+			if got := r.URL.Query().Get("filter"); got != "name eq 'External'" {
+				t.Errorf("filter = %q", got)
+			}
+			jsonResponse(w, 200, []Network{{ID: 1, Name: "External"}})
+		},
+		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, Network{ID: 1, Name: "External", Description: "full"})
+		},
+	}))
+
+	network, err := client.Networks.GetByName(context.Background(), "External")
+	if err != nil {
+		t.Fatalf("GetByName failed: %v", err)
+	}
+	if network.Name != "External" || network.Description != "full" {
+		t.Fatalf("got %+v", network)
+	}
+}
+
+func TestNetworkService_GetByName_Ambiguous(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, []Network{
+				{ID: 1, Name: "Core"},
+				{ID: 4, Name: "Core"},
+			})
+		},
+		"GET /api/v4/vnets/1": func(w http.ResponseWriter, r *http.Request) {
+			t.Error("GetByName fetched the first match")
+		},
+	}))
+
+	_, err := client.Networks.GetByName(context.Background(), "Core")
+	amb, ok := err.(*AmbiguousNameError)
+	if !ok {
+		t.Fatalf("expected *AmbiguousNameError, got %T: %v", err, err)
+	}
+	if amb.Resource != "Network" || amb.Name != "Core" || len(amb.Keys) != 2 || amb.Keys[0] != FlexInt(1) || amb.Keys[1] != FlexInt(4) {
+		t.Fatalf("unexpected details: %+v", amb)
+	}
+}
+
+func TestNetworkService_GetByName_NotFound(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, []Network{})
+		},
+	}))
+
+	_, err := client.Networks.GetByName(context.Background(), "missing")
+	if err == nil {
+		t.Fatal("expected error for not found")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	}
+}
+
 // --- Create ---
 
 func TestNetworkService_Create(t *testing.T) {

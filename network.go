@@ -61,6 +61,33 @@ func (s *NetworkService) Get(ctx context.Context, id int) (*Network, error) {
 	return &network, nil
 }
 
+// GetByName returns the network named name.
+// Returns NotFoundError when nothing matches, and AmbiguousNameError when
+// more than one network matches.
+func (s *NetworkService) GetByName(ctx context.Context, name string) (*Network, error) {
+	networks, err := s.List(ctx, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
+	if err != nil {
+		return nil, err
+	}
+	if len(networks) == 0 {
+		return nil, &NotFoundError{Resource: "Network", ID: name}
+	}
+	if err := requireUniqueName("Network", name, networks, func(n Network) any { return n.ID }); err != nil {
+		return nil, err
+	}
+	if err := requireExactName("Network", name, networks[0].Name, name); err != nil {
+		return nil, err
+	}
+	got, err := s.Get(ctx, networks[0].ID.Int())
+	if err != nil {
+		return nil, err
+	}
+	if err := requireExactName("Network", name, got.Name, name); err != nil {
+		return nil, err
+	}
+	return got, nil
+}
+
 // Create creates a new network and returns the created network.
 func (s *NetworkService) Create(ctx context.Context, req *NetworkCreateRequest) (*Network, error) {
 	if req == nil {

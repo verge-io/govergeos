@@ -13,6 +13,7 @@ import (
 type VMServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]VM, error)
 	Get(ctx context.Context, id int) (*VM, error)
+	GetByName(ctx context.Context, name string) (*VM, error)
 	Create(ctx context.Context, req *VMCreateRequest) (*VM, error)
 	Update(ctx context.Context, id int, req *VMUpdateRequest) (*VM, error)
 	Delete(ctx context.Context, id int) error
@@ -88,6 +89,7 @@ type VMDeviceServiceInterface interface {
 type NetworkServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]Network, error)
 	Get(ctx context.Context, id int) (*Network, error)
+	GetByName(ctx context.Context, name string) (*Network, error)
 	Create(ctx context.Context, req *NetworkCreateRequest) (*Network, error)
 	Update(ctx context.Context, id int, req *NetworkUpdateRequest) (*Network, error)
 	Delete(ctx context.Context, id int) error

@@ -144,3 +144,159 @@ func TestVolumeService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
 		})
 	}
 }
+
+func TestVMService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
+	for _, tt := range filterNameCases {
+		t.Run(tt.label, func(t *testing.T) {
+			wantFilter := "is_snapshot eq false and name eq '" + tt.quoted + "'"
+
+			t.Run("query", func(t *testing.T) {
+				client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+					"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
+						if got := r.URL.Query().Get("filter"); got != wantFilter {
+							t.Errorf("filter = %q, want %q", got, wantFilter)
+						}
+						jsonResponse(w, 200, []VM{{ID: 2, Name: tt.name}})
+					},
+					"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
+						jsonResponse(w, 200, VM{ID: 2, Name: tt.name})
+					},
+				}))
+
+				vm, err := client.VMs.GetByName(context.Background(), tt.name)
+				if err != nil {
+					t.Fatalf("GetByName: %v", err)
+				}
+				if vm.Name != tt.name || vm.ID != 2 {
+					t.Fatalf("got %+v", vm)
+				}
+			})
+
+			t.Run("list mismatch", func(t *testing.T) {
+				returned := "zzgo-grp"
+				if returned == tt.name {
+					returned = "other"
+				}
+				client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+					"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
+						if got := r.URL.Query().Get("filter"); got != wantFilter {
+							t.Errorf("filter = %q, want %q", got, wantFilter)
+						}
+						jsonResponse(w, 200, []VM{{ID: 2, Name: returned}})
+					},
+					"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
+						t.Error("Get was called for a list row whose name did not match")
+						jsonResponse(w, 200, VM{ID: 2, Name: returned})
+					},
+				}))
+
+				_, err := client.VMs.GetByName(context.Background(), tt.name)
+				notFound, ok := err.(*NotFoundError)
+				if !ok {
+					t.Fatalf("expected *NotFoundError, got %T: %v", err, err)
+				}
+				if notFound.Resource != "VM" || notFound.ID != tt.name {
+					t.Fatalf("unexpected not-found details: %+v", notFound)
+				}
+			})
+
+			t.Run("fetched name mismatch", func(t *testing.T) {
+				client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+					"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
+						jsonResponse(w, 200, []VM{{ID: 2, Name: tt.name}})
+					},
+					"GET /api/v4/vms/2": func(w http.ResponseWriter, r *http.Request) {
+						jsonResponse(w, 200, VM{ID: 2, Name: "other-vm"})
+					},
+				}))
+
+				_, err := client.VMs.GetByName(context.Background(), tt.name)
+				notFound, ok := err.(*NotFoundError)
+				if !ok {
+					t.Fatalf("expected *NotFoundError, got %T: %v", err, err)
+				}
+				if notFound.Resource != "VM" || notFound.ID != tt.name {
+					t.Fatalf("unexpected not-found details: %+v", notFound)
+				}
+			})
+		})
+	}
+}
+
+func TestNetworkService_GetByName_EscapesAndMatchesExactly(t *testing.T) {
+	for _, tt := range filterNameCases {
+		t.Run(tt.label, func(t *testing.T) {
+			wantFilter := "name eq '" + tt.quoted + "'"
+
+			t.Run("query", func(t *testing.T) {
+				client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+					"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
+						if got := r.URL.Query().Get("filter"); got != wantFilter {
+							t.Errorf("filter = %q, want %q", got, wantFilter)
+						}
+						jsonResponse(w, 200, []Network{{ID: 3, Name: tt.name}})
+					},
+					"GET /api/v4/vnets/3": func(w http.ResponseWriter, r *http.Request) {
+						jsonResponse(w, 200, Network{ID: 3, Name: tt.name})
+					},
+				}))
+
+				network, err := client.Networks.GetByName(context.Background(), tt.name)
+				if err != nil {
+					t.Fatalf("GetByName: %v", err)
+				}
+				if network.Name != tt.name || network.ID != 3 {
+					t.Fatalf("got %+v", network)
+				}
+			})
+
+			t.Run("list mismatch", func(t *testing.T) {
+				returned := "zzgo-grp"
+				if returned == tt.name {
+					returned = "other"
+				}
+				client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+					"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
+						if got := r.URL.Query().Get("filter"); got != wantFilter {
+							t.Errorf("filter = %q, want %q", got, wantFilter)
+						}
+						jsonResponse(w, 200, []Network{{ID: 3, Name: returned}})
+					},
+					"GET /api/v4/vnets/3": func(w http.ResponseWriter, r *http.Request) {
+						t.Error("Get was called for a list row whose name did not match")
+						jsonResponse(w, 200, Network{ID: 3, Name: returned})
+					},
+				}))
+
+				_, err := client.Networks.GetByName(context.Background(), tt.name)
+				notFound, ok := err.(*NotFoundError)
+				if !ok {
+					t.Fatalf("expected *NotFoundError, got %T: %v", err, err)
+				}
+				if notFound.Resource != "Network" || notFound.ID != tt.name {
+					t.Fatalf("unexpected not-found details: %+v", notFound)
+				}
+			})
+
+			t.Run("fetched name mismatch", func(t *testing.T) {
+				client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+					"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
+						jsonResponse(w, 200, []Network{{ID: 3, Name: tt.name}})
+					},
+					"GET /api/v4/vnets/3": func(w http.ResponseWriter, r *http.Request) {
+						jsonResponse(w, 200, Network{ID: 3, Name: "other-network"})
+					},
+				}))
+
+				_, err := client.Networks.GetByName(context.Background(), tt.name)
+				notFound, ok := err.(*NotFoundError)
+				if !ok {
+					t.Fatalf("expected *NotFoundError, got %T: %v", err, err)
+				}
+				if notFound.Resource != "Network" || notFound.ID != tt.name {
+					t.Fatalf("unexpected not-found details: %+v", notFound)
+				}
+			})
+		})
+	}
+}
