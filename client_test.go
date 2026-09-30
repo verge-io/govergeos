@@ -1,6 +1,7 @@
 package vergeos
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -525,6 +526,213 @@ func TestNewClientSkipsCredentialCheckOnUnsupportedVersion(t *testing.T) {
 	}
 	if len(*seen) != 1 || (*seen)[0].path != "/version.json" || (*seen)[0].authorization != "" {
 		t.Fatalf("startup requests = %#v, want one unauthenticated version check", *seen)
+	}
+}
+
+func TestNewClientForbiddenIsPermissionError(t *testing.T) {
+	server, seen := newStartupServer(t, "26.1.8", http.StatusForbidden, `{"err":"Permission denied"}`)
+
+	client, err := NewClient(
+		WithBaseURL(server.URL),
+		WithAPIKey("limited-key"),
+		WithHTTPClient(server.Client()),
+	)
+	if client != nil {
+		t.Fatal("NewClient returned a client when the credential check was forbidden")
+	}
+	if err == nil {
+		t.Fatal("NewClient returned a nil error when the credential check was forbidden")
+	}
+	if IsAuthError(err) {
+		t.Fatalf("permission denial reported as authentication failure: %v", err)
+	}
+	if !IsPermissionError(err) {
+		t.Fatalf("NewClient error = %v, want PermissionError", err)
+	}
+	if err.Error() != "vergeos: permission denied: Permission denied" {
+		t.Fatalf("error = %q, want permission denied with the platform message", err.Error())
+	}
+
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("errors.As *APIError failed for %T", err)
+	}
+	if apiErr.StatusCode != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", apiErr.StatusCode)
+	}
+	if len(credentialChecks(*seen)) != 1 {
+		t.Fatalf("credential checks = %d, want exactly one", len(credentialChecks(*seen)))
+	}
+}
+
+func TestClientStatusErrorMapping(t *testing.T) {
+	tests := []struct {
+		name           string
+		status         int
+		body           string
+		wantError      string
+		wantAuth       bool
+		wantPermission bool
+		wantConflict   bool
+		wantNotFound   bool
+		wantType       string
+		wantAPIStatus  int // 0 when errors.As *APIError should fail
+		wantEndpoint   string
+		wantMessage    string
+	}{
+		{
+			name:          "401 login required",
+			status:        http.StatusUnauthorized,
+			body:          `{"err":"Login required"}`,
+			wantError:     "vergeos: authentication failed: Login required",
+			wantAuth:      true,
+			wantType:      "*vergeos.AuthError",
+			wantMessage:   "Login required",
+			wantAPIStatus: 0,
+		},
+		{
+			name:           "403 permission denied",
+			status:         http.StatusForbidden,
+			body:           `{"err":"Permission denied"}`,
+			wantError:      "vergeos: permission denied: Permission denied",
+			wantPermission: true,
+			wantType:       "*vergeos.PermissionError",
+			wantAPIStatus:  http.StatusForbidden,
+			wantEndpoint:   "/groups",
+			wantMessage:    "Permission denied",
+		},
+		{
+			name:          "409 name taken",
+			status:        http.StatusConflict,
+			body:          `{"err":"name already exists"}`,
+			wantError:     "vergeos: conflict: name already exists",
+			wantConflict:  true,
+			wantType:      "*vergeos.ConflictError",
+			wantAPIStatus: http.StatusConflict,
+			wantEndpoint:  "/groups",
+			wantMessage:   "name already exists",
+		},
+		{
+			name:          "404 plain APIError",
+			status:        http.StatusNotFound,
+			body:          `{"err":"not found"}`,
+			wantError:     "vergeos: API error 404 at /groups: not found",
+			wantNotFound:  true,
+			wantType:      "*vergeos.APIError",
+			wantAPIStatus: http.StatusNotFound,
+			wantEndpoint:  "/groups",
+			wantMessage:   "not found",
+		},
+		{
+			name:          "500 plain APIError",
+			status:        http.StatusInternalServerError,
+			body:          `{"err":"unavailable"}`,
+			wantError:     "vergeos: API error 500 at /groups: unavailable",
+			wantType:      "*vergeos.APIError",
+			wantAPIStatus: http.StatusInternalServerError,
+			wantEndpoint:  "/groups",
+			wantMessage:   "unavailable",
+		},
+		{
+			name:           "403 plain text body",
+			status:         http.StatusForbidden,
+			body:           "Permission denied",
+			wantError:      "vergeos: permission denied: Permission denied",
+			wantPermission: true,
+			wantType:       "*vergeos.PermissionError",
+			wantAPIStatus:  http.StatusForbidden,
+			wantEndpoint:   "/groups",
+			wantMessage:    "Permission denied",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+				"GET /api/v4/groups": func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(tt.status)
+					_, _ = w.Write([]byte(tt.body))
+				},
+			}))
+
+			_, err := client.Groups.List(context.Background())
+			if err == nil {
+				t.Fatal("expected an error")
+			}
+			if err.Error() != tt.wantError {
+				t.Fatalf("error = %q, want %q", err.Error(), tt.wantError)
+			}
+			if got := errorTypeName(err); got != tt.wantType {
+				t.Fatalf("type = %s, want %s", got, tt.wantType)
+			}
+			if IsAuthError(err) != tt.wantAuth {
+				t.Fatalf("IsAuthError = %v, want %v", IsAuthError(err), tt.wantAuth)
+			}
+			if IsPermissionError(err) != tt.wantPermission {
+				t.Fatalf("IsPermissionError = %v, want %v", IsPermissionError(err), tt.wantPermission)
+			}
+			if IsConflictError(err) != tt.wantConflict {
+				t.Fatalf("IsConflictError = %v, want %v", IsConflictError(err), tt.wantConflict)
+			}
+			if IsNotFoundError(err) != tt.wantNotFound {
+				t.Fatalf("IsNotFoundError = %v, want %v", IsNotFoundError(err), tt.wantNotFound)
+			}
+
+			var apiErr *APIError
+			gotAPI := errors.As(err, &apiErr)
+			if tt.wantAPIStatus == 0 {
+				if gotAPI {
+					t.Fatalf("errors.As *APIError matched %T, want no match", err)
+				}
+				return
+			}
+			if !gotAPI {
+				t.Fatalf("errors.As *APIError failed for %T", err)
+			}
+			if apiErr.StatusCode != tt.wantAPIStatus || apiErr.Endpoint != tt.wantEndpoint || apiErr.Message != tt.wantMessage {
+				t.Fatalf("APIError = %+v", apiErr)
+			}
+		})
+	}
+}
+
+func TestGetAbsoluteStatusErrorMapping(t *testing.T) {
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/version.json" {
+			t.Fatalf("path = %q, want /version.json", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte("Permission denied"))
+	}))
+
+	err := client.getAbsolute(context.Background(), "/version.json", nil, &versionResponse{})
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	if IsAuthError(err) {
+		t.Fatalf("403 reported as authentication failure: %v", err)
+	}
+	if !IsPermissionError(err) {
+		t.Fatalf("error = %v, want PermissionError", err)
+	}
+	if err.Error() != "vergeos: permission denied: Permission denied" {
+		t.Fatalf("error = %q", err.Error())
+	}
+}
+
+func errorTypeName(err error) string {
+	switch err.(type) {
+	case *AuthError:
+		return "*vergeos.AuthError"
+	case *PermissionError:
+		return "*vergeos.PermissionError"
+	case *ConflictError:
+		return "*vergeos.ConflictError"
+	case *APIError:
+		return "*vergeos.APIError"
+	default:
+		return ""
 	}
 }
 

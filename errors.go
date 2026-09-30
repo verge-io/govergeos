@@ -31,7 +31,7 @@ func (e *NotFoundError) Error() string {
 	return fmt.Sprintf("vergeos: %s with ID %v not found", e.Resource, e.ID)
 }
 
-// AuthError is returned when authentication fails.
+// AuthError is returned when authentication fails (HTTP 401).
 type AuthError struct {
 	Message string
 }
@@ -42,6 +42,56 @@ func (e *AuthError) Error() string {
 		return fmt.Sprintf("vergeos: authentication failed: %s", e.Message)
 	}
 	return "vergeos: authentication failed"
+}
+
+// PermissionError is returned when the caller is authenticated but the
+// platform denies the request (HTTP 403).
+//
+// It unwraps to *APIError so errors.As can recover the status code,
+// endpoint, and platform message.
+type PermissionError struct {
+	APIError
+}
+
+// Error implements the error interface.
+func (e *PermissionError) Error() string {
+	if e != nil && e.Message != "" {
+		return fmt.Sprintf("vergeos: permission denied: %s", e.Message)
+	}
+	return "vergeos: permission denied"
+}
+
+// Unwrap exposes the underlying APIError.
+func (e *PermissionError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return &e.APIError
+}
+
+// ConflictError is returned when the request conflicts with current state
+// (HTTP 409), such as creating a resource whose name is already taken.
+//
+// It unwraps to *APIError so errors.As can recover the status code,
+// endpoint, and platform message.
+type ConflictError struct {
+	APIError
+}
+
+// Error implements the error interface.
+func (e *ConflictError) Error() string {
+	if e != nil && e.Message != "" {
+		return fmt.Sprintf("vergeos: conflict: %s", e.Message)
+	}
+	return "vergeos: conflict"
+}
+
+// Unwrap exposes the underlying APIError.
+func (e *ConflictError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return &e.APIError
 }
 
 // ValidationError is returned when request validation fails.
@@ -95,7 +145,8 @@ func IsNotFoundError(err error) bool {
 	return false
 }
 
-// IsAuthError returns true if the error is an AuthError or a 401/403 API error.
+// IsAuthError returns true if the error is an AuthError or a 401 API error.
+// A 403 is a permission denial; use IsPermissionError for that.
 func IsAuthError(err error) bool {
 	if err == nil {
 		return false
@@ -106,7 +157,39 @@ func IsAuthError(err error) bool {
 	}
 	var apiErr *APIError
 	if errors.As(err, &apiErr) {
-		return apiErr.StatusCode == 401 || apiErr.StatusCode == 403
+		return apiErr.StatusCode == 401
+	}
+	return false
+}
+
+// IsPermissionError returns true if the error is a PermissionError or a 403 API error.
+func IsPermissionError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var permErr *PermissionError
+	if errors.As(err, &permErr) {
+		return true
+	}
+	var apiErr *APIError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == 403
+	}
+	return false
+}
+
+// IsConflictError returns true if the error is a ConflictError or a 409 API error.
+func IsConflictError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var conflictErr *ConflictError
+	if errors.As(err, &conflictErr) {
+		return true
+	}
+	var apiErr *APIError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == 409
 	}
 	return false
 }

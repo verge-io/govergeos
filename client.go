@@ -294,8 +294,9 @@ func WithEnvConfig() ClientOption {
 // after a small number of failed logins, and retrying a bad password
 // locks the account for every client that shares it, including API keys.
 //
-// A failed login is returned as an AuthError. An incompatible server
-// version is returned as an UnsupportedVersionError.
+// A failed login is returned as an AuthError. A credential that is
+// accepted but not allowed to read the check endpoint is a PermissionError.
+// An incompatible server version is returned as an UnsupportedVersionError.
 func NewClient(opts ...ClientOption) (*Client, error) {
 	// Create client with defaults
 	c := &Client{
@@ -509,22 +510,7 @@ func (c *Client) do(ctx context.Context, method, endpoint string, body any, para
 			errMsg = apiResp.Err
 		}
 
-		// Return appropriate error type
-		if resp.StatusCode == 401 || resp.StatusCode == 403 {
-			return &AuthError{Message: errMsg}
-		}
-		if resp.StatusCode == 404 {
-			return &APIError{
-				StatusCode: resp.StatusCode,
-				Endpoint:   endpoint,
-				Message:    errMsg,
-			}
-		}
-		return &APIError{
-			StatusCode: resp.StatusCode,
-			Endpoint:   endpoint,
-			Message:    errMsg,
-		}
+		return apiStatusError(resp.StatusCode, endpoint, errMsg)
 	}
 
 	// Decode response if result is provided
@@ -587,14 +573,7 @@ func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values
 	// Check for HTTP errors
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
-		if resp.StatusCode == 401 || resp.StatusCode == 403 {
-			return &AuthError{Message: string(body)}
-		}
-		return &APIError{
-			StatusCode: resp.StatusCode,
-			Endpoint:   path,
-			Message:    string(body),
-		}
+		return apiStatusError(resp.StatusCode, path, string(body))
 	}
 
 	// Decode response
@@ -605,6 +584,35 @@ func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values
 	}
 
 	return nil
+}
+
+// apiStatusError maps a non-success HTTP status to an SDK error.
+// 401 is an authentication failure, 403 is a permission denial, and 409
+// is a conflict. Other statuses, including 404, are a plain APIError.
+// IsNotFoundError already checks the status code.
+func apiStatusError(status int, endpoint, message string) error {
+	switch status {
+	case http.StatusUnauthorized:
+		return &AuthError{Message: message}
+	case http.StatusForbidden:
+		return &PermissionError{APIError: APIError{
+			StatusCode: status,
+			Endpoint:   endpoint,
+			Message:    message,
+		}}
+	case http.StatusConflict:
+		return &ConflictError{APIError: APIError{
+			StatusCode: status,
+			Endpoint:   endpoint,
+			Message:    message,
+		}}
+	default:
+		return &APIError{
+			StatusCode: status,
+			Endpoint:   endpoint,
+			Message:    message,
+		}
+	}
 }
 
 // getKey extracts the key from an API response.
