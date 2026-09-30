@@ -41,7 +41,17 @@ type Client struct {
 	// When set, requests use it instead of username and password.
 	apiKey string
 	// httpClient is the HTTP client used for requests.
+	// WithHTTPClient stores the base here. Timeout, TLS, and transport
+	// wrapping are applied to a copy after every option has run.
 	httpClient *http.Client
+	// timeoutSet reports that WithTimeout or VERGEOS_TIMEOUT selected timeout.
+	timeoutSet bool
+	// timeout is applied to a copy of httpClient when timeoutSet is true.
+	timeout time.Duration
+	// insecureTLS skips certificate verification when true. WithInsecureTLS
+	// and the TLS environment variables record it. A later option replaces
+	// an earlier one. The change is made on a cloned *http.Transport.
+	insecureTLS bool
 	// userAgent is the User-Agent header sent with requests.
 	userAgent string
 	// serverVersion is the version reported by /version.json during client initialization.
@@ -184,12 +194,9 @@ func WithAPIKey(apiKey string) ClientOption {
 	}
 }
 
-// cloneOrNewTransport returns a clone of the existing transport if it is an
-// *http.Transport, or a fresh transport with sensible defaults otherwise.
-func cloneOrNewTransport(rt http.RoundTripper) *http.Transport {
-	if t, ok := rt.(*http.Transport); ok {
-		return t.Clone()
-	}
+// defaultTransport returns the transport used when the caller does not
+// supply one.
+func defaultTransport() *http.Transport {
 	return &http.Transport{
 		MaxIdleConns:        100,
 		MaxIdleConnsPerHost: 20,
@@ -197,30 +204,127 @@ func cloneOrNewTransport(rt http.RoundTripper) *http.Transport {
 	}
 }
 
-// useInsecureTLS skips TLS certificate verification on c.httpClient.
-func useInsecureTLS(c *Client) {
-	transport := cloneOrNewTransport(c.httpClient.Transport)
-	transport.TLSClientConfig = &tls.Config{
-		InsecureSkipVerify: true,
+// defaultHTTPClient is the client used when WithHTTPClient is not set.
+func defaultHTTPClient() *http.Client {
+	return &http.Client{
+		Timeout:   defaultTimeout,
+		Transport: defaultTransport(),
 	}
-	c.httpClient.Transport = transport
+}
+
+// cloneHTTPTransport copies the exported fields of t.
+//
+// http.Transport.Clone also enables HTTP/2 on t, and that writes a TLS
+// config into the caller's transport. Copying the fields leaves t as it was.
+// The copy configures HTTP/2 for itself on its first request.
+func cloneHTTPTransport(t *http.Transport) *http.Transport {
+	cloned := &http.Transport{
+		Proxy:                  t.Proxy,
+		OnProxyConnectResponse: t.OnProxyConnectResponse,
+		DialContext:            t.DialContext,
+		Dial:                   t.Dial,
+		DialTLS:                t.DialTLS,
+		DialTLSContext:         t.DialTLSContext,
+		TLSHandshakeTimeout:    t.TLSHandshakeTimeout,
+		DisableKeepAlives:      t.DisableKeepAlives,
+		DisableCompression:     t.DisableCompression,
+		MaxIdleConns:           t.MaxIdleConns,
+		MaxIdleConnsPerHost:    t.MaxIdleConnsPerHost,
+		MaxConnsPerHost:        t.MaxConnsPerHost,
+		IdleConnTimeout:        t.IdleConnTimeout,
+		ResponseHeaderTimeout:  t.ResponseHeaderTimeout,
+		ExpectContinueTimeout:  t.ExpectContinueTimeout,
+		ProxyConnectHeader:     t.ProxyConnectHeader.Clone(),
+		GetProxyConnectHeader:  t.GetProxyConnectHeader,
+		MaxResponseHeaderBytes: t.MaxResponseHeaderBytes,
+		ForceAttemptHTTP2:      t.ForceAttemptHTTP2,
+		WriteBufferSize:        t.WriteBufferSize,
+		ReadBufferSize:         t.ReadBufferSize,
+	}
+	if t.TLSClientConfig != nil {
+		cloned.TLSClientConfig = t.TLSClientConfig.Clone()
+	}
+	if len(t.TLSNextProto) > 0 {
+		next := make(map[string]func(string, *tls.Conn) http.RoundTripper, len(t.TLSNextProto))
+		for name, fn := range t.TLSNextProto {
+			next[name] = fn
+		}
+		cloned.TLSNextProto = next
+	}
+	return cloned
+}
+
+// transportWithInsecureSkipVerify returns a transport that skips certificate
+// verification. A nil transport gets a new default. An *http.Transport is
+// cloned and the flag is set on the clone. Any other type is an error:
+// replacing it would drop the caller's transport.
+func transportWithInsecureSkipVerify(rt http.RoundTripper) (http.RoundTripper, error) {
+	if rt == nil {
+		t := defaultTransport()
+		t.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		return t, nil
+	}
+	t, ok := rt.(*http.Transport)
+	if !ok {
+		return nil, fmt.Errorf("insecure TLS cannot be applied to transport %T (WithInsecureTLS and VERGEOS_INSECURE require *http.Transport)", rt)
+	}
+	cloned := cloneHTTPTransport(t)
+	if cloned.TLSClientConfig == nil {
+		cloned.TLSClientConfig = &tls.Config{}
+	}
+	cloned.TLSClientConfig.InsecureSkipVerify = true
+	return cloned, nil
+}
+
+// prepareHTTPClient copies the base client and applies the recorded timeout
+// and TLS settings. The client stored by WithHTTPClient, and its transport,
+// are not modified.
+func (c *Client) prepareHTTPClient() error {
+	if c.httpClient == nil {
+		return fmt.Errorf("http client is nil")
+	}
+	cloned := *c.httpClient
+	if c.timeoutSet {
+		cloned.Timeout = c.timeout
+	}
+	if c.insecureTLS {
+		tr, err := transportWithInsecureSkipVerify(cloned.Transport)
+		if err != nil {
+			return err
+		}
+		cloned.Transport = tr
+	}
+	c.httpClient = &cloned
+	return nil
 }
 
 // WithInsecureTLS configures whether to skip TLS certificate verification.
 // This is useful for self-signed certificates.
+//
+// The choice is recorded and applied to a copy of the base client after
+// every option has run. true skips verification. false does not, and it
+// replaces an earlier true from WithInsecureTLS or from the TLS environment
+// variables. The TLS change is made on a clone of *http.Transport so the
+// caller's transport is left alone. A transport of any other type cannot
+// take that change, and NewClient returns an error instead of dropping it.
+// false does not rewrite TLS settings that were already on a custom transport.
 func WithInsecureTLS(insecure bool) ClientOption {
 	return func(c *Client) error {
-		if insecure {
-			useInsecureTLS(c)
-		}
+		c.insecureTLS = insecure
 		return nil
 	}
 }
 
 // WithTimeout sets the HTTP request timeout.
+//
+// The timeout is applied to a copy of the base client after every option
+// has run, including when WithHTTPClient is also set. A later WithTimeout
+// or VERGEOS_TIMEOUT replaces an earlier one. The *http.Client passed to
+// WithHTTPClient is not modified.
 func WithTimeout(timeout time.Duration) ClientOption {
 	return func(c *Client) error {
-		c.httpClient.Timeout = timeout
+		c.timeout = timeout
+		c.timeoutSet = true
 		return nil
 	}
 }
@@ -264,13 +368,28 @@ func (c *Client) vmPowerWait() (time.Duration, time.Duration) {
 	return timeout, interval
 }
 
-// WithHTTPClient sets a custom HTTP client.
+// WithHTTPClient sets the base HTTP client.
 //
-// NewClient keeps this client's Timeout, cookie jar, and redirect policy.
-// It wraps Transport with the retry policy and, when requested, the rate
-// limit. The Transport value on the client passed in is left in place.
+// NewClient copies this client after every option has run. Timeout, TLS,
+// retry, and rate limit settings are applied to the copy. CheckRedirect,
+// the cookie jar, and a timeout that no other option set are kept from the
+// base. The *http.Client value passed in is not modified, and neither is
+// its transport.
+//
+// Transport stays shared when TLS settings do not need to change, so the
+// connection pool stays shared. WithInsecureTLS(true), or a TLS environment
+// variable that skips verification, clones an *http.Transport and sets
+// InsecureSkipVerify on the clone. Any other transport type cannot take
+// that change, and NewClient returns an error.
+//
+// Option order does not decide whether timeout, TLS, or rate limit settings
+// survive WithHTTPClient. A later WithTimeout or WithInsecureTLS still
+// replaces an earlier one.
 func WithHTTPClient(httpClient *http.Client) ClientOption {
 	return func(c *Client) error {
+		if httpClient == nil {
+			return fmt.Errorf("http client is nil")
+		}
 		c.httpClient = httpClient
 		return nil
 	}
@@ -317,6 +436,13 @@ func WithSkipVersionCheck() ClientOption {
 // WithEnvConfig configures the client from environment variables.
 // This option should typically be applied first, allowing subsequent options
 // to override specific values.
+//
+// TLS and timeout values are recorded here and applied to a copy of the base
+// HTTP client after every option has run. WithHTTPClient does not drop them.
+// A later WithTimeout or WithInsecureTLS replaces the value read from the
+// environment. A later WithEnvConfig replaces an earlier WithTimeout, and it
+// replaces an earlier WithInsecureTLS(false) when the environment asks to
+// skip verification.
 //
 // Environment variables:
 //   - VERGEOS_HOST: Host or base URL. A value with no scheme is treated as
@@ -380,16 +506,17 @@ func WithEnvConfig() ClientOption {
 			return err
 		}
 		if skipVerify {
-			useInsecureTLS(c)
+			c.insecureTLS = true
 		}
 
-		// Timeout (only if set in environment)
+		// Timeout (only if set in environment). A later WithTimeout replaces it.
 		if timeoutStr := os.Getenv("VERGEOS_TIMEOUT"); timeoutStr != "" {
 			timeout, err := strconv.Atoi(timeoutStr)
 			if err != nil {
 				return fmt.Errorf("invalid VERGEOS_TIMEOUT value %q: %w", timeoutStr, err)
 			}
-			c.httpClient.Timeout = time.Duration(timeout) * time.Second
+			c.timeout = time.Duration(timeout) * time.Second
+			c.timeoutSet = true
 		}
 
 		return nil
@@ -480,17 +607,11 @@ func envSkipTLSVerify() (bool, error) {
 // UnsupportedVersionError. WithMinimumVersion changes that floor.
 // WithSkipVersionCheck records the version and does not reject it.
 func NewClient(opts ...ClientOption) (*Client, error) {
-	// Create client with defaults
+	// Create client with defaults. Options record HTTP settings. The client
+	// those settings apply to is built once, after every option has run.
 	c := &Client{
-		httpClient: &http.Client{
-			Timeout: defaultTimeout,
-			Transport: &http.Transport{
-				MaxIdleConns:        100,
-				MaxIdleConnsPerHost: 20,
-				IdleConnTimeout:     90 * time.Second,
-			},
-		},
-		userAgent: defaultUserAgent,
+		httpClient: defaultHTTPClient(),
+		userAgent:  defaultUserAgent,
 	}
 
 	// Apply options
@@ -510,9 +631,11 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 		return nil, fmt.Errorf("vergeos: authentication required (use WithCredentials or WithAPIKey)")
 	}
 
-	// Wrap after options so WithHTTPClient and WithInsecureTLS sit inside
-	// the retry layer, and so startup checks use the same policy.
-	c.applyTransportPolicy()
+	// Build the HTTP client from the recorded options, then wrap it so
+	// startup checks use the same retry and rate limit policy as later calls.
+	if err := c.applyTransportPolicy(); err != nil {
+		return nil, fmt.Errorf("vergeos: %w", err)
+	}
 
 	// Initialize services
 	c.VMs = &VMService{client: c}

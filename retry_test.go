@@ -45,7 +45,9 @@ func newPolicyClient(t *testing.T, base http.RoundTripper, opts ...ClientOption)
 			t.Fatalf("option: %v", err)
 		}
 	}
-	c.applyTransportPolicy()
+	if err := c.applyTransportPolicy(); err != nil {
+		t.Fatalf("transport: %v", err)
+	}
 	return c
 }
 
@@ -702,8 +704,19 @@ func TestTransportPolicyPreservesCallerAndTLS(t *testing.T) {
 	if err := WithRetry(RetryPolicy{MaxAttempts: 2})(client); err != nil {
 		t.Fatal(err)
 	}
-	client.applyTransportPolicy()
+	if err := client.applyTransportPolicy(); err != nil {
+		t.Fatal(err)
+	}
 
+	if caller.Transport != base {
+		t.Fatal("caller transport was replaced")
+	}
+	if caller.Timeout != time.Second {
+		t.Fatalf("caller timeout = %s, want 1s", caller.Timeout)
+	}
+	if base.TLSClientConfig != nil {
+		t.Fatal("caller TLS config was modified")
+	}
 	if caller.Transport == client.httpClient.Transport {
 		t.Fatal("applyTransportPolicy replaced the caller's Transport")
 	}
@@ -729,14 +742,11 @@ func TestTransportPolicyPreservesCallerAndTLS(t *testing.T) {
 	if !ok {
 		t.Fatalf("base = %T", limit.base)
 	}
-	if got != caller.Transport {
-		t.Fatal("rate limit is not wrapping the caller's transport")
-	}
-	if got == base {
-		t.Fatal("WithInsecureTLS did not install its own transport")
+	if got == base || got == caller.Transport {
+		t.Fatal("insecure TLS reused the caller's transport")
 	}
 	if got.TLSClientConfig == nil || !got.TLSClientConfig.InsecureSkipVerify {
-		t.Fatal("InsecureSkipVerify was not preserved")
+		t.Fatal("InsecureSkipVerify was not set on the clone")
 	}
 	client.httpClient.CloseIdleConnections()
 }
