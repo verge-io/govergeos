@@ -44,9 +44,10 @@ type VMSnapshotServiceInterface interface {
 }
 
 // VMNICServiceInterface defines the interface for VM NIC operations.
-// Note: List takes a machineID (VM.Machine field), not the VM's $key/ID.
+// Methods that take vmID use the VM $key (VM.ID). The machine key stored on
+// machine_nics is resolved internally. Hot-unplug posts that VM $key to vm_actions.
 type VMNICServiceInterface interface {
-	List(ctx context.Context, machineID int) ([]VMNIC, error)
+	List(ctx context.Context, vmID int) ([]VMNIC, error)
 	Get(ctx context.Context, nicID int) (*VMNIC, error)
 	Create(ctx context.Context, vmID int, req *VMNICCreateRequest) (*VMNIC, error)
 	Update(ctx context.Context, nicID int, req *VMNICUpdateRequest) (*VMNIC, error)
@@ -54,8 +55,11 @@ type VMNICServiceInterface interface {
 }
 
 // VMDriveServiceInterface defines the interface for VM Drive operations.
+// Methods that take vmID use the VM $key (VM.ID). The machine key stored on
+// machine_drives is resolved internally. HotplugDrive and HotUnplugDrive also
+// take the VM $key, which is what vm_actions requires.
 type VMDriveServiceInterface interface {
-	List(ctx context.Context, machineID int) ([]VMDrive, error)
+	List(ctx context.Context, vmID int) ([]VMDrive, error)
 	ListAll(ctx context.Context, opts ...ListOption) ([]VMDrive, error)
 	Get(ctx context.Context, driveID int) (*VMDrive, error)
 	GetByName(ctx context.Context, vmID int, name string) (*VMDrive, error)
@@ -68,8 +72,10 @@ type VMDriveServiceInterface interface {
 }
 
 // VMDeviceServiceInterface defines the interface for VM Device operations.
+// Methods that take vmID use the VM $key (VM.ID). The machine key stored on
+// machine_devices is resolved internally.
 type VMDeviceServiceInterface interface {
-	List(ctx context.Context, machineID int) ([]VMDevice, error)
+	List(ctx context.Context, vmID int) ([]VMDevice, error)
 	Get(ctx context.Context, deviceID int) (*VMDevice, error)
 	Create(ctx context.Context, vmID int, req *VMDeviceCreateRequest) (*VMDevice, error)
 	Update(ctx context.Context, deviceID int, req *VMDeviceUpdateRequest) (*VMDevice, error)

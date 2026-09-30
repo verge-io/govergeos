@@ -46,11 +46,18 @@ func (s *VMDriveService) getFields() string {
 	return fields
 }
 
-// List returns all drives for a machine.
-func (s *VMDriveService) List(ctx context.Context, machineID int) ([]VMDrive, error) {
+// List returns all drives for a VM.
+// vmID is the VM $key (VM.ID). Drives are stored against the machine key,
+// which is resolved before querying machine_drives.
+func (s *VMDriveService) List(ctx context.Context, vmID int) ([]VMDrive, error) {
+	machine, err := s.client.machineKeyForVM(ctx, vmID)
+	if err != nil {
+		return nil, err
+	}
+
 	params := url.Values{}
 	params.Set("fields", s.listFields())
-	params.Set("filter", fmt.Sprintf("machine eq %d", machineID))
+	params.Set("filter", fmt.Sprintf("machine eq %d", machine))
 
 	var drives []VMDrive
 	if err := s.client.get(ctx, "/machine_drives", params, &drives); err != nil {
@@ -107,10 +114,15 @@ func (s *VMDriveService) Get(ctx context.Context, driveID int) (*VMDrive, error)
 }
 
 // GetByName returns a drive by name within a specific VM.
-// Drive names are scoped to a VM (every VM can have a "disk0"), so vmID is required.
+// vmID is the VM $key (VM.ID). Drive names are scoped to a machine
+// (every VM can have a "disk0"), so the machine key is resolved first.
 // Returns NotFoundError if no drive with the given name exists on the VM.
 func (s *VMDriveService) GetByName(ctx context.Context, vmID int, name string) (*VMDrive, error) {
-	drives, err := s.ListAll(ctx, WithFilter(fmt.Sprintf("machine eq %d and name eq '%s'", vmID, escapeFilterValue(name))))
+	machine, err := s.client.machineKeyForVM(ctx, vmID)
+	if err != nil {
+		return nil, err
+	}
+	drives, err := s.ListAll(ctx, WithFilter(fmt.Sprintf("machine eq %d and name eq '%s'", machine, escapeFilterValue(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +134,7 @@ func (s *VMDriveService) GetByName(ctx context.Context, vmID int, name string) (
 }
 
 // Create creates a new drive and returns the created drive.
+// vmID is the VM $key (VM.ID). It is resolved to the machine key stored on the drive.
 // For import media, this method waits for the import to complete.
 func (s *VMDriveService) Create(ctx context.Context, vmID int, req *VMDriveCreateRequest) (*VMDrive, error) {
 	if req == nil {
@@ -131,8 +144,11 @@ func (s *VMDriveService) Create(ctx context.Context, vmID int, req *VMDriveCreat
 		return nil, &ValidationError{Field: "name", Message: "name is required"}
 	}
 
-	// Set the machine ID
-	req.Machine = vmID
+	machine, err := s.client.machineKeyForVM(ctx, vmID)
+	if err != nil {
+		return nil, err
+	}
+	req.Machine = machine
 
 	// Convert GB to bytes
 	if req.SizeGB > 0 {
@@ -254,9 +270,14 @@ func (s *VMDriveService) Delete(ctx context.Context, driveID int) error {
 		return err
 	}
 
-	// If drive is online, hot-unplug it first
+	// If drive is online, hot-unplug it first.
+	// drive.Machine is a machine key; vm_actions wants the VM $key.
 	if drive.PowerState != "" && drive.PowerState != "offline" {
-		if err := s.hotUnplug(ctx, drive.Machine, driveID); err != nil {
+		vmKey, err := s.client.vmKeyForMachine(ctx, drive.Machine, false)
+		if err != nil {
+			return fmt.Errorf("vergeos: failed to resolve VM for machine %d: %w", drive.Machine, err)
+		}
+		if err := s.hotUnplug(ctx, vmKey, driveID); err != nil {
 			return fmt.Errorf("vergeos: failed to unplug drive before deletion: %w", err)
 		}
 	}

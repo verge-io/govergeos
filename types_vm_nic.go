@@ -42,7 +42,8 @@ type VMNIC struct {
 
 // VMNICCreateRequest is the request body for creating a NIC.
 type VMNICCreateRequest struct {
-	// Machine is the VM's machine ID.
+	// Machine is the machine key (VM.Machine) written to machine_nics.
+	// Create sets this from the VM $key argument; callers do not need to set it.
 	Machine int `json:"machine"`
 	// OrderID is the NIC order (0-30, auto-assigned if not specified).
 	OrderID *int `json:"orderid,omitempty"`

@@ -10,6 +10,7 @@ import (
 
 func TestVMDriveService_List(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/42": stubVM(42, 42),
 		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
 			if fields := r.URL.Query().Get("fields"); !strings.Contains(fields, "ms_2023_kek_applied") {
 				t.Errorf("fields missing ms_2023_kek_applied: %s", fields)
@@ -180,6 +181,7 @@ func TestVMDriveService_Get(t *testing.T) {
 
 func TestVMDriveService_GetByName(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/42": stubVM(42, 42),
 		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
 			filter := r.URL.Query().Get("filter")
 			expected := "machine eq 42 and name eq 'disk0'"
@@ -218,6 +220,7 @@ func TestVMDriveService_GetByName(t *testing.T) {
 
 func TestVMDriveService_GetByName_NotFound(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/42": stubVM(42, 42),
 		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []VMDrive{})
 		},
@@ -234,6 +237,7 @@ func TestVMDriveService_GetByName_NotFound(t *testing.T) {
 
 func TestVMDriveService_GetByName_EscapesName(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/42": stubVM(42, 42),
 		"GET /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
 			filter := r.URL.Query().Get("filter")
 			expected := "machine eq 42 and name eq 'o''malley'"
@@ -271,6 +275,7 @@ func TestVMDriveService_Get_NotFound(t *testing.T) {
 
 func TestVMDriveService_Create(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/10": stubVM(10, 10),
 		"POST /api/v4/machine_drives": func(w http.ResponseWriter, r *http.Request) {
 			var req VMDriveCreateRequest
 			json.NewDecoder(r.Body).Decode(&req)
@@ -432,6 +437,7 @@ func TestVMDriveService_Delete_NotFound(t *testing.T) {
 func TestVMDriveService_Delete_HotUnplug(t *testing.T) {
 	getCalls := 0
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms": stubVMsByMachine(10, 10, false),
 		"GET /api/v4/machine_drives/1": func(w http.ResponseWriter, r *http.Request) {
 			getCalls++
 			state := "online"

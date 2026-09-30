@@ -12,10 +12,17 @@ type VMDeviceService struct {
 }
 
 // List returns all devices for a VM.
-func (s *VMDeviceService) List(ctx context.Context, machineID int) ([]VMDevice, error) {
+// vmID is the VM $key (VM.ID). Devices are stored against the machine key,
+// which is resolved before querying machine_devices.
+func (s *VMDeviceService) List(ctx context.Context, vmID int) ([]VMDevice, error) {
+	machine, err := s.client.machineKeyForVM(ctx, vmID)
+	if err != nil {
+		return nil, err
+	}
+
 	params := url.Values{}
 	params.Set("fields", deviceListFields)
-	params.Set("filter", fmt.Sprintf("machine eq %d", machineID))
+	params.Set("filter", fmt.Sprintf("machine eq %d", machine))
 
 	var devices []VMDevice
 	if err := s.client.get(ctx, "/machine_devices", params, &devices); err != nil {
@@ -137,6 +144,7 @@ func (s *VMDeviceService) getVGPUSettings(ctx context.Context, deviceID int) (*V
 }
 
 // Create creates a new device and returns the created device.
+// vmID is the VM $key (VM.ID). It is resolved to the machine key stored on the device.
 func (s *VMDeviceService) Create(ctx context.Context, vmID int, req *VMDeviceCreateRequest) (*VMDevice, error) {
 	if req == nil {
 		return nil, &ValidationError{Message: "create request is required"}
@@ -148,8 +156,11 @@ func (s *VMDeviceService) Create(ctx context.Context, vmID int, req *VMDeviceCre
 		return nil, &ValidationError{Field: "type", Message: "type is required"}
 	}
 
-	// Set the machine ID
-	req.Machine = vmID
+	machine, err := s.client.machineKeyForVM(ctx, vmID)
+	if err != nil {
+		return nil, err
+	}
+	req.Machine = machine
 
 	// Set defaults
 	if req.Enabled == nil {

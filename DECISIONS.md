@@ -625,3 +625,25 @@ The SDK itself does NOT include built-in rate limiting because:
 - ADR-017 (Explicit Environment Configuration) - Same philosophy of explicit opt-in
 - `test/integration/helpers_test.go` - Implementation location
 
+---
+
+## ADR-019: VM $key and Machine Key Are Different
+
+**Date:** 2026-09-30
+
+**Status:** Accepted
+
+**Context:** Every VM has a row key (`VM.ID`, `vms.$key`) and a machine key (`VM.Machine`). Drives, NICs, devices, and snapshots are stored against the machine key. `vm_actions` (power, hotplug, restore) uses the VM $key. On a system that has been in use the two counters differ, and each number is often some other object's key.
+
+**Decision:** Public methods that identify a VM take the VM $key and resolve the machine key internally. `vm_actions` calls keep using the VM $key. Restore resolves `snap_machine` to the snapshot VM row (`is_snapshot` true) and posts that VM $key. Drive and NIC delete resolve the live VM (`is_snapshot` false) for the device's machine key before hot-unplug.
+
+**Rationale:**
+- Callers otherwise pass `VM.ID` into a parameter documented as an ID and attach the device to a different machine, or post a machine key to `vm_actions` and act on a different VM.
+- `HotplugDrive` already took the VM $key. One parameter name had both meanings.
+- pyVergeOS resolves the same two keys this way.
+
+**Consequences:**
+- `VMDrives`, `VMNICs`, and `VMDevices` `List` and `Create`, `VMDrives.GetByName`, and `VMSnapshots.ListByVM` / `GetByName` take the VM $key.
+- `VMSnapshotCreateRequest.VM` is the VM $key. `Create` posts the resolved machine key.
+- A call with a machine key where a VM $key is required now looks up the wrong VM, or returns not found, instead of silently targeting another machine.
+

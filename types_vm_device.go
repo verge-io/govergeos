@@ -86,7 +86,8 @@ type VGPUDeviceSettings struct {
 
 // VMDeviceCreateRequest is the request body for creating a device.
 type VMDeviceCreateRequest struct {
-	// Machine is the VM's machine ID.
+	// Machine is the machine key (VM.Machine) written to machine_devices.
+	// Create sets this from the VM $key argument; callers do not need to set it.
 	Machine int `json:"machine"`
 	// OrderID is the device order (0-64, auto-assigned if not specified).
 	OrderID *int `json:"orderid,omitempty"`

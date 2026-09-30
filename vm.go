@@ -313,9 +313,10 @@ type VMSnapshotOptions struct {
 // Snapshot creates a VM snapshot and returns it.
 //
 // id is the VM $key used by Get and the power methods. The row is inserted
-// with VMSnapshots.Create (POST /machine_snapshots) using the VM's machine
-// key, a name, and an expires timestamp of now + Retention. The
-// quiesce_snapshot VM action does not create that row.
+// with VMSnapshots.Create (POST /machine_snapshots). Create resolves id to
+// the VM's machine key, which is what machine_snapshots stores, along with
+// a name and an expires timestamp of now + Retention. The quiesce_snapshot
+// VM action does not create that row.
 //
 // When Quiesce is true, the create request sets quiesce and the
 // quiesce_snapshot action is sent afterward so the guest agent can freeze
@@ -324,14 +325,6 @@ type VMSnapshotOptions struct {
 // a guest agent. If the row is created but that action fails, Snapshot
 // returns the snapshot together with the error.
 func (s *VMService) Snapshot(ctx context.Context, id int, opts *VMSnapshotOptions) (*VMSnapshot, error) {
-	vm, err := s.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if vm.Machine <= 0 {
-		return nil, &ValidationError{Field: "machine", Message: fmt.Sprintf("VM %d has no machine key", id)}
-	}
-
 	retention := vmSnapshotDefaultRetention
 	name := ""
 	quiesce := false
@@ -348,7 +341,7 @@ func (s *VMService) Snapshot(ctx context.Context, id int, opts *VMSnapshotOption
 
 	expires := time.Now().Unix() + int64(retention)
 	req := &VMSnapshotCreateRequest{
-		Machine:     vm.Machine,
+		VM:          id,
 		Name:        name,
 		ExpiresType: "date",
 		Expires:     &expires,

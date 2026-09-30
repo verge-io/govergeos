@@ -31,7 +31,14 @@ func (s *VMSnapshotService) List(ctx context.Context, opts ...ListOption) ([]VMS
 }
 
 // ListByVM returns all snapshots for a specific VM.
+// vmID is the VM $key (VM.ID). Snapshots are stored against the machine key,
+// so the VM is resolved before the machine_snapshots filter is applied.
 func (s *VMSnapshotService) ListByVM(ctx context.Context, vmID int, opts ...ListOption) ([]VMSnapshot, error) {
+	machine, err := s.client.machineKeyForVM(ctx, vmID)
+	if err != nil {
+		return nil, err
+	}
+
 	options := applyListOptions(opts)
 
 	if options.Fields == "most" {
@@ -40,9 +47,9 @@ func (s *VMSnapshotService) ListByVM(ctx context.Context, vmID int, opts ...List
 
 	// Add machine filter
 	if options.Filter != "" {
-		options.Filter = fmt.Sprintf("(%s) and machine eq %d", options.Filter, vmID)
+		options.Filter = fmt.Sprintf("(%s) and machine eq %d", options.Filter, machine)
 	} else {
-		options.Filter = fmt.Sprintf("machine eq %d", vmID)
+		options.Filter = fmt.Sprintf("machine eq %d", machine)
 	}
 
 	params := options.toQueryParams()
@@ -98,6 +105,7 @@ func (s *VMSnapshotService) Get(ctx context.Context, id int) (*VMSnapshot, error
 }
 
 // GetByName returns a VM snapshot by name within a specific VM.
+// vmID is the VM $key (VM.ID).
 func (s *VMSnapshotService) GetByName(ctx context.Context, vmID int, name string) (*VMSnapshot, error) {
 	snapshots, err := s.ListByVM(ctx, vmID, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {
@@ -111,16 +119,33 @@ func (s *VMSnapshotService) GetByName(ctx context.Context, vmID int, name string
 	return &snapshots[0], nil
 }
 
+// vmSnapshotCreateBody is the machine_snapshots create payload.
+// Machine is the machine key, resolved from VMSnapshotCreateRequest.VM.
+type vmSnapshotCreateBody struct {
+	Machine     int    `json:"machine"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	ExpiresType string `json:"expires_type,omitempty"`
+	Expires     *int64 `json:"expires,omitempty"`
+	Quiesce     *bool  `json:"quiesce,omitempty"`
+}
+
 // Create creates a new VM snapshot and returns the created snapshot.
+// req.VM is the VM $key. The machine key is resolved and posted as "machine".
 func (s *VMSnapshotService) Create(ctx context.Context, req *VMSnapshotCreateRequest) (*VMSnapshot, error) {
 	if req == nil {
 		return nil, &ValidationError{Message: "create request is required"}
 	}
-	if req.Machine <= 0 {
-		return nil, &ValidationError{Field: "machine", Message: "machine (VM ID) is required"}
+	if req.VM <= 0 {
+		return nil, &ValidationError{Field: "vm", Message: "VM ID is required"}
 	}
 	if req.Name == "" {
 		return nil, &ValidationError{Field: "name", Message: "name is required"}
+	}
+
+	machine, err := s.client.machineKeyForVM(ctx, req.VM)
+	if err != nil {
+		return nil, err
 	}
 
 	// Set defaults
@@ -128,8 +153,17 @@ func (s *VMSnapshotService) Create(ctx context.Context, req *VMSnapshotCreateReq
 		req.ExpiresType = "date"
 	}
 
+	body := vmSnapshotCreateBody{
+		Machine:     machine,
+		Name:        req.Name,
+		Description: req.Description,
+		ExpiresType: req.ExpiresType,
+		Expires:     req.Expires,
+		Quiesce:     req.Quiesce,
+	}
+
 	var resp apiResponse
-	if err := s.client.post(ctx, "/machine_snapshots", req, &resp); err != nil {
+	if err := s.client.post(ctx, "/machine_snapshots", body, &resp); err != nil {
 		return nil, err
 	}
 
@@ -175,11 +209,24 @@ func (s *VMSnapshotService) Delete(ctx context.Context, id int) error {
 
 // Restore restores a VM from a snapshot.
 // The VM will be reverted to the state at the time of the snapshot.
+//
+// snap_machine is a machine key. vm_actions wants the snapshot VM's $key
+// (the vms row with that machine and is_snapshot true). Posting the machine
+// key returns 404, or restores a different VM when that key collides.
 func (s *VMSnapshotService) Restore(ctx context.Context, id int, opts *VMSnapshotRestoreOptions) error {
-	// Get the snapshot to find the parent machine
 	snapshot, err := s.Get(ctx, id)
 	if err != nil {
 		return err
+	}
+
+	snapMachine := int(snapshot.SnapMachine)
+	if snapMachine <= 0 {
+		return &ValidationError{Field: "snap_machine", Message: fmt.Sprintf("snapshot %d has no snap_machine", id)}
+	}
+
+	vmKey, err := s.client.vmKeyForMachine(ctx, snapMachine, true)
+	if err != nil {
+		return fmt.Errorf("vergeos: failed to resolve snapshot VM for snapshot %d: %w", id, err)
 	}
 
 	params := map[string]any{}
@@ -188,11 +235,11 @@ func (s *VMSnapshotService) Restore(ctx context.Context, id int, opts *VMSnapsho
 	}
 
 	action := struct {
-		VM     int                    `json:"vm"`
-		Action string                 `json:"action"`
+		VM     int            `json:"vm"`
+		Action string         `json:"action"`
 		Params map[string]any `json:"params"`
 	}{
-		VM:     int(snapshot.Machine),
+		VM:     vmKey,
 		Action: "restore",
 		Params: params,
 	}
