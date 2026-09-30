@@ -816,3 +816,29 @@ OIDC applications and auth source settings both carry a `client_secret`. The aut
 - `Get` and `List` of an auth source do not include `client_secret`. `Get` still returns the other settings.
 - Code that logs an `AuthSource`, an `OIDCApplication`, or a `WriteOnlySecret` does not log the client secret. `Value` and the JSON body of a request are the two places the secret is visible.
 
+---
+
+## ADR-024: Recipe Answers Are Checked Before Deploy, and Preview Cannot Deploy
+
+**Date:** 2026-09-30
+
+**Status:** Accepted
+
+**Context:** Most VergeOS VMs are created by answering a catalog recipe, not by posting a raw VM. The Terraform provider and other automation need that path (issue #58). Two answer shapes are accepted by the platform and then silently ignored. A bool question given a string it does not know, such as `enabled`, is stored as false, so a UEFI request builds a BIOS VM and the deploy still succeeds. A `disksize` answer is a byte count. `50`, sent by a caller who meant 50 GB, is fifty bytes; the recipe keeps the image's own disk size and the deploy still succeeds. Zero is the recipe's own default and has to keep working.
+
+The platform's dry run is a POST to the same collection with `simulate: true`. It answers HTTP 405, body `{"err":"Simulation complete", ...}`. A 2xx response means a VM was created. Folding that into Deploy with a boolean would repeat the Ansible module's failure mode, where a check still deployed.
+
+**Decision:** `Catalogs` and `VMRecipes` are read services. `VMRecipes.Questions` returns each question and its type. `VMRecipeInstances.Deploy` loads those questions and refuses the POST until the answers match. Recognized bools are `true`/`false`, the words `true`, `yes`, `on`, `1`, `false`, `no`, `off`, `0`, an empty string (false), and the integers 0 and 1. Any other bool answer is a validation error. A `disksize` above zero and under 1 MB (1048576) is a validation error, and the message says the unit is bytes and shows 50 GB as 53687091200. Network names resolve to vnet keys. An ambiguous name is refused. `__new_internal__` is sent unchanged.
+
+`Preview` takes the same request struct and is a different method with a different result type, `*VMRecipePreview`. The request struct has no dry-run flag. Preview sends `simulate: true`. HTTP 405 with the simulation report is success. Log lines that record a failed step are `RecipePreviewFailedError`. A 2xx response is `RecipePreviewPersistedError` and is not turned into an instance.
+
+**Rationale:**
+- The two silent successes are the ones that ship a VM the caller did not ask for.
+- A separate method and result type is what makes a dry run impossible to use as a deploy.
+- Treating a successful preview POST as failure matters because that status is how the platform reports a real create.
+
+**Consequences:**
+- Callers pass disk sizes in bytes. A gigabyte value has to be converted before Deploy.
+- Table-backed choices (a storage tier, for example) are still checked by the platform. Preview is how to see that failure before Deploy.
+- Tenant recipes are not part of this surface.
+

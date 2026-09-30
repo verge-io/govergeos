@@ -117,6 +117,32 @@ err = client.VMs.PowerOffWithOptions(ctx, vmID, &vergeos.VMPowerOffOptions{
     ForceAfterTimeout: true,
 })
 
+// Read a catalog and the questions a recipe will ask.
+catalogs, err := client.Catalogs.List(ctx)
+recipe, err := client.VMRecipes.GetByName(ctx, "Debian 12 (Bookworm)")
+questions, err := client.VMRecipes.Questions(ctx, recipe.Key)
+
+// Answers are checked against the recipe's questions before either call.
+// Bool values the SDK does not recognize are refused. Disk sizes are bytes:
+// 20 GiB is the number below, and 50 would be refused as fifty bytes.
+answers := vergeos.RecipeAnswers{
+    "HOSTNAME":           "web-01",
+    "YB_DRIVE_OS_SIZE":   int64(20 * 1024 * 1024 * 1024),
+    "SELECT_CREATE_UEFI": true,
+}
+
+// Preview walks the deploy and creates nothing. A successful HTTP status
+// from the platform is an error here: that means a VM was created, and
+// Preview will not return it.
+preview, err := client.VMRecipeInstances.Preview(ctx, &vergeos.VMRecipeDeployRequest{
+    Recipe: recipe.Key, Name: "web-01", Answers: answers,
+})
+
+// Deploy is the call that creates the VM.
+instance, err := client.VMRecipeInstances.Deploy(ctx, &vergeos.VMRecipeDeployRequest{
+    Recipe: recipe.Key, Name: "web-01", Answers: answers,
+})
+
 // Take a snapshot. Retention is a lifetime in seconds, sent as expires.
 // Quiesce requires a running guest agent; leave it false to snapshot
 // a VM that does not have one.
@@ -188,6 +214,9 @@ devClient, _ := vergeos.NewClient(
 | `VMDrives` | VM disk management (attach, resize, detach) |
 | `VMNICs` | VM network interface management |
 | `VMDevices` | VM device management (USB, TPM, vGPU) |
+| `Catalogs` | Recipe catalogs (read) |
+| `VMRecipes` | VM recipes and their questions (read) |
+| `VMRecipeInstances` | Deploy a VM from a recipe, or preview that deploy |
 
 ### Networking
 
@@ -319,6 +348,7 @@ devClient, _ := vergeos.NewClient(
 | [basic](./examples/basic/) | Client setup, list resources, system info |
 | [apikey-auth](./examples/apikey-auth/) | API key authentication |
 | [vm-lifecycle](./examples/vm-lifecycle/) | VM create, configure, power, delete |
+| [vm-recipes](./examples/vm-recipes/) | List catalogs, VM recipes, and recipe questions |
 | [vm-snapshots](./examples/vm-snapshots/) | VM snapshots, tags, and migration |
 | [network-management](./examples/network-management/) | Create and manage virtual networks |
 | [tenants](./examples/tenants/) | Multi-tenant management for MSPs |
@@ -529,6 +559,7 @@ go test -tags=integration -v ./test/integration/ -run "CRUD"
 | `snapshot_profiles_test.go` | Snapshot Profiles |
 | `tags_test.go` | Tags, Tag Categories |
 | `tenants_test.go` | Tenants, Nodes, Storage, Snapshots, Layer2 |
+| `vm_recipes_test.go` | Catalogs, VM Recipes, Recipe Questions |
 | `vm_snapshots_test.go` | VM Snapshots |
 | `volumes_test.go` | Volumes |
 | `vpn_test.go` | WireGuard, IPSec |

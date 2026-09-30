@@ -85,6 +85,33 @@ type VMDeviceServiceInterface interface {
 	Delete(ctx context.Context, deviceID int) error
 }
 
+// CatalogServiceInterface defines the interface for catalog reads.
+type CatalogServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]Catalog, error)
+	Get(ctx context.Context, id string) (*Catalog, error)
+	GetByName(ctx context.Context, name string) (*Catalog, error)
+}
+
+// VMRecipeServiceInterface defines the interface for VM recipe reads.
+type VMRecipeServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VMRecipe, error)
+	ListByCatalog(ctx context.Context, catalogID string, opts ...ListOption) ([]VMRecipe, error)
+	Get(ctx context.Context, id string) (*VMRecipe, error)
+	GetByName(ctx context.Context, name string) (*VMRecipe, error)
+	Questions(ctx context.Context, recipeID string, opts ...ListOption) ([]RecipeQuestion, error)
+}
+
+// VMRecipeInstanceServiceInterface defines the interface for recipe deployments.
+// Preview is the dry run. It does not return an instance.
+type VMRecipeInstanceServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VMRecipeInstance, error)
+	ListByRecipe(ctx context.Context, recipeID string, opts ...ListOption) ([]VMRecipeInstance, error)
+	Get(ctx context.Context, id int) (*VMRecipeInstance, error)
+	GetByName(ctx context.Context, name string) (*VMRecipeInstance, error)
+	Deploy(ctx context.Context, req *VMRecipeDeployRequest) (*VMRecipeInstance, error)
+	Preview(ctx context.Context, req *VMRecipeDeployRequest) (*VMRecipePreview, error)
+}
+
 // NetworkServiceInterface defines the interface for Network operations.
 type NetworkServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]Network, error)
@@ -980,6 +1007,9 @@ var (
 	_ VMNICServiceInterface                   = (*VMNICService)(nil)
 	_ VMDriveServiceInterface                 = (*VMDriveService)(nil)
 	_ VMDeviceServiceInterface                = (*VMDeviceService)(nil)
+	_ CatalogServiceInterface                 = (*CatalogService)(nil)
+	_ VMRecipeServiceInterface                = (*VMRecipeService)(nil)
+	_ VMRecipeInstanceServiceInterface        = (*VMRecipeInstanceService)(nil)
 	_ NetworkServiceInterface                 = (*NetworkService)(nil)
 	_ UserServiceInterface                    = (*UserService)(nil)
 	_ MemberServiceInterface                  = (*MemberService)(nil)

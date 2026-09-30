@@ -226,6 +226,56 @@ func IsConflictError(err error) bool {
 	return false
 }
 
+// RecipePreviewPersistedError means a recipe preview was accepted as a real
+// deploy. The platform returned a successful HTTP status for a POST that was
+// supposed to simulate. A VM with Name may exist. Preview does not return it.
+type RecipePreviewPersistedError struct {
+	Name string
+}
+
+// Error implements the error interface.
+func (e *RecipePreviewPersistedError) Error() string {
+	if e == nil {
+		return "vergeos: recipe preview was accepted as a deploy"
+	}
+	return fmt.Sprintf("vergeos: recipe preview for %q was accepted as a deploy; a VM with that name may exist, and this call did not return it", e.Name)
+}
+
+// IsRecipePreviewPersistedError returns true if err is a RecipePreviewPersistedError.
+func IsRecipePreviewPersistedError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var persisted *RecipePreviewPersistedError
+	return errors.As(err, &persisted)
+}
+
+// RecipePreviewFailedError means the platform finished a preview and its log
+// recorded a failed step. Lines are those log lines. Preview is the report,
+// which may contain guest credentials. A nil result from Preview is not a
+// successful dry run.
+type RecipePreviewFailedError struct {
+	Lines   []string
+	Preview *VMRecipePreview
+}
+
+// Error implements the error interface.
+func (e *RecipePreviewFailedError) Error() string {
+	if e == nil || len(e.Lines) == 0 {
+		return "vergeos: recipe preview reported a failed step"
+	}
+	return fmt.Sprintf("vergeos: recipe preview reported a failed step: %s", strings.Join(e.Lines, "; "))
+}
+
+// IsRecipePreviewFailedError returns true if err is a RecipePreviewFailedError.
+func IsRecipePreviewFailedError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var failed *RecipePreviewFailedError
+	return errors.As(err, &failed)
+}
+
 // IsValidationError returns true if the error is a ValidationError or a 400 API error.
 func IsValidationError(err error) bool {
 	if err == nil {

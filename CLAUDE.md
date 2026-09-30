@@ -29,7 +29,7 @@ Integration tests use `//go:build integration` build constraint and require `VER
 
 **Single flat package** (`vergeos`) — all code lives at the repository root. No nested packages.
 
-### Core Pattern: Service-Oriented Design (82 services)
+### Core Pattern: Service-Oriented Design (85 services)
 
 Each VergeOS resource has three pieces:
 
@@ -41,7 +41,7 @@ Services are initialized in `NewClient()` (in `client.go`) and exposed as interf
 
 ### Key Design Decisions
 
-Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-023). The critical ones:
+Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-024). The critical ones:
 
 - **FlexInt** (`types.go`): Custom type handling VergeOS API returning IDs as int or string. Exception: Volume service uses `string` keys (SHA1 hashes).
 - **Pointer fields** in Update requests: `*int`, `*bool` etc. distinguish "not provided" (nil) from "set to zero value".
@@ -52,13 +52,14 @@ Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-023). The critical one
 - **Retries**: GET, PUT, and DELETE retry connection resets, timeouts before a response, and HTTP 429, 502, and 503. POST is not retried. HTTP 401 is never retried. `WithRetry` tunes or disables this. `WithRateLimit` is an optional minimum interval between request starts.
 - **WithEnvConfig() is opt-in**: Environment variables are not auto-read.
 - **Auth source settings are merged on update**: The API replaces the settings object. `AuthSourceService.Update` reads the stored settings and merges the caller's keys before sending, so a partial update cannot drop `client_secret`. Returned auth sources omit `client_secret`. An OIDC application's `client_secret` is write-only: `Create` returns it as a `WriteOnlySecret`, and `OIDCApplication` does not keep it.
+- **Recipe deploy checks answers, and preview is a different method**: `Catalogs` and `VMRecipes` read catalogs, recipes, and each recipe's questions. `VMRecipeInstances.Deploy` checks answers against those question types before POST. Bool values it does not recognize are refused. Disk sizes are bytes; a value above zero and under 1 MB is refused. `Preview` is the dry run. It cannot return an instance. A successful HTTP status on that POST is `RecipePreviewPersistedError`.
 
 ### Adding a New Service
 
 1. Create `types_{resource}.go` with request/response structs
 2. Create `{resource}.go` with service struct and methods
 3. Add interface to `interfaces.go`
-4. Initialize service in `NewClient()` in `client.go`
+4. Initialize service in `NewClient()` in `client.go` and in `initServices` in `testhelper_test.go`
 5. Add integration tests in `test/integration/` with `//go:build integration`
 
 ### Error Types

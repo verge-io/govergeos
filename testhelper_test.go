@@ -35,6 +35,9 @@ func initServices(c *Client) {
 	c.VMNICs = &VMNICService{client: c}
 	c.VMDrives = &VMDriveService{client: c}
 	c.VMDevices = &VMDeviceService{client: c}
+	c.Catalogs = &CatalogService{client: c}
+	c.VMRecipes = &VMRecipeService{client: c}
+	c.VMRecipeInstances = &VMRecipeInstanceService{client: c}
 	c.Networks = &NetworkService{client: c}
 	c.Users = &UserService{client: c}
 	c.Members = &MemberService{client: c}
