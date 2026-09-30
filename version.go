@@ -8,17 +8,20 @@ import (
 	"strings"
 )
 
-// RequiredMajorVersion is the VergeOS major version this SDK requires.
+// RequiredMajorVersion is the oldest VergeOS major this SDK accepts by default.
+// Newer majors are accepted. WithMinimumVersion overrides this floor, and
+// WithSkipVersionCheck disables the comparison.
 const RequiredMajorVersion = 26
 
-// UnsupportedVersionError is returned when the server version is not supported.
+// UnsupportedVersionError is returned when the server is older than the
+// minimum major this client accepts.
 type UnsupportedVersionError struct {
 	ServerVersion string
 	Required      int
 }
 
 func (e *UnsupportedVersionError) Error() string {
-	return fmt.Sprintf("unsupported server version %s: this SDK requires VergeOS %d.x",
+	return fmt.Sprintf("unsupported server version %s: this SDK requires VergeOS %d.0 or later",
 		e.ServerVersion, e.Required)
 }
 
@@ -87,8 +90,11 @@ func isVersionAtLeast(v string, requiredMajor, requiredMinor, requiredPatch int)
 	return !prerelease
 }
 
-// checkServerVersion fetches /version.json and validates the server is v26.
-// Called during NewClient() - returns error if version check fails.
+// checkServerVersion fetches /version.json and rejects majors older than the
+// client's minimum. The default minimum is RequiredMajorVersion. Newer majors
+// are accepted. WithSkipVersionCheck still records the version and does not
+// reject it. Called during NewClient().
+//
 // Credentials are not sent. /version.json does not require them, and sending
 // a bad password here would be a second login attempt.
 func (c *Client) checkServerVersion(ctx context.Context) error {
@@ -97,16 +103,30 @@ func (c *Client) checkServerVersion(ctx context.Context) error {
 		return fmt.Errorf("failed to check server version: %w", err)
 	}
 
+	if c.skipVersionCheck {
+		c.serverVersion = resp.Version
+		return nil
+	}
+
 	major, err := parseVersion(resp.Version)
 	if err != nil {
 		return fmt.Errorf("failed to parse server version %q: %w", resp.Version, err)
 	}
-	if major != RequiredMajorVersion {
+	minimum := c.minimumMajor()
+	if major < minimum {
 		return &UnsupportedVersionError{
 			ServerVersion: resp.Version,
-			Required:      RequiredMajorVersion,
+			Required:      minimum,
 		}
 	}
 	c.serverVersion = resp.Version
 	return nil
+}
+
+// minimumMajor returns the oldest major this client will accept.
+func (c *Client) minimumMajor() int {
+	if c.minimumMajorVersion > 0 {
+		return c.minimumMajorVersion
+	}
+	return RequiredMajorVersion
 }

@@ -529,6 +529,138 @@ func TestNewClientSkipsCredentialCheckOnUnsupportedVersion(t *testing.T) {
 	}
 }
 
+func TestNewClientAcceptsLaterMajor(t *testing.T) {
+	server, seen := newStartupServer(t, "27.0.0", http.StatusOK, `[]`)
+
+	client, err := NewClient(
+		WithBaseURL(server.URL),
+		WithCredentials("admin", "correct-password"),
+		WithHTTPClient(server.Client()),
+	)
+	if err != nil {
+		t.Fatalf("NewClient rejected VergeOS 27: %v", err)
+	}
+	if client.serverVersion != "27.0.0" {
+		t.Fatalf("serverVersion = %q, want 27.0.0", client.serverVersion)
+	}
+	if len(credentialChecks(*seen)) != 1 {
+		t.Fatalf("credential checks = %d, want exactly one", len(credentialChecks(*seen)))
+	}
+}
+
+func TestNewClientMinimumVersionOverride(t *testing.T) {
+	t.Run("rejects below the override", func(t *testing.T) {
+		server, seen := newStartupServer(t, "26.1.8", http.StatusOK, `[]`)
+
+		client, err := NewClient(
+			WithBaseURL(server.URL),
+			WithCredentials("admin", "correct-password"),
+			WithHTTPClient(server.Client()),
+			WithMinimumVersion(27),
+		)
+		if client != nil {
+			t.Fatal("NewClient returned a client below the configured minimum")
+		}
+		var unsupported *UnsupportedVersionError
+		if !errors.As(err, &unsupported) {
+			t.Fatalf("error = %v, want UnsupportedVersionError", err)
+		}
+		if unsupported.Required != 27 {
+			t.Fatalf("Required = %d, want 27", unsupported.Required)
+		}
+		if got := err.Error(); got != "unsupported server version 26.1.8: this SDK requires VergeOS 27.0 or later" {
+			t.Fatalf("error = %q", got)
+		}
+		if len(credentialChecks(*seen)) != 0 {
+			t.Fatalf("credential check ran for a version below the override: %#v", *seen)
+		}
+	})
+
+	t.Run("accepts the override and later", func(t *testing.T) {
+		server, seen := newStartupServer(t, "28.0.0", http.StatusOK, `[]`)
+
+		client, err := NewClient(
+			WithBaseURL(server.URL),
+			WithCredentials("admin", "correct-password"),
+			WithHTTPClient(server.Client()),
+			WithMinimumVersion(27),
+		)
+		if err != nil {
+			t.Fatalf("NewClient rejected a major above the override: %v", err)
+		}
+		if client.serverVersion != "28.0.0" {
+			t.Fatalf("serverVersion = %q, want 28.0.0", client.serverVersion)
+		}
+		if len(credentialChecks(*seen)) != 1 {
+			t.Fatalf("credential checks = %d, want exactly one", len(credentialChecks(*seen)))
+		}
+	})
+
+	t.Run("rejects a non-positive major", func(t *testing.T) {
+		_, err := NewClient(
+			WithBaseURL("https://verge.example"),
+			WithCredentials("admin", "correct-password"),
+			WithMinimumVersion(0),
+		)
+		if err == nil {
+			t.Fatal("expected error for minimum version 0")
+		}
+		if !strings.Contains(err.Error(), "minimum version must be >= 1") {
+			t.Fatalf("error = %q, want minimum version validation", err.Error())
+		}
+	})
+}
+
+func TestNewClientSkipVersionCheck(t *testing.T) {
+	t.Run("allows an older major and still checks credentials", func(t *testing.T) {
+		server, seen := newStartupServer(t, "4.2.0", http.StatusOK, `[]`)
+
+		client, err := NewClient(
+			WithBaseURL(server.URL),
+			WithCredentials("admin", "correct-password"),
+			WithHTTPClient(server.Client()),
+			WithMinimumVersion(27),
+			WithSkipVersionCheck(),
+		)
+		if err != nil {
+			t.Fatalf("WithSkipVersionCheck rejected 4.2.0: %v", err)
+		}
+		if client.serverVersion != "4.2.0" {
+			t.Fatalf("serverVersion = %q, want 4.2.0", client.serverVersion)
+		}
+		checks := credentialChecks(*seen)
+		if len(checks) != 1 {
+			t.Fatalf("credential checks = %d, want exactly one", len(checks))
+		}
+		if !checks[0].hasBasicAuth || checks[0].username != "admin" || checks[0].password != "correct-password" {
+			t.Fatalf("credential check = %#v", checks[0])
+		}
+		if (*seen)[0].path != "/version.json" || (*seen)[0].authorization != "" {
+			t.Fatalf("version check = %#v, want an unauthenticated /version.json request", (*seen)[0])
+		}
+	})
+
+	t.Run("still rejects bad credentials", func(t *testing.T) {
+		server, seen := newStartupServer(t, "27.0.0", http.StatusUnauthorized, `{"err":"Login required"}`)
+
+		client, err := NewClient(
+			WithBaseURL(server.URL),
+			WithAPIKey("bad-key"),
+			WithHTTPClient(server.Client()),
+			WithSkipVersionCheck(),
+		)
+		if client != nil {
+			t.Fatal("NewClient returned a client for a rejected API key")
+		}
+		if !IsAuthError(err) {
+			t.Fatalf("error = %v, want AuthError", err)
+		}
+		if len(*seen) != 2 {
+			t.Fatalf("NewClient made %d requests, want version check plus one credential check", len(*seen))
+		}
+	})
+}
+
 func TestNewClientForbiddenIsPermissionError(t *testing.T) {
 	server, seen := newStartupServer(t, "26.1.8", http.StatusForbidden, `{"err":"Permission denied"}`)
 

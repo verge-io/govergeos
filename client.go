@@ -45,6 +45,10 @@ type Client struct {
 	userAgent string
 	// serverVersion is the version reported by /version.json during client initialization.
 	serverVersion string
+	// minimumMajorVersion overrides RequiredMajorVersion when greater than zero.
+	minimumMajorVersion int
+	// skipVersionCheck records serverVersion without rejecting the major.
+	skipVersionCheck bool
 
 	// Services for interacting with different API resources.
 	// All services implement their corresponding interfaces for mock testing.
@@ -211,6 +215,36 @@ func WithUserAgent(userAgent string) ClientOption {
 	}
 }
 
+// WithMinimumVersion sets the oldest VergeOS major NewClient will accept.
+// The default is RequiredMajorVersion (26). A server older than major is
+// rejected with UnsupportedVersionError. Newer majors are still accepted.
+//
+// WithSkipVersionCheck disables this comparison. major must be at least 1.
+func WithMinimumVersion(major int) ClientOption {
+	return func(c *Client) error {
+		if major < 1 {
+			return fmt.Errorf("minimum version must be >= 1, got %d", major)
+		}
+		c.minimumMajorVersion = major
+		return nil
+	}
+}
+
+// WithSkipVersionCheck connects even when the server major is outside the
+// range NewClient would otherwise accept. The version is still read and
+// stored, so feature gates that use it keep working, and the credential
+// check still runs.
+//
+// The default check accepts VergeOS 26 and every later major. Use this
+// option to keep a deployment running if a later release narrows that
+// range, or to talk to a server this release does not claim to support.
+func WithSkipVersionCheck() ClientOption {
+	return func(c *Client) error {
+		c.skipVersionCheck = true
+		return nil
+	}
+}
+
 // WithEnvConfig configures the client from environment variables.
 // This option should typically be applied first, allowing subsequent options
 // to override specific values.
@@ -287,8 +321,8 @@ func WithEnvConfig() ClientOption {
 
 // NewClient creates a new VergeOS API client.
 //
-// Client creation checks that the server is VergeOS 26.x and that the
-// supplied credentials are accepted. /version.json does not require
+// Client creation checks that the server is VergeOS 26 or later and that
+// the supplied credentials are accepted. /version.json does not require
 // authentication, so a wrong password is caught by one follow-up read of
 // a small table. That read is a single attempt: VergeOS locks an account
 // after a small number of failed logins, and retrying a bad password
@@ -296,7 +330,9 @@ func WithEnvConfig() ClientOption {
 //
 // A failed login is returned as an AuthError. A credential that is
 // accepted but not allowed to read the check endpoint is a PermissionError.
-// An incompatible server version is returned as an UnsupportedVersionError.
+// A server older than the minimum major is returned as an
+// UnsupportedVersionError. WithMinimumVersion changes that floor.
+// WithSkipVersionCheck records the version and does not reject it.
 func NewClient(opts ...ClientOption) (*Client, error) {
 	// Create client with defaults
 	c := &Client{
