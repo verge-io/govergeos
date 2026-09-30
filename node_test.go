@@ -123,14 +123,13 @@ func TestNodeService_GetByName_NotFound(t *testing.T) {
 
 func TestNodeService_EnableMaintenance(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"POST /api/v4/node_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body nodeAction
-			json.NewDecoder(r.Body).Decode(&body)
-			if body.Action != "enable_maintenance" {
-				t.Errorf("expected action 'enable_maintenance', got %q", body.Action)
+		"POST /api/v4/nodes/1/enable_maintenance": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode body: %v", err)
 			}
-			if body.Node != 1 {
-				t.Errorf("expected node 1, got %d", body.Node)
+			if len(body) != 0 {
+				t.Errorf("expected empty body, got %v", body)
 			}
 			w.WriteHeader(200)
 		},
@@ -144,11 +143,13 @@ func TestNodeService_EnableMaintenance(t *testing.T) {
 
 func TestNodeService_DisableMaintenance(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"POST /api/v4/node_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body nodeAction
-			json.NewDecoder(r.Body).Decode(&body)
-			if body.Action != "disable_maintenance" {
-				t.Errorf("expected action 'disable_maintenance', got %q", body.Action)
+		"POST /api/v4/nodes/1/disable_maintenance": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode body: %v", err)
+			}
+			if len(body) != 0 {
+				t.Errorf("expected empty body, got %v", body)
 			}
 			w.WriteHeader(200)
 		},
@@ -180,11 +181,16 @@ func TestNodeService_MaintenanceReboot(t *testing.T) {
 
 func TestNodeService_ClearPStore(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"POST /api/v4/node_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body nodeAction
-			json.NewDecoder(r.Body).Decode(&body)
-			if body.Action != "clear_pstore" {
-				t.Errorf("expected action 'clear_pstore', got %q", body.Action)
+		"POST /api/v4/node_queries": func(w http.ResponseWriter, r *http.Request) {
+			var body nodeQueryRequest
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode body: %v", err)
+			}
+			if body.Node != 1 {
+				t.Errorf("expected node 1, got %d", body.Node)
+			}
+			if body.Query != "clear-pstore" {
+				t.Errorf("expected query 'clear-pstore', got %q", body.Query)
 			}
 			w.WriteHeader(200)
 		},

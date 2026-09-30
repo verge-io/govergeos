@@ -262,14 +262,16 @@ func TestUserService_Delete_NotFound(t *testing.T) {
 
 func TestUserService_Enable(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"POST /api/v4/user_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body userAction
-			json.NewDecoder(r.Body).Decode(&body)
-			if body.User != 1 {
-				t.Errorf("expected user 1, got %d", body.User)
+		"PUT /api/v4/users/1": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode body: %v", err)
 			}
-			if body.Action != "enable" {
-				t.Errorf("expected action 'enable', got %q", body.Action)
+			if body["enabled"] != true {
+				t.Errorf("expected enabled true, got %v", body["enabled"])
+			}
+			if _, ok := body["action"]; ok {
+				t.Errorf("enable must update the user record, got action payload: %v", body)
 			}
 			w.WriteHeader(200)
 		},
@@ -283,14 +285,13 @@ func TestUserService_Enable(t *testing.T) {
 
 func TestUserService_Disable(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"POST /api/v4/user_actions": func(w http.ResponseWriter, r *http.Request) {
-			var body userAction
-			json.NewDecoder(r.Body).Decode(&body)
-			if body.User != 2 {
-				t.Errorf("expected user 2, got %d", body.User)
+		"PUT /api/v4/users/2": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode body: %v", err)
 			}
-			if body.Action != "disable" {
-				t.Errorf("expected action 'disable', got %q", body.Action)
+			if body["enabled"] != false {
+				t.Errorf("expected enabled false, got %v", body["enabled"])
 			}
 			w.WriteHeader(200)
 		},

@@ -483,7 +483,7 @@ func (s *SiteSyncOutgoingService) Disable(ctx context.Context, id int) error {
 func (s *SiteSyncOutgoingService) Throttle(ctx context.Context, id int, throttle int) error {
 	action := siteSyncOutgoingAction{
 		SiteSyncOutgoing: id,
-		Action:           "throttle",
+		Action:           "throttle_sync",
 		Params: map[string]any{
 			"throttle": throttle,
 		},
@@ -496,10 +496,14 @@ func (s *SiteSyncOutgoingService) Throttle(ctx context.Context, id int, throttle
 }
 
 // DisableThrottle disables throttling for an outgoing sync.
+// VergeOS accepts this as throttle_sync with throttle set to 0.
 func (s *SiteSyncOutgoingService) DisableThrottle(ctx context.Context, id int) error {
 	action := siteSyncOutgoingAction{
 		SiteSyncOutgoing: id,
-		Action:           "throttle_disable",
+		Action:           "throttle_sync",
+		Params: map[string]any{
+			"throttle": 0,
+		},
 	}
 
 	if err := s.client.post(ctx, "/site_syncs_outgoing_actions", action, nil); err != nil {

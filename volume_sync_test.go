@@ -381,8 +381,11 @@ func TestVolumeSyncService_Start(t *testing.T) {
 			if body.Sync != "sync1" {
 				t.Errorf("expected sync 'sync1', got %q", body.Sync)
 			}
-			if body.Action != "start" {
-				t.Errorf("expected action 'start', got %q", body.Action)
+			if body.Action != "start_sync" {
+				t.Errorf("expected action 'start_sync', got %q", body.Action)
+			}
+			if body.Params != nil {
+				t.Errorf("expected no params, got %v", body.Params)
 			}
 			w.WriteHeader(200)
 		},
@@ -402,8 +405,11 @@ func TestVolumeSyncService_Stop(t *testing.T) {
 			if body.Sync != "sync1" {
 				t.Errorf("expected sync 'sync1', got %q", body.Sync)
 			}
-			if body.Action != "stop" {
-				t.Errorf("expected action 'stop', got %q", body.Action)
+			if body.Action != "stop_sync" {
+				t.Errorf("expected action 'stop_sync', got %q", body.Action)
+			}
+			if body.Params != nil {
+				t.Errorf("expected no params, got %v", body.Params)
 			}
 			w.WriteHeader(200)
 		},

@@ -154,17 +154,16 @@ func (s *VolumeSyncService) Disable(ctx context.Context, id string) error {
 
 // volumeSyncAction represents a volume sync action request.
 type volumeSyncAction struct {
-	Sync   string                 `json:"sync"`
-	Action string                 `json:"action"`
-	Params map[string]any `json:"params"`
+	Sync   string         `json:"sync"`
+	Action string         `json:"action"`
+	Params map[string]any `json:"params,omitempty"`
 }
 
 // Start starts a volume sync job immediately.
 func (s *VolumeSyncService) Start(ctx context.Context, id string) error {
 	action := volumeSyncAction{
 		Sync:   id,
-		Action: "start",
-		Params: map[string]any{},
+		Action: "start_sync",
 	}
 
 	if err := s.client.post(ctx, "/volume_sync_actions", action, nil); err != nil {
@@ -177,8 +176,7 @@ func (s *VolumeSyncService) Start(ctx context.Context, id string) error {
 func (s *VolumeSyncService) Stop(ctx context.Context, id string) error {
 	action := volumeSyncAction{
 		Sync:   id,
-		Action: "stop",
-		Params: map[string]any{},
+		Action: "stop_sync",
 	}
 
 	if err := s.client.post(ctx, "/volume_sync_actions", action, nil); err != nil {
