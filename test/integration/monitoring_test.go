@@ -4,6 +4,9 @@ package integration
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -139,61 +142,85 @@ func TestAlarmsList(t *testing.T) {
 	prettyPrint(t, "Sample Alarm", first)
 }
 
-// TestAlarmsSnooze tests snoozing and unsnoozing an alarm.
+// TestAlarmsSnooze snoozes and unsnoozes one alarm.
+//
+// Alarms are raised by the platform and cannot be created through the API,
+// so this test runs only when VERGEOS_TEST_ALARM_ID names the alarm. The
+// previous snooze timestamp is restored with t.Cleanup, registered
+// immediately after the snooze.
 func TestAlarmsSnooze(t *testing.T) {
 	client := setupTestClient(t)
 	ctx := context.Background()
 
-	// Find a non-critical alarm to test with
-	alarms, err := client.Alarms.List(ctx, vergeos.WithFilter("level ne 'critical'"))
+	alarmIDStr := os.Getenv("VERGEOS_TEST_ALARM_ID")
+	if alarmIDStr == "" {
+		t.Skip("Skipping snooze test: VERGEOS_TEST_ALARM_ID not set")
+	}
+
+	alarmID, err := strconv.Atoi(alarmIDStr)
 	if err != nil {
-		t.Fatalf("Failed to list alarms: %v", err)
+		t.Fatalf("Invalid VERGEOS_TEST_ALARM_ID: %v", err)
 	}
 
-	if len(alarms) == 0 {
-		t.Skip("No non-critical alarms available for snooze testing")
-	}
-
-	alarm := alarms[0]
-	alarmID := int(alarm.Key)
-	t.Logf("Testing snooze workflow on alarm %d (Level: %s, Status: %s)",
-		alarmID, alarm.Level, alarm.Status)
-
-	// Snooze the alarm for 1 hour
-	snoozeUntil := time.Now().Add(1 * time.Hour).Unix()
-	err = client.Alarms.Snooze(ctx, alarmID, snoozeUntil)
+	alarm, err := client.Alarms.Get(ctx, alarmID)
 	if err != nil {
-		t.Fatalf("Failed to snooze alarm: %v", err)
+		t.Fatalf("Alarms.Get(%d) failed: %v", alarmID, err)
 	}
-	t.Logf("Snoozed alarm until %v", time.Unix(snoozeUntil, 0))
+	originalSnooze := alarm.Snooze
+	t.Logf("Modifying alarm key=%d alarm_id=%q status=%q owner=%q level=%q snooze=%d",
+		alarmID, alarm.AlarmID, alarm.Status, alarm.Owner, alarm.Level, originalSnooze)
 
-	// Verify the alarm is snoozed
+	snoozeUntil := time.Now().Add(time.Hour).Unix()
+	if err := client.Alarms.Snooze(ctx, alarmID, snoozeUntil); err != nil {
+		t.Fatalf("Failed to snooze alarm key=%d alarm_id=%q status=%q: %v",
+			alarmID, alarm.AlarmID, alarm.Status, err)
+	}
+	t.Logf("Snoozed alarm key=%d alarm_id=%q status=%q until %s",
+		alarmID, alarm.AlarmID, alarm.Status, time.Unix(snoozeUntil, 0).UTC().Format(time.RFC3339))
+
+	t.Cleanup(func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		err := client.Alarms.Snooze(cleanupCtx, alarmID, originalSnooze)
+		if err != nil && originalSnooze <= time.Now().Unix() {
+			t.Logf("Restoring snooze=%d on alarm key=%d alarm_id=%q status=%q failed: %v; unsnoozing",
+				originalSnooze, alarmID, alarm.AlarmID, alarm.Status, err)
+			err = client.Alarms.Unsnooze(cleanupCtx, alarmID)
+		}
+		if err != nil {
+			t.Errorf("Failed to restore alarm key=%d alarm_id=%q status=%q owner=%q to snooze=%d: %v",
+				alarmID, alarm.AlarmID, alarm.Status, alarm.Owner, originalSnooze, err)
+			return
+		}
+		t.Logf("Restored alarm key=%d alarm_id=%q status=%q owner=%q snooze=%d",
+			alarmID, alarm.AlarmID, alarm.Status, alarm.Owner, originalSnooze)
+	})
+
 	snoozed, err := client.Alarms.Get(ctx, alarmID)
 	if err != nil {
-		t.Fatalf("Failed to get snoozed alarm: %v", err)
+		t.Fatalf("Failed to get snoozed alarm key=%d alarm_id=%q: %v", alarmID, alarm.AlarmID, err)
 	}
 	if snoozed.Snooze == 0 {
 		t.Error("Expected alarm.Snooze to be non-zero after snoozing")
 	} else {
-		t.Logf("Verified: Snooze timestamp is %d", snoozed.Snooze)
+		t.Logf("Verified: alarm key=%d alarm_id=%q snooze=%d", alarmID, alarm.AlarmID, snoozed.Snooze)
 	}
 
-	// Unsnooze the alarm
-	err = client.Alarms.Unsnooze(ctx, alarmID)
-	if err != nil {
-		t.Fatalf("Failed to unsnooze alarm: %v", err)
+	if err := client.Alarms.Unsnooze(ctx, alarmID); err != nil {
+		t.Fatalf("Failed to unsnooze alarm key=%d alarm_id=%q status=%q: %v",
+			alarmID, alarm.AlarmID, alarm.Status, err)
 	}
-	t.Log("Unsnoozed alarm")
+	t.Logf("Unsnoozed alarm key=%d alarm_id=%q status=%q", alarmID, alarm.AlarmID, alarm.Status)
 
-	// Verify the alarm is unsnoozed
 	unsnoozed, err := client.Alarms.Get(ctx, alarmID)
 	if err != nil {
-		t.Fatalf("Failed to get unsnoozed alarm: %v", err)
+		t.Fatalf("Failed to get unsnoozed alarm key=%d alarm_id=%q: %v", alarmID, alarm.AlarmID, err)
 	}
 	if unsnoozed.Snooze != 0 {
 		t.Errorf("Expected alarm.Snooze to be 0 after unsnoozing, got %d", unsnoozed.Snooze)
 	} else {
-		t.Log("Verified: Alarm is unsnoozed")
+		t.Logf("Verified: alarm key=%d alarm_id=%q is unsnoozed", alarmID, alarm.AlarmID)
 	}
 }
 
@@ -283,58 +310,108 @@ func TestTasksList(t *testing.T) {
 	prettyPrint(t, "Sample Task", first)
 }
 
-// TestTasksEnableDisable tests enabling and disabling a task.
+// TestTasksEnableDisable creates a disabled task on a throwaway VM, enables
+// it, and disables it again. The task has no schedule or event trigger, and
+// the VM is not powered on. Both objects are deleted with t.Cleanup,
+// registered as soon as each one exists. Cleanup disables the task before
+// deleting it.
 func TestTasksEnableDisable(t *testing.T) {
 	client := setupTestClient(t)
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
 
-	// Find an enabled task to test with
-	tasks, err := client.Tasks.List(ctx, vergeos.WithFilter("enabled eq true"))
+	stamp := time.Now().Format("20060102-150405")
+	vmName := "sdk-test-task-vm-" + stamp
+	vm, err := client.VMs.Create(ctx, &vergeos.VMCreateRequest{
+		Name:        vmName,
+		Description: "goVergeOS integration test VM for task enable/disable - safe to delete",
+		CPUCores:    1,
+		RAM:         512,
+		OSFamily:    "linux",
+	})
 	if err != nil {
-		t.Fatalf("Failed to list tasks: %v", err)
+		t.Fatalf("VMs.Create(%q) failed: %v", vmName, err)
 	}
-
-	if len(tasks) == 0 {
-		t.Skip("No enabled tasks available for enable/disable testing")
+	vmID := vm.ID.Int()
+	if vm.Name != "" {
+		vmName = vm.Name
 	}
+	if vmID == 0 {
+		t.Fatalf("VMs.Create returned VM %q with an empty key", vmName)
+	}
+	t.Logf("Created VM key=%d name=%q", vmID, vmName)
+	t.Cleanup(func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cleanupCancel()
+		if err := client.VMs.Delete(cleanupCtx, vmID); err != nil && !vergeos.IsNotFoundError(err) {
+			t.Errorf("Failed to delete VM key=%d name=%q: %v", vmID, vmName, err)
+			return
+		}
+		t.Logf("Deleted VM key=%d name=%q", vmID, vmName)
+	})
 
-	task := tasks[0]
+	taskName := "sdk-test-task-" + stamp
+	enabled := false
+	owner := fmt.Sprintf("vms/%d", vmID)
+	task, err := client.Tasks.Create(ctx, &vergeos.TaskCreateRequest{
+		Owner:       owner,
+		Action:      "snapshot",
+		Name:        taskName,
+		Description: "goVergeOS integration test task - safe to delete",
+		Enabled:     &enabled,
+	})
+	if err != nil {
+		t.Fatalf("Tasks.Create(%q) on VM key=%d name=%q failed: %v", taskName, vmID, vmName, err)
+	}
 	taskID := int(task.Key)
-	t.Logf("Testing enable/disable workflow on task %d (Name: %s)", taskID, task.Name)
+	if task.Name != "" {
+		taskName = task.Name
+	}
+	if taskID == 0 {
+		t.Fatalf("Tasks.Create returned task %q with an empty key", taskName)
+	}
+	t.Logf("Created task key=%d name=%q owner=%q action=%q enabled=%v",
+		taskID, taskName, owner, task.Action, task.Enabled)
+	t.Cleanup(func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cleanupCancel()
+		if err := client.Tasks.Disable(cleanupCtx, taskID); err != nil && !vergeos.IsNotFoundError(err) {
+			t.Logf("Cleanup disable task key=%d name=%q: %v", taskID, taskName, err)
+		}
+		if err := client.Tasks.Delete(cleanupCtx, taskID); err != nil && !vergeos.IsNotFoundError(err) {
+			t.Errorf("Failed to delete task key=%d name=%q owner=%q: %v", taskID, taskName, owner, err)
+			return
+		}
+		t.Logf("Deleted task key=%d name=%q", taskID, taskName)
+	})
 
-	// Disable the task
-	err = client.Tasks.Disable(ctx, taskID)
-	if err != nil {
-		t.Fatalf("Failed to disable task: %v", err)
-	}
-	t.Log("Disabled task")
-
-	// Verify the task is disabled
-	disabled, err := client.Tasks.Get(ctx, taskID)
-	if err != nil {
-		t.Fatalf("Failed to get disabled task: %v", err)
-	}
-	if disabled.Enabled {
-		t.Error("Expected task.Enabled to be false after disabling")
-	} else {
-		t.Log("Verified: Task is disabled")
+	t.Logf("Enabling task key=%d name=%q", taskID, taskName)
+	if err := client.Tasks.Enable(ctx, taskID); err != nil {
+		t.Fatalf("Failed to enable task key=%d name=%q: %v", taskID, taskName, err)
 	}
 
-	// Re-enable the task
-	err = client.Tasks.Enable(ctx, taskID)
+	enabledTask, err := client.Tasks.Get(ctx, taskID)
 	if err != nil {
-		t.Fatalf("Failed to enable task: %v", err)
+		t.Fatalf("Failed to get enabled task key=%d name=%q: %v", taskID, taskName, err)
 	}
-	t.Log("Re-enabled task")
-
-	// Verify the task is enabled
-	enabled, err := client.Tasks.Get(ctx, taskID)
-	if err != nil {
-		t.Fatalf("Failed to get enabled task: %v", err)
-	}
-	if !enabled.Enabled {
+	if !enabledTask.Enabled {
 		t.Error("Expected task.Enabled to be true after enabling")
 	} else {
-		t.Log("Verified: Task is enabled")
+		t.Logf("Verified: task key=%d name=%q is enabled", taskID, taskName)
+	}
+
+	t.Logf("Disabling task key=%d name=%q", taskID, taskName)
+	if err := client.Tasks.Disable(ctx, taskID); err != nil {
+		t.Fatalf("Failed to disable task key=%d name=%q: %v", taskID, taskName, err)
+	}
+
+	disabledTask, err := client.Tasks.Get(ctx, taskID)
+	if err != nil {
+		t.Fatalf("Failed to get disabled task key=%d name=%q: %v", taskID, taskName, err)
+	}
+	if disabledTask.Enabled {
+		t.Error("Expected task.Enabled to be false after disabling")
+	} else {
+		t.Logf("Verified: task key=%d name=%q is disabled", taskID, taskName)
 	}
 }
