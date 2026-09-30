@@ -82,6 +82,9 @@ type Client struct {
 	VMNICs                  VMNICServiceInterface
 	VMDrives                VMDriveServiceInterface
 	VMDevices               VMDeviceServiceInterface
+	Catalogs                CatalogServiceInterface
+	VMRecipes               VMRecipeServiceInterface
+	VMRecipeInstances       VMRecipeInstanceServiceInterface
 	Networks                NetworkServiceInterface
 	Users                   UserServiceInterface
 	Members                 MemberServiceInterface
@@ -651,6 +654,9 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.VMNICs = &VMNICService{client: c}
 	c.VMDrives = &VMDriveService{client: c}
 	c.VMDevices = &VMDeviceService{client: c}
+	c.Catalogs = &CatalogService{client: c}
+	c.VMRecipes = &VMRecipeService{client: c}
+	c.VMRecipeInstances = &VMRecipeInstanceService{client: c}
 	c.Networks = &NetworkService{client: c}
 	c.Users = &UserService{client: c}
 	c.Members = &MemberService{client: c}
@@ -856,6 +862,25 @@ func (c *Client) get(ctx context.Context, endpoint string, params url.Values, re
 // post performs a POST request and returns the created resource's key.
 func (c *Client) post(ctx context.Context, endpoint string, body any, result any) error {
 	return c.do(ctx, http.MethodPost, endpoint, body, nil, result)
+}
+
+// postStatus performs a POST and returns the HTTP status and body.
+//
+// Unlike post, a non-2xx status is not turned into an error. Recipe preview
+// completes as HTTP 405 with the report in the body. Callers decide what a
+// status means. POST is not retried.
+func (c *Client) postStatus(ctx context.Context, endpoint string, body any) (int, []byte, error) {
+	resp, err := c.request(ctx, http.MethodPost, endpoint, body, nil)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+	if err != nil {
+		return resp.StatusCode, nil, fmt.Errorf("vergeos: failed to read response body: %w", err)
+	}
+	return resp.StatusCode, respBody, nil
 }
 
 // put performs a PUT request.
