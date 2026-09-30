@@ -150,7 +150,7 @@ func TestVMImportServiceCreateFromURL(t *testing.T) {
 			jsonResponse(w, 200, map[string]any{"$key": 9})
 		},
 		"GET /api/v4/files": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, File{ID: 9, Name: "disk.qcow2"})
+			jsonResponse(w, 200, File{Key: 9, Name: "disk.qcow2"})
 		},
 		"POST /api/v4/vm_imports": func(w http.ResponseWriter, r *http.Request) {
 			if err := json.NewDecoder(r.Body).Decode(&importBody); err != nil {
@@ -214,10 +214,10 @@ func TestVMImportServiceCreateExistingVM(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
 			if strings.Contains(r.URL.Path, "/vms/") {
-				jsonResponse(w, 200, VM{ID: 7, Name: "imported-vm"})
+				jsonResponse(w, 200, VM{Key: 7, Name: "imported-vm"})
 				return
 			}
-			jsonResponse(w, 200, []VM{{ID: 7, Name: "imported-vm"}})
+			jsonResponse(w, 200, []VM{{Key: 7, Name: "imported-vm"}})
 		},
 		"GET /api/v4/vm_imports": func(w http.ResponseWriter, r *http.Request) {
 			filter := r.URL.Query().Get("filter")
@@ -246,10 +246,10 @@ func TestVMImportServiceCreateDuplicateName(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
 			if strings.Contains(r.URL.Path, "/vms/") {
-				jsonResponse(w, 200, VM{ID: 7, Name: "qa-p-dup"})
+				jsonResponse(w, 200, VM{Key: 7, Name: "qa-p-dup"})
 				return
 			}
-			jsonResponse(w, 200, []VM{{ID: 7, Name: "qa-p-dup"}})
+			jsonResponse(w, 200, []VM{{Key: 7, Name: "qa-p-dup"}})
 		},
 		"GET /api/v4/vm_imports": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []VMImport{
@@ -274,14 +274,14 @@ func TestVMImportServiceCreateConflictBecomesExisting(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
 			if strings.Contains(r.URL.Path, "/vms/") {
-				jsonResponse(w, 200, VM{ID: 7, Name: "imported-vm"})
+				jsonResponse(w, 200, VM{Key: 7, Name: "imported-vm"})
 				return
 			}
 			if vmLists.Add(1) == 1 {
 				jsonResponse(w, 200, []VM{})
 				return
 			}
-			jsonResponse(w, 200, []VM{{ID: 7, Name: "imported-vm"}})
+			jsonResponse(w, 200, []VM{{Key: 7, Name: "imported-vm"}})
 		},
 		"POST /api/v4/vm_imports": func(w http.ResponseWriter, r *http.Request) {
 			posts.Add(1)

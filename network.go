@@ -72,13 +72,13 @@ func (s *NetworkService) GetByName(ctx context.Context, name string) (*Network, 
 	if len(networks) == 0 {
 		return nil, &NotFoundError{Resource: "Network", ID: name}
 	}
-	if err := requireUniqueName("Network", name, networks, func(n Network) any { return n.ID }); err != nil {
+	if err := requireUniqueName("Network", name, networks, func(n Network) any { return n.Key }); err != nil {
 		return nil, err
 	}
 	if err := requireExactName("Network", name, networks[0].Name, name); err != nil {
 		return nil, err
 	}
-	got, err := s.Get(ctx, networks[0].ID.Int())
+	got, err := s.Get(ctx, networks[0].Key.Int())
 	if err != nil {
 		return nil, err
 	}

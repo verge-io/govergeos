@@ -11,8 +11,8 @@ func TestGroupService_List(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/groups": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []Group{
-				{ID: 1, Name: "admins"},
-				{ID: 2, Name: "operators"},
+				{Key: 1, Name: "admins"},
+				{Key: 2, Name: "operators"},
 			})
 		},
 	}))
@@ -36,7 +36,7 @@ func TestGroupService_List_WithFilter(t *testing.T) {
 			if filter == "" {
 				t.Error("expected filter parameter")
 			}
-			jsonResponse(w, 200, []Group{{ID: 1, Name: "admins"}})
+			jsonResponse(w, 200, []Group{{Key: 1, Name: "admins"}})
 		},
 	}))
 
@@ -52,7 +52,7 @@ func TestGroupService_List_WithFilter(t *testing.T) {
 func TestGroupService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/groups/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Group{ID: 1, Name: "admins", Description: "Administrator group"})
+			jsonResponse(w, 200, Group{Key: 1, Name: "admins", Description: "Administrator group"})
 		},
 	}))
 
@@ -91,7 +91,7 @@ func TestGroupService_GetByName(t *testing.T) {
 			if filter != "name eq 'admins'" {
 				t.Errorf("unexpected filter: %s", filter)
 			}
-			jsonResponse(w, 200, []Group{{ID: 1, Name: "admins"}})
+			jsonResponse(w, 200, []Group{{Key: 1, Name: "admins"}})
 		},
 	}))
 
@@ -108,8 +108,8 @@ func TestGroupService_GetByName_Ambiguous(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/groups": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []Group{
-				{ID: 1, Name: "admins"},
-				{ID: 2, Name: "admins"},
+				{Key: 1, Name: "admins"},
+				{Key: 2, Name: "admins"},
 			})
 		},
 	}))
@@ -153,7 +153,7 @@ func TestGroupService_Create(t *testing.T) {
 			}{Key: 5})
 		},
 		"GET /api/v4/groups/5": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Group{ID: 5, Name: "newgroup"})
+			jsonResponse(w, 200, Group{Key: 5, Name: "newgroup"})
 		},
 	}))
 
@@ -166,8 +166,8 @@ func TestGroupService_Create(t *testing.T) {
 	if group.Name != "newgroup" {
 		t.Errorf("expected name 'newgroup', got %q", group.Name)
 	}
-	if int(group.ID) != 5 {
-		t.Errorf("expected ID 5, got %d", int(group.ID))
+	if int(group.Key) != 5 {
+		t.Errorf("expected ID 5, got %d", int(group.Key))
 	}
 }
 
@@ -183,7 +183,7 @@ func TestGroupService_Update(t *testing.T) {
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/groups/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Group{ID: 1, Name: "admins", Description: newDesc})
+			jsonResponse(w, 200, Group{Key: 1, Name: "admins", Description: newDesc})
 		},
 	}))
 

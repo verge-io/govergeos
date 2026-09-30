@@ -4,8 +4,8 @@ import "strings"
 
 // Network represents a VergeOS virtual network (vnet).
 type Network struct {
-	// ID is the unique identifier for the network.
-	ID FlexInt `json:"$key,omitempty"`
+	// Key is the unique identifier for the network ($key).
+	Key FlexInt `json:"$key,omitempty"`
 	// Name is the network name.
 	Name string `json:"name"`
 	// Description is an optional description of the network.

@@ -61,7 +61,7 @@ func (c *Client) vmKeyForMachine(ctx context.Context, machineKey int, snapshot b
 		if vm.Machine != 0 && vm.Machine != machineKey {
 			continue
 		}
-		id := vm.ID.Int()
+		id := vm.Key.Int()
 		if id <= 0 {
 			continue
 		}

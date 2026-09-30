@@ -123,7 +123,7 @@ func initServices(c *Client) {
 // stubVM handles GET /vms/{id} and reports the VM's machine key.
 func stubVM(id, machine int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		jsonResponse(w, 200, VM{ID: FlexInt(id), Machine: machine})
+		jsonResponse(w, 200, VM{Key: FlexInt(id), Machine: machine})
 	}
 }
 
@@ -131,7 +131,7 @@ func stubVM(id, machine int) http.HandlerFunc {
 func stubVMsByMachine(machine, vmID int, snapshot bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(w, 200, []VM{{
-			ID:         FlexInt(vmID),
+			Key:        FlexInt(vmID),
 			Machine:    machine,
 			IsSnapshot: snapshot,
 		}})

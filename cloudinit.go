@@ -31,7 +31,7 @@ func (s *CloudInitService) List(ctx context.Context, opts ...ListOption) ([]Clou
 }
 
 // ListByVM returns cloud-init files owned by the VM with the given $key.
-// vmID is VM.ID (vms.$key), not VM.Machine. Files are selected with
+// vmID is VM.Key (vms.$key), not VM.Machine. Files are selected with
 // owner eq 'vms/<vmID>'.
 func (s *CloudInitService) ListByVM(ctx context.Context, vmID int, opts ...ListOption) ([]CloudInitFile, error) {
 	if vmID <= 0 {
@@ -70,7 +70,7 @@ func (s *CloudInitService) GetByName(ctx context.Context, name string) (*CloudIn
 	if len(files) == 0 {
 		return nil, &NotFoundError{Resource: "CloudInitFile", ID: name}
 	}
-	if err := requireUniqueName("CloudInitFile", name, files, func(f CloudInitFile) any { return f.ID }); err != nil {
+	if err := requireUniqueName("CloudInitFile", name, files, func(f CloudInitFile) any { return f.Key }); err != nil {
 		return nil, err
 	}
 	if err := requireExactName("CloudInitFile", name, files[0].Name, name); err != nil {
@@ -108,7 +108,7 @@ func (s *CloudInitService) Create(ctx context.Context, req *CloudInitFileCreateR
 }
 
 // CreateForVM creates a cloud-init file owned by the VM with the given $key.
-// vmID is VM.ID (vms.$key), not VM.Machine. The helper sets owner to
+// vmID is VM.Key (vms.$key), not VM.Machine. The helper sets owner to
 // "vms/<vmID>" and leaves req unchanged. Any Owner already set on req is
 // not sent.
 func (s *CloudInitService) CreateForVM(ctx context.Context, vmID int, req *CloudInitFileCreateRequest) (*CloudInitFile, error) {

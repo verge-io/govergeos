@@ -327,7 +327,7 @@ func TestTenantLayer2List(t *testing.T) {
 
 	// Test ListByNetwork
 	t.Run("ListByNetwork", func(t *testing.T) {
-		networkID := int(networks[0].ID)
+		networkID := int(networks[0].Key)
 		networkAssignments, err := client.TenantLayer2Networks.ListByNetwork(ctx, networkID)
 		if err != nil {
 			t.Fatalf("TenantLayer2Networks.ListByNetwork failed: %v", err)

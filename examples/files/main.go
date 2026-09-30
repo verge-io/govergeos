@@ -74,7 +74,7 @@ func main() {
 		for _, iso := range isoFiles {
 			sizeMB := iso.Filesize / (1024 * 1024)
 			fmt.Printf("- %s\n", iso.Name)
-			fmt.Printf("    ID: %d, Size: %d MB\n", iso.ID, sizeMB)
+			fmt.Printf("    ID: %d, Size: %d MB\n", iso.Key, sizeMB)
 			if iso.Description != "" {
 				fmt.Printf("    Description: %s\n", iso.Description)
 			}
@@ -103,12 +103,12 @@ func main() {
 	// Get details of first file
 	if len(files) > 0 {
 		fmt.Println("\n=== File Details ===")
-		f, err := client.Files.Get(ctx, files[0].ID.Int())
+		f, err := client.Files.Get(ctx, files[0].Key.Int())
 		if err != nil {
 			log.Fatalf("Failed to get file: %v", err)
 		}
 		fmt.Printf("Name: %s\n", f.Name)
-		fmt.Printf("ID: %d\n", f.ID)
+		fmt.Printf("ID: %d\n", f.Key)
 		fmt.Printf("Type: %s\n", f.Type)
 		fmt.Printf("Filesize: %d bytes (%.2f GB)\n", f.Filesize, float64(f.Filesize)/(1024*1024*1024))
 		fmt.Printf("Allocated: %d bytes\n", f.AllocatedBytes)

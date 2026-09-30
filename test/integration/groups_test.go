@@ -28,7 +28,7 @@ func TestGroupsList(t *testing.T) {
 			break
 		}
 		t.Logf("  - ID=%d Name=%q SystemGroup=%v Enabled=%v",
-			g.ID, g.Name, g.SystemGroup, g.Enabled)
+			g.Key, g.Name, g.SystemGroup, g.Enabled)
 	}
 }
 
@@ -51,7 +51,7 @@ func TestGroupCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create group: %v", err)
 	}
-	groupID := int(created.ID)
+	groupID := int(created.Key)
 	t.Logf("Created group with ID: %d", groupID)
 
 	// Cleanup
@@ -86,8 +86,8 @@ func TestGroupCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get group by name: %v", err)
 	}
-	if int(byName.ID) != groupID {
-		t.Errorf("Expected ID %d, got %d", groupID, byName.ID)
+	if int(byName.Key) != groupID {
+		t.Errorf("Expected ID %d, got %d", groupID, byName.Key)
 	}
 
 	// Update

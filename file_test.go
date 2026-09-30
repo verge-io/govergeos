@@ -13,8 +13,8 @@ func TestFileService_List(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/files": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []File{
-				{ID: 1, Name: "ubuntu.iso", Type: "iso"},
-				{ID: 2, Name: "data.img", Type: "img"},
+				{Key: 1, Name: "ubuntu.iso", Type: "iso"},
+				{Key: 2, Name: "data.img", Type: "img"},
 			})
 		},
 	}))
@@ -38,7 +38,7 @@ func TestFileService_List_WithFilter(t *testing.T) {
 			if filter == "" {
 				t.Error("expected filter parameter")
 			}
-			jsonResponse(w, 200, []File{{ID: 1, Name: "ubuntu.iso", Type: "iso"}})
+			jsonResponse(w, 200, []File{{Key: 1, Name: "ubuntu.iso", Type: "iso"}})
 		},
 	}))
 
@@ -70,7 +70,7 @@ func TestFileService_List_Empty(t *testing.T) {
 func TestFileService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/files/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, File{ID: 1, Name: "ubuntu.iso", Type: "iso", Filesize: 1048576})
+			jsonResponse(w, 200, File{Key: 1, Name: "ubuntu.iso", Type: "iso", Filesize: 1048576})
 		},
 	}))
 
@@ -109,7 +109,7 @@ func TestFileService_GetByName(t *testing.T) {
 			if filter != "name eq 'ubuntu.iso'" {
 				t.Errorf("unexpected filter: %s", filter)
 			}
-			jsonResponse(w, 200, []File{{ID: 1, Name: "ubuntu.iso", Type: "iso"}})
+			jsonResponse(w, 200, []File{{Key: 1, Name: "ubuntu.iso", Type: "iso"}})
 		},
 	}))
 
@@ -146,8 +146,8 @@ func TestFileService_ListISOs(t *testing.T) {
 				t.Errorf("expected ISO filter, got %q", filter)
 			}
 			jsonResponse(w, 200, []File{
-				{ID: 1, Name: "ubuntu.iso", Type: "iso"},
-				{ID: 2, Name: "windows.iso", Type: "iso"},
+				{Key: 1, Name: "ubuntu.iso", Type: "iso"},
+				{Key: 2, Name: "windows.iso", Type: "iso"},
 			})
 		},
 	}))
@@ -172,7 +172,7 @@ func TestFileService_Create(t *testing.T) {
 			jsonResponse(w, 200, apiResponse{Key: float64(10)})
 		},
 		"GET /api/v4/files/10": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, File{ID: 10, Name: "test.iso", Type: "iso"})
+			jsonResponse(w, 200, File{Key: 10, Name: "test.iso", Type: "iso"})
 		},
 	}))
 
@@ -186,8 +186,8 @@ func TestFileService_Create(t *testing.T) {
 	if file.Name != "test.iso" {
 		t.Errorf("expected name 'test.iso', got %q", file.Name)
 	}
-	if int(file.ID) != 10 {
-		t.Errorf("expected ID 10, got %d", int(file.ID))
+	if int(file.Key) != 10 {
+		t.Errorf("expected ID 10, got %d", int(file.Key))
 	}
 }
 
@@ -202,7 +202,7 @@ func TestFileService_Create_WithURL(t *testing.T) {
 			jsonResponse(w, 200, apiResponse{Key: float64(11)})
 		},
 		"GET /api/v4/files/11": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, File{ID: 11, Name: "file.iso", URL: "https://example.com/file.iso"})
+			jsonResponse(w, 200, File{Key: 11, Name: "file.iso", URL: "https://example.com/file.iso"})
 		},
 	}))
 
@@ -230,7 +230,7 @@ func TestFileService_Update(t *testing.T) {
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/files/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, File{ID: 1, Name: newName, Type: "iso"})
+			jsonResponse(w, 200, File{Key: 1, Name: newName, Type: "iso"})
 		},
 	}))
 
@@ -298,7 +298,7 @@ func TestFileService_Download(t *testing.T) {
 				return
 			}
 			// Regular Get for file metadata
-			jsonResponse(w, 200, File{ID: 1, Name: "test.iso", Type: "iso", Filesize: int64(len(fileContent))})
+			jsonResponse(w, 200, File{Key: 1, Name: "test.iso", Type: "iso", Filesize: int64(len(fileContent))})
 		},
 	}))
 
@@ -346,7 +346,7 @@ func TestFileService_Upload(t *testing.T) {
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/files/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, File{ID: 1, Name: "uploaded.bin", Filesize: size})
+			jsonResponse(w, 200, File{Key: 1, Name: "uploaded.bin", Filesize: size})
 		},
 	}))
 
@@ -374,7 +374,7 @@ func TestFileService_UploadWithChunkSize(t *testing.T) {
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/files/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, File{ID: 1, Name: "chunked.bin", Filesize: size})
+			jsonResponse(w, 200, File{Key: 1, Name: "chunked.bin", Filesize: size})
 		},
 	}))
 

@@ -354,10 +354,10 @@ func TestVMSnapshotService_Restore(t *testing.T) {
 				t.Errorf("filter = %q, want machine eq 63 (snap_machine)", got)
 			}
 			jsonResponse(w, 200, []VM{
-				{ID: FlexInt(63), Machine: 26, IsSnapshot: false},
-				{ID: FlexInt(45), Machine: 63, IsSnapshot: false},
-				{ID: FlexInt(77), Machine: 99, IsSnapshot: true},
-				{ID: FlexInt(90), Machine: 63, IsSnapshot: true},
+				{Key: FlexInt(63), Machine: 26, IsSnapshot: false},
+				{Key: FlexInt(45), Machine: 63, IsSnapshot: false},
+				{Key: FlexInt(77), Machine: 99, IsSnapshot: true},
+				{Key: FlexInt(90), Machine: 63, IsSnapshot: true},
 			})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {

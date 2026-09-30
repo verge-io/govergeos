@@ -12,7 +12,7 @@ type VMDeviceService struct {
 }
 
 // List returns all devices for a VM.
-// vmID is the VM $key (VM.ID). Devices are stored against the machine key,
+// vmID is the VM $key (VM.Key). Devices are stored against the machine key,
 // which is resolved before querying machine_devices.
 func (s *VMDeviceService) List(ctx context.Context, vmID int) ([]VMDevice, error) {
 	machine, err := s.client.machineKeyForVM(ctx, vmID)
@@ -65,21 +65,21 @@ func (s *VMDeviceService) Get(ctx context.Context, deviceID int) (*VMDevice, err
 func (s *VMDeviceService) loadSettings(ctx context.Context, device *VMDevice) error {
 	switch device.Type {
 	case DeviceTypeUSB:
-		settings, err := s.getUSBSettings(ctx, device.ID.Int())
+		settings, err := s.getUSBSettings(ctx, device.Key.Int())
 		if err != nil {
 			return err
 		}
 		device.USBSettings = settings
 
 	case DeviceTypeTPM:
-		settings, err := s.getTPMSettings(ctx, device.ID.Int())
+		settings, err := s.getTPMSettings(ctx, device.Key.Int())
 		if err != nil {
 			return err
 		}
 		device.TPMSettings = settings
 
 	case DeviceTypeVGPU:
-		settings, err := s.getVGPUSettings(ctx, device.ID.Int())
+		settings, err := s.getVGPUSettings(ctx, device.Key.Int())
 		if err != nil {
 			return err
 		}
@@ -144,7 +144,7 @@ func (s *VMDeviceService) getVGPUSettings(ctx context.Context, deviceID int) (*V
 }
 
 // Create creates a new device and returns the created device.
-// vmID is the VM $key (VM.ID). It is resolved to the machine key stored on the device.
+// vmID is the VM $key (VM.Key). It is resolved to the machine key stored on the device.
 func (s *VMDeviceService) Create(ctx context.Context, vmID int, req *VMDeviceCreateRequest) (*VMDevice, error) {
 	if req == nil {
 		return nil, &ValidationError{Message: "create request is required"}
@@ -229,39 +229,39 @@ func (s *VMDeviceService) updateSettings(ctx context.Context, device *VMDevice, 
 	case DeviceTypeUSB:
 		if usb != nil {
 			// Get existing settings to find the ID
-			existing, err := s.getUSBSettings(ctx, device.ID.Int())
+			existing, err := s.getUSBSettings(ctx, device.Key.Int())
 			if err != nil {
 				return err
 			}
 			if existing != nil {
-				usb.MachineDevice = device.ID.Int()
-				endpoint := fmt.Sprintf("/machine_device_settings_usb/%d", existing.ID)
+				usb.MachineDevice = device.Key.Int()
+				endpoint := fmt.Sprintf("/machine_device_settings_usb/%d", existing.Key)
 				return s.client.put(ctx, endpoint, usb, nil)
 			}
 		}
 
 	case DeviceTypeTPM:
 		if tpm != nil {
-			existing, err := s.getTPMSettings(ctx, device.ID.Int())
+			existing, err := s.getTPMSettings(ctx, device.Key.Int())
 			if err != nil {
 				return err
 			}
 			if existing != nil {
-				tpm.MachineDevice = device.ID.Int()
-				endpoint := fmt.Sprintf("/machine_device_settings_tpm/%d", existing.ID)
+				tpm.MachineDevice = device.Key.Int()
+				endpoint := fmt.Sprintf("/machine_device_settings_tpm/%d", existing.Key)
 				return s.client.put(ctx, endpoint, tpm, nil)
 			}
 		}
 
 	case DeviceTypeVGPU:
 		if vgpu != nil {
-			existing, err := s.getVGPUSettings(ctx, device.ID.Int())
+			existing, err := s.getVGPUSettings(ctx, device.Key.Int())
 			if err != nil {
 				return err
 			}
 			if existing != nil {
-				vgpu.MachineDevice = device.ID.Int()
-				endpoint := fmt.Sprintf("/machine_device_settings_nvidia_vgpu/%d", existing.ID)
+				vgpu.MachineDevice = device.Key.Int()
+				endpoint := fmt.Sprintf("/machine_device_settings_nvidia_vgpu/%d", existing.Key)
 				return s.client.put(ctx, endpoint, vgpu, nil)
 			}
 		}

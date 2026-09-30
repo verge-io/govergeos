@@ -196,10 +196,10 @@ func TestNetworkDiagnosticsStatistics(t *testing.T) {
 		return
 	}
 
-	t.Logf("Using running network for tests: %s (ID: %d, Type: %s)", runningNetwork.Name, runningNetwork.ID, runningNetwork.Type)
+	t.Logf("Using running network for tests: %s (ID: %d, Type: %s)", runningNetwork.Name, runningNetwork.Key, runningNetwork.Type)
 
 	t.Run("GetDiagnostics", func(t *testing.T) {
-		diagnostics, err := client.Networks.GetDiagnostics(ctx, int(runningNetwork.ID))
+		diagnostics, err := client.Networks.GetDiagnostics(ctx, int(runningNetwork.Key))
 		if err != nil {
 			t.Logf("Networks.GetDiagnostics returned error (may be expected if network is internal): %v", err)
 			return
@@ -214,7 +214,7 @@ func TestNetworkDiagnosticsStatistics(t *testing.T) {
 		if runningNetwork.Type != "external" {
 			t.Skip("Ping test requires external network")
 		}
-		result, err := client.Networks.Ping(ctx, int(runningNetwork.ID), "8.8.8.8", 3)
+		result, err := client.Networks.Ping(ctx, int(runningNetwork.Key), "8.8.8.8", 3)
 		if err != nil {
 			t.Logf("Networks.Ping returned error: %v", err)
 			return
@@ -229,7 +229,7 @@ func TestNetworkDiagnosticsStatistics(t *testing.T) {
 		if runningNetwork.Type != "external" {
 			t.Skip("DNS lookup test requires external network")
 		}
-		result, err := client.Networks.DNSLookup(ctx, int(runningNetwork.ID), "google.com")
+		result, err := client.Networks.DNSLookup(ctx, int(runningNetwork.Key), "google.com")
 		if err != nil {
 			t.Logf("Networks.DNSLookup returned error: %v", err)
 			return
@@ -241,7 +241,7 @@ func TestNetworkDiagnosticsStatistics(t *testing.T) {
 	})
 
 	t.Run("GetStatistics", func(t *testing.T) {
-		statistics, err := client.Networks.GetStatistics(ctx, int(runningNetwork.ID))
+		statistics, err := client.Networks.GetStatistics(ctx, int(runningNetwork.Key))
 		if err != nil {
 			t.Logf("Networks.GetStatistics returned error (may be expected if monitoring not enabled): %v", err)
 			return
@@ -253,7 +253,7 @@ func TestNetworkDiagnosticsStatistics(t *testing.T) {
 	})
 
 	t.Run("GetLatestStatistics", func(t *testing.T) {
-		stats, err := client.Networks.GetLatestStatistics(ctx, int(runningNetwork.ID))
+		stats, err := client.Networks.GetLatestStatistics(ctx, int(runningNetwork.Key))
 		if err != nil {
 			t.Logf("Networks.GetLatestStatistics returned error: %v", err)
 			return
@@ -267,7 +267,7 @@ func TestNetworkDiagnosticsStatistics(t *testing.T) {
 
 	t.Run("ShowFirewallRules", func(t *testing.T) {
 		result, err := client.Networks.RunQueryWait(ctx, &vergeos.NetworkQueryRequest{
-			VNet:  int(runningNetwork.ID),
+			VNet:  int(runningNetwork.Key),
 			Query: vergeos.NetworkQueryFirewall,
 		})
 		if err != nil {

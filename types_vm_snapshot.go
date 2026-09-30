@@ -38,7 +38,7 @@ type VMSnapshot struct {
 
 // VMSnapshotCreateRequest is the request body for creating a VM snapshot.
 type VMSnapshotCreateRequest struct {
-	// VM is the VM $key (VM.ID) to snapshot. Create resolves it to the
+	// VM is the VM $key (VM.Key) to snapshot. Create resolves it to the
 	// machine key posted as "machine". It is not VM.Machine.
 	VM int `json:"-"`
 	// Name is the snapshot name (required).

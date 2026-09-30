@@ -31,7 +31,7 @@ func (s *VMSnapshotService) List(ctx context.Context, opts ...ListOption) ([]VMS
 }
 
 // ListByVM returns all snapshots for a specific VM.
-// vmID is the VM $key (VM.ID). Snapshots are stored against the machine key,
+// vmID is the VM $key (VM.Key). Snapshots are stored against the machine key,
 // so the VM is resolved before the machine_snapshots filter is applied.
 func (s *VMSnapshotService) ListByVM(ctx context.Context, vmID int, opts ...ListOption) ([]VMSnapshot, error) {
 	machine, err := s.client.machineKeyForVM(ctx, vmID)
@@ -105,7 +105,7 @@ func (s *VMSnapshotService) Get(ctx context.Context, id int) (*VMSnapshot, error
 }
 
 // GetByName returns a VM snapshot by name within a specific VM.
-// vmID is the VM $key (VM.ID).
+// vmID is the VM $key (VM.Key).
 func (s *VMSnapshotService) GetByName(ctx context.Context, vmID int, name string) (*VMSnapshot, error) {
 	snapshots, err := s.ListByVM(ctx, vmID, WithFilter(fmt.Sprintf("name eq '%s'", escapeFilterValue(name))))
 	if err != nil {

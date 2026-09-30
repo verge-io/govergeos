@@ -2,8 +2,8 @@ package vergeos
 
 // VMDrive represents a virtual disk attached to a VM.
 type VMDrive struct {
-	// ID is the unique identifier for the drive.
-	ID FlexInt `json:"$key,omitempty"`
+	// Key is the unique identifier for the drive ($key).
+	Key FlexInt `json:"$key,omitempty"`
 	// Machine is the machine reference ID.
 	Machine int `json:"machine,omitempty"`
 	// OrderID is the boot order ID.

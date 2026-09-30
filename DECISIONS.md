@@ -675,12 +675,12 @@ The SDK itself does NOT include built-in rate limiting because:
 
 **Status:** Accepted
 
-**Context:** Every VM has a row key (`VM.ID`, `vms.$key`) and a machine key (`VM.Machine`). Drives, NICs, devices, and snapshots are stored against the machine key. `vm_actions` (power, hotplug, restore) uses the VM $key. On a system that has been in use the two counters differ, and each number is often some other object's key.
+**Context:** Every VM has a row key (`VM.Key`, `vms.$key`) and a machine key (`VM.Machine`). Drives, NICs, devices, and snapshots are stored against the machine key. `vm_actions` (power, hotplug, restore) uses the VM $key. On a system that has been in use the two counters differ, and each number is often some other object's key.
 
 **Decision:** Public methods that identify a VM take the VM $key and resolve the machine key internally. `vm_actions` calls keep using the VM $key. Restore resolves `snap_machine` to the snapshot VM row (`is_snapshot` true) and posts that VM $key. Drive and NIC delete resolve the live VM (`is_snapshot` false) for the device's machine key before hot-unplug.
 
 **Rationale:**
-- Callers otherwise pass `VM.ID` into a parameter documented as an ID and attach the device to a different machine, or post a machine key to `vm_actions` and act on a different VM.
+- Callers otherwise pass `VM.Key` into a parameter documented as an ID and attach the device to a different machine, or post a machine key to `vm_actions` and act on a different VM.
 - `HotplugDrive` already took the VM $key. One parameter name had both meanings.
 - pyVergeOS resolves the same two keys this way.
 
@@ -868,4 +868,23 @@ Two behaviors in the Ansible collection are wrong for a client library. A failed
 - `Delete` by key still removes a live import. `DeleteByName` will not, when other rows share the name.
 - Deleting an import row leaves the VM. Deleting an export configuration leaves files already written to the volume.
 - The file download started for a URL import is not polled. A download that fails is reported by `Wait` on the import.
+
+## ADR-026: The $key Field Is Named Key
+
+**Date:** 2026-09-30
+
+**Status:** Accepted
+
+**Context:** Every VergeOS row has a `$key`. Most Go types named that field `Key`. Thirteen named it `ID`: `VM`, `Network`, `VMNIC`, `VMDrive`, `VMDevice`, `USBDeviceSettings`, `TPMDeviceSettings`, `VGPUDeviceSettings`, `Group`, `File`, `Member`, `CloudInitFile`, and `ResourceGroup`. `VM` and `Network` are the types callers use most, so code that handles a VM and a tenant wrote `vm.ID` next to `tenant.Key`. Some tables also have a separate `id` column, so `ID` meant two different things (issue #53).
+
+**Decision:** The Go field for `$key` is `Key` on every type. Those thirteen fields are renamed from `ID` to `Key`. JSON tags stay `$key`. Fields that were `FlexInt` stay `FlexInt`. `USBDeviceSettings`, `TPMDeviceSettings`, and `VGPUDeviceSettings` stay `int`. `ResourceGroup` stays a UUID `string`, the same class as the other string-key tables (volumes and the other SHA1 keys, ADR-014), which already used `Key string` plus `ID` for the `id` column. `Node.ID` maps to the `id` column, not `$key`, and is not renamed. `StorageTier.Key` was already `Key` and stays `int`, because the key is the tier number.
+
+**Rationale:**
+- One name matches `$key` and the majority of the SDK.
+- `ID` stays available for the separate `id` column.
+- The library is still 0.x, so the rename can land before 1.0.
+
+**Consequences:**
+- Callers replace `vm.ID` with `vm.Key`, and the same for the other twelve types. Method parameters that take the key as an `int` are unchanged.
+- JSON on the wire is unchanged.
 

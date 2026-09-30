@@ -4,8 +4,8 @@ import "encoding/json"
 
 // VM represents a VergeOS virtual machine.
 type VM struct {
-	// ID is the unique identifier for the VM.
-	ID FlexInt `json:"$key,omitempty"`
+	// Key is the unique identifier for the VM ($key).
+	Key FlexInt `json:"$key,omitempty"`
 	// UUID is the universally unique identifier for the VM.
 	UUID string `json:"uuid,omitempty"`
 	// Machine is the machine reference ID.

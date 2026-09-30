@@ -420,7 +420,7 @@ func TestWireGuardCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create test network: %v", err)
 	}
-	networkID := int(testNetwork.ID)
+	networkID := int(testNetwork.Key)
 	t.Logf("Created test network: %s (ID: %d)", testNetwork.Name, networkID)
 
 	// Cleanup: delete test network when done

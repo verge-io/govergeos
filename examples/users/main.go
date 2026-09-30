@@ -78,13 +78,13 @@ func main() {
 
 	for _, group := range groups {
 		fmt.Printf("- %s (ID: %d, Type: %s)\n",
-			group.Name, group.ID, group.Type)
+			group.Name, group.Key, group.Type)
 	}
 
 	// Show group memberships
 	fmt.Println("\n=== Group Memberships ===")
 	for _, group := range groups {
-		members, err := client.Members.ListByGroup(ctx, group.ID.Int())
+		members, err := client.Members.ListByGroup(ctx, group.Key.Int())
 		if err != nil {
 			log.Printf("Failed to list members for group %s: %v", group.Name, err)
 			continue

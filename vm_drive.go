@@ -47,7 +47,7 @@ func (s *VMDriveService) getFields() string {
 }
 
 // List returns all drives for a VM.
-// vmID is the VM $key (VM.ID). Drives are stored against the machine key,
+// vmID is the VM $key (VM.Key). Drives are stored against the machine key,
 // which is resolved before querying machine_drives.
 func (s *VMDriveService) List(ctx context.Context, vmID int) ([]VMDrive, error) {
 	machine, err := s.client.machineKeyForVM(ctx, vmID)
@@ -114,7 +114,7 @@ func (s *VMDriveService) Get(ctx context.Context, driveID int) (*VMDrive, error)
 }
 
 // GetByName returns a drive by name within a specific VM.
-// vmID is the VM $key (VM.ID). Drive names are scoped to a machine
+// vmID is the VM $key (VM.Key). Drive names are scoped to a machine
 // (every VM can have a "disk0"), so the machine key is resolved first.
 // Returns NotFoundError if no drive with the given name exists on the VM.
 func (s *VMDriveService) GetByName(ctx context.Context, vmID int, name string) (*VMDrive, error) {
@@ -129,14 +129,14 @@ func (s *VMDriveService) GetByName(ctx context.Context, vmID int, name string) (
 	if len(drives) == 0 {
 		return nil, &NotFoundError{Resource: "VMDrive", ID: name}
 	}
-	if err := requireUniqueName("VMDrive", name, drives, func(d VMDrive) any { return d.ID }); err != nil {
+	if err := requireUniqueName("VMDrive", name, drives, func(d VMDrive) any { return d.Key }); err != nil {
 		return nil, err
 	}
 	if err := requireExactName("VMDrive", name, drives[0].Name, name); err != nil {
 		return nil, err
 	}
 	// Fetch full details (Get returns additional fields like power state and status).
-	got, err := s.Get(ctx, drives[0].ID.Int())
+	got, err := s.Get(ctx, drives[0].Key.Int())
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (s *VMDriveService) GetByName(ctx context.Context, vmID int, name string) (
 }
 
 // Create creates a new drive and returns the created drive.
-// vmID is the VM $key (VM.ID). It is resolved to the machine key stored on the drive.
+// vmID is the VM $key (VM.Key). It is resolved to the machine key stored on the drive.
 // For import media, this method waits for the import to complete.
 func (s *VMDriveService) Create(ctx context.Context, vmID int, req *VMDriveCreateRequest) (*VMDrive, error) {
 	if req == nil {

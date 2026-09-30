@@ -115,7 +115,7 @@ func main() {
 	if err != nil {
 		log.Printf("Failed to list VMs: %v", err)
 	} else if len(vms) > 0 {
-		vmID := vms[0].ID
+		vmID := vms[0].Key
 		vmMember := fmt.Sprintf("vms/%d", vmID)
 
 		vmTags, err := client.TagMembers.ListByMember(ctx, vmMember)

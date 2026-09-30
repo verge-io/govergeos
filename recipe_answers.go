@@ -131,7 +131,7 @@ func indexNetworkNames(networks []Network) map[string]networkNameHit {
 	for _, network := range networks {
 		hit := index[network.Name]
 		if hit.count == 0 {
-			hit.key = int(network.ID)
+			hit.key = int(network.Key)
 		}
 		hit.count++
 		index[network.Name] = hit

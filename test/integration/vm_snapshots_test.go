@@ -58,13 +58,13 @@ func TestVMSnapshots(t *testing.T) {
 
 		var vm *vergeos.VM
 		for i := range vms {
-			if vms[i].IsSnapshot || vms[i].ID.Int() <= 0 || vms[i].Machine <= 0 {
+			if vms[i].IsSnapshot || vms[i].Key.Int() <= 0 || vms[i].Machine <= 0 {
 				continue
 			}
-			if vm == nil || vms[i].ID.Int() != vms[i].Machine {
+			if vm == nil || vms[i].Key.Int() != vms[i].Machine {
 				chosen := vms[i]
 				vm = &chosen
-				if vms[i].ID.Int() != vms[i].Machine {
+				if vms[i].Key.Int() != vms[i].Machine {
 					break
 				}
 			}
@@ -73,14 +73,14 @@ func TestVMSnapshots(t *testing.T) {
 			t.Skip("No VMs available")
 		}
 
-		vmSnapshots, err := client.VMSnapshots.ListByVM(ctx, vm.ID.Int())
+		vmSnapshots, err := client.VMSnapshots.ListByVM(ctx, vm.Key.Int())
 		if err != nil {
-			t.Fatalf("VMSnapshots.ListByVM(%d) failed: %v", vm.ID.Int(), err)
+			t.Fatalf("VMSnapshots.ListByVM(%d) failed: %v", vm.Key.Int(), err)
 		}
-		t.Logf("Found %d snapshots for VM %d (machine %d)", len(vmSnapshots), vm.ID.Int(), vm.Machine)
+		t.Logf("Found %d snapshots for VM %d (machine %d)", len(vmSnapshots), vm.Key.Int(), vm.Machine)
 		for _, snap := range vmSnapshots {
 			if int(snap.Machine) != vm.Machine {
-				t.Errorf("snapshot %d machine=%d, VM %d machine=%d", int(snap.Key), int(snap.Machine), vm.ID.Int(), vm.Machine)
+				t.Errorf("snapshot %d machine=%d, VM %d machine=%d", int(snap.Key), int(snap.Machine), vm.Key.Int(), vm.Machine)
 			}
 		}
 	})
