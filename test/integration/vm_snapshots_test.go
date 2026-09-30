@@ -167,6 +167,71 @@ func TestVMSnapshotsCRUD(t *testing.T) {
 	t.Log("VM Snapshot CRUD test completed")
 }
 
+// TestVMsSnapshot creates a snapshot through VMs.Snapshot and checks that a
+// machine_snapshots row exists for the VM. Requires VERGEOS_TEST_VM_ID.
+// Quiesce is left false so the test does not depend on a guest agent.
+func TestVMsSnapshot(t *testing.T) {
+	client := setupTestClient(t)
+	ctx := context.Background()
+
+	vmIDStr := os.Getenv("VERGEOS_TEST_VM_ID")
+	if vmIDStr == "" {
+		t.Skip("Skipping: VERGEOS_TEST_VM_ID not set")
+	}
+
+	var vmID int
+	if err := json.Unmarshal([]byte(vmIDStr), &vmID); err != nil {
+		t.Fatalf("Invalid VERGEOS_TEST_VM_ID: %v", err)
+	}
+
+	vm, err := client.VMs.Get(ctx, vmID)
+	if err != nil {
+		t.Fatalf("VMs.Get(%d) failed: %v", vmID, err)
+	}
+	if vm.Machine <= 0 {
+		t.Fatalf("VM %d has no machine key", vmID)
+	}
+
+	snapshotName := "sdk-test-vms-snapshot-" + time.Now().Format("20060102-150405")
+	snapshot, err := client.VMs.Snapshot(ctx, vmID, &vergeos.VMSnapshotOptions{
+		Name:      snapshotName,
+		Retention: 3600,
+	})
+	if err != nil {
+		t.Fatalf("VMs.Snapshot failed: %v", err)
+	}
+	if snapshot == nil || int(snapshot.Key) == 0 {
+		t.Fatal("VMs.Snapshot returned no snapshot")
+	}
+	snapshotID := int(snapshot.Key)
+	t.Logf("VMs.Snapshot created [%d] %s", snapshotID, snapshot.Name)
+
+	defer func() {
+		t.Log("Cleaning up: deleting test snapshot...")
+		if err := client.VMSnapshots.Delete(ctx, snapshotID); err != nil {
+			t.Logf("Warning: failed to delete test snapshot: %v", err)
+		}
+	}()
+
+	fetched, err := client.VMSnapshots.Get(ctx, snapshotID)
+	if err != nil {
+		t.Fatalf("VMSnapshots.Get(%d) failed: %v", snapshotID, err)
+	}
+	if fetched.Name != snapshotName {
+		t.Errorf("snapshot name = %q, want %q", fetched.Name, snapshotName)
+	}
+
+	byName, err := client.VMSnapshots.GetByName(ctx, vm.Machine, snapshotName)
+	if err != nil {
+		t.Fatalf("snapshot %q not found on machine %d: %v", snapshotName, vm.Machine, err)
+	}
+	if int(byName.Key) != snapshotID {
+		t.Errorf("GetByName key = %d, want %d", int(byName.Key), snapshotID)
+	}
+	t.Logf("Found machine_snapshots row: Key=%d Name=%q Machine=%d Expires=%d",
+		int(byName.Key), byName.Name, int(byName.Machine), byName.Expires)
+}
+
 // TestVMMigrate tests the VM migration functionality.
 // Requires VERGEOS_TEST_VM_ID and VERGEOS_TEST_TARGET_NODE environment variables.
 func TestVMMigrate(t *testing.T) {

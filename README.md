@@ -102,8 +102,10 @@ vm, err := client.VMs.Create(ctx, &vergeos.VMCreateRequest{
 err = client.VMs.PowerOn(ctx, vmID)
 err = client.VMs.PowerOff(ctx, vmID)
 
-// Create a snapshot
-err = client.VMs.Snapshot(ctx, vmID, "pre-upgrade")
+// Create a snapshot (expires in 24 hours)
+snapshot, err := client.VMs.Snapshot(ctx, vmID, &vergeos.VMSnapshotOptions{
+    Name: "pre-upgrade", Retention: 86400,
+})
 ```
 
 ### Network Management

@@ -45,10 +45,12 @@ err = client.VMs.Clone(ctx, vmID, &vergeos.VMCloneOptions{
     PreserveMACs: false,
 })
 
-// Take a snapshot
-err = client.VMs.Snapshot(ctx, vmID, &vergeos.VMSnapshotOptions{
+// Take a snapshot. Retention is a lifetime in seconds, sent as expires.
+// Quiesce requires a running guest agent; leave it false to snapshot
+// a VM that does not have one.
+snapshot, err := client.VMs.Snapshot(ctx, vmID, &vergeos.VMSnapshotOptions{
+    Name:      "pre-upgrade",
     Retention: 86400, // 24 hours
-    Quiesce:   true,
 })
 
 // Migrate a VM to another node

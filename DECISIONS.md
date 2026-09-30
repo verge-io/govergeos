@@ -173,6 +173,7 @@ This document captures key design decisions made during the development of goVer
 **Consequences:**
 - Users must query separately to get cloned VM or snapshot details
 - Consistent behavior across all action methods
+- Exception: `VMs.Snapshot` returns the created `*VMSnapshot`. Creating a VM snapshot is a synchronous `machine_snapshots` insert, not a fire-and-forget `vm_actions` call.
 
 ---
 
