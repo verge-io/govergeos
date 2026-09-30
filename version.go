@@ -89,6 +89,8 @@ func isVersionAtLeast(v string, requiredMajor, requiredMinor, requiredPatch int)
 
 // checkServerVersion fetches /version.json and validates the server is v26.
 // Called during NewClient() - returns error if version check fails.
+// Credentials are not sent. /version.json does not require them, and sending
+// a bad password here would be a second login attempt.
 func (c *Client) checkServerVersion(ctx context.Context) error {
 	var resp versionResponse
 	if err := c.getAbsolute(ctx, "/version.json", nil, &resp); err != nil {

@@ -48,7 +48,7 @@ Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-018). The critical one
 - **Functional options**: `WithBaseURL()`, `WithCredentials()`, `WithAPIKey()`, `WithEnvConfig()`, etc.
 - **Context-first**: All API methods take `context.Context` as first parameter.
 - **Actions return error only**: Clone, snapshot, power operations don't return the new resource.
-- **Mandatory version check**: `NewClient()` validates server version during initialization.
+- **Mandatory version and credential check**: `NewClient()` validates the server version and the supplied credentials during initialization. The credential check is a single request and is not retried.
 - **WithEnvConfig() is opt-in**: Environment variables are not auto-read.
 
 ### Adding a New Service

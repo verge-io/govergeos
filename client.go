@@ -24,6 +24,9 @@ const (
 	defaultUserAgent = "govergeos/0.3.1"
 	// maxResponseSize is the maximum response body size (100 MB).
 	maxResponseSize = 100 << 20
+	// credentialCheckEndpoint is a small table present on every VergeOS system.
+	// A limit=1 read is enough to learn whether the credentials were accepted.
+	credentialCheckEndpoint = "/clusters"
 )
 
 // Client is the VergeOS API client.
@@ -283,6 +286,16 @@ func WithEnvConfig() ClientOption {
 }
 
 // NewClient creates a new VergeOS API client.
+//
+// Client creation checks that the server is VergeOS 26.x and that the
+// supplied credentials are accepted. /version.json does not require
+// authentication, so a wrong password is caught by one follow-up read of
+// a small table. That read is a single attempt: VergeOS locks an account
+// after a small number of failed logins, and retrying a bad password
+// locks the account for every client that shares it, including API keys.
+//
+// A failed login is returned as an AuthError. An incompatible server
+// version is returned as an UnsupportedVersionError.
 func NewClient(opts ...ClientOption) (*Client, error) {
 	// Create client with defaults
 	c := &Client{
@@ -394,19 +407,39 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.UpdateBranches = &UpdateBranchService{client: c}
 	c.UpdateSourcePackages = &UpdateSourcePackageService{client: c}
 
-	// Validate server version before returning client
+	// Validate server version before returning client.
+	// /version.json is public, so this does not authenticate.
 	if err := c.checkServerVersion(context.Background()); err != nil {
+		return nil, err
+	}
+
+	// One authenticated read. Do not retry: a second attempt with the
+	// same bad credentials counts toward account lockout.
+	if err := c.checkCredentials(context.Background()); err != nil {
 		return nil, err
 	}
 
 	return c, nil
 }
 
+// checkCredentials performs exactly one authenticated request.
+//
+// Authentication failures must not be retried. The platform locks an
+// account after a configurable number of failed logins (five on the
+// system this was measured against). A retry locks that account for
+// every client sharing it, including its API keys.
+func (c *Client) checkCredentials(ctx context.Context) error {
+	params := url.Values{}
+	params.Set("limit", "1")
+	params.Set("fields", "$key")
+	return c.get(ctx, credentialCheckEndpoint, params, nil)
+}
+
 // apiResponse represents the standard VergeOS API response structure.
 type apiResponse struct {
-	Key      any `json:"$key,omitempty"`
-	Response any `json:"response,omitempty"`
-	Err      string      `json:"err,omitempty"`
+	Key      any    `json:"$key,omitempty"`
+	Response any    `json:"response,omitempty"`
+	Err      string `json:"err,omitempty"`
 }
 
 // request performs an HTTP request to the VergeOS API.
@@ -525,7 +558,9 @@ func (c *Client) delete(ctx context.Context, endpoint string) error {
 }
 
 // getAbsolute performs a GET request to an absolute path (not under /api/v4/).
-// This is used for endpoints like /version.json that are outside the API path.
+// This is used for endpoints like /version.json that are outside the API path
+// and do not require authentication. Credentials are omitted so a bad password
+// is presented only by checkCredentials, and only once.
 func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values, result any) error {
 	// Build URL with absolute path
 	u := c.baseURL + path
@@ -539,12 +574,6 @@ func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values
 		return fmt.Errorf("vergeos: failed to create request: %w", err)
 	}
 
-	// Set authentication header
-	if c.apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+c.apiKey)
-	} else {
-		req.SetBasicAuth(c.username, c.password)
-	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
 

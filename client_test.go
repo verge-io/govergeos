@@ -1,7 +1,9 @@
 package vergeos
 
 import (
+	"errors"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -335,4 +337,215 @@ func TestNewClientWithEnvConfigValidation(t *testing.T) {
 			t.Errorf("error = %q, expected to mention authentication", err.Error())
 		}
 	})
+}
+
+// startupRequest is one request observed during NewClient.
+type startupRequest struct {
+	path          string
+	authorization string
+	limit         string
+	fields        string
+	username      string
+	password      string
+	hasBasicAuth  bool
+}
+
+// newStartupServer serves the two requests NewClient makes: a public
+// version document, then one authenticated clusters read.
+func newStartupServer(t *testing.T, version string, clusterStatus int, clusterBody string) (*httptest.Server, *[]startupRequest) {
+	t.Helper()
+
+	seen := &[]startupRequest{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, password, hasBasicAuth := r.BasicAuth()
+		*seen = append(*seen, startupRequest{
+			path:          r.URL.Path,
+			authorization: r.Header.Get("Authorization"),
+			limit:         r.URL.Query().Get("limit"),
+			fields:        r.URL.Query().Get("fields"),
+			username:      username,
+			password:      password,
+			hasBasicAuth:  hasBasicAuth,
+		})
+
+		switch r.URL.Path {
+		case "/version.json":
+			jsonResponse(w, http.StatusOK, versionResponse{Version: version})
+		case apiBasePath + credentialCheckEndpoint:
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(clusterStatus)
+			_, _ = w.Write([]byte(clusterBody))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(server.Close)
+	return server, seen
+}
+
+func credentialChecks(seen []startupRequest) []startupRequest {
+	var checks []startupRequest
+	for _, req := range seen {
+		if req.path == apiBasePath+credentialCheckEndpoint {
+			checks = append(checks, req)
+		}
+	}
+	return checks
+}
+
+func TestNewClientWrongPasswordReturnsAuthError(t *testing.T) {
+	server, seen := newStartupServer(t, "26.1.8", http.StatusUnauthorized, `{"err":"Login required"}`)
+
+	client, err := NewClient(
+		WithBaseURL(server.URL),
+		WithCredentials("admin", "wrong-password"),
+		WithHTTPClient(server.Client()),
+	)
+	if client != nil {
+		t.Fatal("NewClient returned a client for a wrong password")
+	}
+	if !IsAuthError(err) {
+		t.Fatalf("NewClient error = %v, want AuthError", err)
+	}
+
+	var authErr *AuthError
+	if !errors.As(err, &authErr) {
+		t.Fatalf("NewClient error type = %T, want *AuthError", err)
+	}
+	if authErr.Message != "Login required" {
+		t.Fatalf("AuthError.Message = %q, want %q", authErr.Message, "Login required")
+	}
+
+	if len(*seen) != 2 {
+		t.Fatalf("NewClient made %d requests, want version check plus one credential check: %#v", len(*seen), *seen)
+	}
+	versionReq := (*seen)[0]
+	if versionReq.path != "/version.json" {
+		t.Fatalf("first request path = %q, want /version.json", versionReq.path)
+	}
+	if versionReq.authorization != "" || versionReq.hasBasicAuth {
+		t.Fatalf("version check sent credentials: %#v", versionReq)
+	}
+
+	checks := credentialChecks(*seen)
+	if len(checks) != 1 {
+		t.Fatalf("credential checks = %d, want exactly one", len(checks))
+	}
+	check := checks[0]
+	if !check.hasBasicAuth || check.username != "admin" || check.password != "wrong-password" {
+		t.Fatalf("credential check basic auth = %q:%q (present %v), want admin:wrong-password", check.username, check.password, check.hasBasicAuth)
+	}
+	if check.limit != "1" {
+		t.Fatalf("credential check limit = %q, want 1", check.limit)
+	}
+	if check.fields != "$key" {
+		t.Fatalf("credential check fields = %q, want $key", check.fields)
+	}
+}
+
+func TestNewClientInvalidAPIKeyReturnsAuthError(t *testing.T) {
+	server, seen := newStartupServer(t, "26.1.8", http.StatusUnauthorized, `{"err":"Login required"}`)
+
+	client, err := NewClient(
+		WithBaseURL(server.URL),
+		WithAPIKey("bad-key"),
+		WithHTTPClient(server.Client()),
+	)
+	if client != nil {
+		t.Fatal("NewClient returned a client for a rejected API key")
+	}
+	if !IsAuthError(err) {
+		t.Fatalf("NewClient error = %v, want AuthError", err)
+	}
+
+	checks := credentialChecks(*seen)
+	if len(checks) != 1 {
+		t.Fatalf("credential checks = %d, want exactly one", len(checks))
+	}
+	if checks[0].authorization != "Bearer bad-key" {
+		t.Fatalf("Authorization = %q, want %q", checks[0].authorization, "Bearer bad-key")
+	}
+	if checks[0].hasBasicAuth {
+		t.Fatal("API key client also sent basic auth")
+	}
+	if (*seen)[0].authorization != "" {
+		t.Fatalf("version check sent Authorization %q", (*seen)[0].authorization)
+	}
+}
+
+func TestNewClientSucceedsWhenCredentialsAccepted(t *testing.T) {
+	server, seen := newStartupServer(t, "26.1.8", http.StatusOK, `[]`)
+
+	client, err := NewClient(
+		WithBaseURL(server.URL),
+		WithCredentials("admin", "correct-password"),
+		WithHTTPClient(server.Client()),
+	)
+	if err != nil {
+		t.Fatalf("NewClient returned error for accepted credentials: %v", err)
+	}
+	if client == nil {
+		t.Fatal("NewClient returned a nil client")
+	}
+	if client.serverVersion != "26.1.8" {
+		t.Fatalf("serverVersion = %q, want 26.1.8", client.serverVersion)
+	}
+	if client.VMs == nil || client.Clusters == nil {
+		t.Fatal("NewClient returned a client without services")
+	}
+
+	checks := credentialChecks(*seen)
+	if len(checks) != 1 {
+		t.Fatalf("credential checks = %d, want exactly one", len(checks))
+	}
+	if !checks[0].hasBasicAuth || checks[0].username != "admin" || checks[0].password != "correct-password" {
+		t.Fatalf("credential check did not present the supplied password: %#v", checks[0])
+	}
+	if (*seen)[0].path != "/version.json" || (*seen)[0].authorization != "" {
+		t.Fatalf("version check = %#v, want an unauthenticated /version.json request", (*seen)[0])
+	}
+}
+
+func TestNewClientSkipsCredentialCheckOnUnsupportedVersion(t *testing.T) {
+	server, seen := newStartupServer(t, "4.2.0", http.StatusOK, `[]`)
+
+	client, err := NewClient(
+		WithBaseURL(server.URL),
+		WithCredentials("admin", "correct-password"),
+		WithHTTPClient(server.Client()),
+	)
+	if client != nil {
+		t.Fatal("NewClient returned a client for an unsupported version")
+	}
+	if !IsUnsupportedVersionError(err) {
+		t.Fatalf("NewClient error = %v, want UnsupportedVersionError", err)
+	}
+	if len(credentialChecks(*seen)) != 0 {
+		t.Fatalf("credential check ran for an unsupported version: %#v", *seen)
+	}
+	if len(*seen) != 1 || (*seen)[0].path != "/version.json" || (*seen)[0].authorization != "" {
+		t.Fatalf("startup requests = %#v, want one unauthenticated version check", *seen)
+	}
+}
+
+func TestNewClientCredentialProbeFailureIsNotAuthError(t *testing.T) {
+	server, seen := newStartupServer(t, "26.1.8", http.StatusInternalServerError, `{"err":"unavailable"}`)
+
+	client, err := NewClient(
+		WithBaseURL(server.URL),
+		WithCredentials("admin", "correct-password"),
+		WithHTTPClient(server.Client()),
+	)
+	if client != nil {
+		t.Fatal("NewClient returned a client when the credential check failed")
+	}
+	if err == nil {
+		t.Fatal("NewClient returned a nil error when the credential check failed")
+	}
+	if IsAuthError(err) {
+		t.Fatalf("server error reported as AuthError: %v", err)
+	}
+	if len(credentialChecks(*seen)) != 1 {
+		t.Fatalf("credential checks = %d, want exactly one", len(credentialChecks(*seen)))
+	}
 }

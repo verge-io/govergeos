@@ -11,8 +11,8 @@ import (
 	vergeos "github.com/verge-io/govergeos"
 )
 
-// TestVersionEnforcement tests the mandatory version check in NewClient (ADR-016).
-// This test verifies that the SDK correctly validates the server is running VergeOS 26.x.
+// TestVersionEnforcement tests the mandatory version and credential checks in NewClient (ADR-016).
+// This test verifies that the SDK validates the server is running VergeOS 26.x and accepts the supplied credentials.
 //
 // Run with:
 //
