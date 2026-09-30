@@ -1,0 +1,80 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  unit:
+    name: Go ${{ matrix.go }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.21", "stable"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: gofmt
+        run: |
+          files=$(gofmt -l .)
+          if [ -n "$files" ]; then
+            echo "These files need gofmt:"
+            echo "$files"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: staticcheck
+        if: matrix.go == 'stable'
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@2026.2.1
+          "$(go env GOPATH)/bin/staticcheck" ./...
+
+      - name: Test
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Coverage
+        run: go tool cover -func=coverage.out
+
+      - name: Upload coverage
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.go }}
+          path: coverage.out
+          if-no-files-found: error
+
+      - name: Build examples
+        run: |
+          go build ./...
+          while IFS= read -r dir; do
+            go build -o /dev/null "$dir"
+          done < <(go list -f '{{if eq .Name "main"}}{{.Dir}}{{end}}' ./examples/...)
+
+  test:
+    name: test
+    needs: unit
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require unit jobs
+        run: |
+          if [ "${{ needs.unit.result }}" != "success" ]; then
+            echo "Go unit jobs finished with ${{ needs.unit.result }}"
+            exit 1
+          fi

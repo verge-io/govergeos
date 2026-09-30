@@ -224,7 +224,9 @@ func cloneHTTPTransport(t *http.Transport) *http.Transport {
 		Proxy:                  t.Proxy,
 		OnProxyConnectResponse: t.OnProxyConnectResponse,
 		DialContext:            t.DialContext,
-		Dial:                   t.Dial,
+		//lint:ignore SA1019 caller transports may still set Dial; DialContext wins when both are set
+		Dial: t.Dial,
+		//lint:ignore SA1019 caller transports may still set DialTLS; DialTLSContext wins when both are set
 		DialTLS:                t.DialTLS,
 		DialTLSContext:         t.DialTLSContext,
 		TLSHandshakeTimeout:    t.TLSHandshakeTimeout,

@@ -1,0 +1,71 @@
+name: integration
+
+# On demand against a real VergeOS system. The nightly schedule is skipped
+# until a dedicated lab is ready: set the repository variable
+# VERGEOS_INTEGRATION_LAB to "true" to let the cron run.
+#
+# Secrets (repository or environment):
+#   VERGEOS_HOST                  required
+#   VERGEOS_API_KEY               required unless username and password are set
+#   VERGEOS_USERNAME              required with VERGEOS_PASSWORD when no API key
+#   VERGEOS_PASSWORD
+#   VERGEOS_VERIFY_SSL            optional, true or false
+#   VERGEOS_INSECURE              optional, true skips TLS verification
+#   VERGEOS_TIMEOUT               optional seconds; defaults to 120 in this workflow
+#   VERGEOS_TEST_VM_ID            optional; enables TestVMKeyAndMachineKeyDiffer
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: integration
+    if: github.event_name == 'workflow_dispatch' || vars.VERGEOS_INTEGRATION_LAB == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      VERGEOS_HOST: ${{ secrets.VERGEOS_HOST }}
+      VERGEOS_USERNAME: ${{ secrets.VERGEOS_USERNAME }}
+      VERGEOS_PASSWORD: ${{ secrets.VERGEOS_PASSWORD }}
+      VERGEOS_API_KEY: ${{ secrets.VERGEOS_API_KEY }}
+      VERGEOS_VERIFY_SSL: ${{ secrets.VERGEOS_VERIFY_SSL }}
+      VERGEOS_INSECURE: ${{ secrets.VERGEOS_INSECURE }}
+      VERGEOS_TIMEOUT: ${{ secrets.VERGEOS_TIMEOUT }}
+      VERGEOS_TEST_VM_ID: ${{ secrets.VERGEOS_TEST_VM_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Check credentials
+        run: |
+          if [ -z "$VERGEOS_TIMEOUT" ]; then
+            echo "VERGEOS_TIMEOUT=120" >> "$GITHUB_ENV"
+          fi
+          if [ -z "$VERGEOS_HOST" ]; then
+            echo "Set the VERGEOS_HOST secret before running integration tests."
+            exit 1
+          fi
+          if [ -z "$VERGEOS_API_KEY" ] && { [ -z "$VERGEOS_USERNAME" ] || [ -z "$VERGEOS_PASSWORD" ]; }; then
+            echo "Set VERGEOS_API_KEY, or both VERGEOS_USERNAME and VERGEOS_PASSWORD."
+            exit 1
+          fi
+
+      - name: Sweep leftovers
+        run: go run ./test/integration/sweep
+
+      - name: Integration tests
+        id: tests
+        run: go test -tags=integration -count=1 -timeout 90m ./test/integration/
+
+      - name: Sweep leftovers again
+        if: ${{ always() && (steps.tests.conclusion == 'success' || steps.tests.conclusion == 'failure') }}
+        run: go run ./test/integration/sweep -fail-if-left

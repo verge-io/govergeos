@@ -542,7 +542,7 @@ For detailed API examples for all services, see [docs/REFERENCE.md](./docs/REFER
 
 ## Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. By contributing you agree to the [Contributor License Agreement](CLA.md).
 
 ## License
 

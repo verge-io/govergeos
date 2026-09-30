@@ -100,8 +100,8 @@ type SiteUpdateRequest struct {
 
 // siteAction represents an action request for a site.
 type siteAction struct {
-	Site   int                    `json:"site"`
-	Action string                 `json:"action"`
+	Site   int            `json:"site"`
+	Action string         `json:"action"`
 	Params map[string]any `json:"params,omitempty"`
 }
 
@@ -192,8 +192,8 @@ type SiteSyncIncomingUpdateRequest struct {
 
 // siteSyncIncomingAction represents an action request for an incoming sync.
 type siteSyncIncomingAction struct {
-	SiteSyncIncoming int                    `json:"site_syncs_incoming"`
-	Action           string                 `json:"action"`
+	SiteSyncIncoming int            `json:"site_syncs_incoming"`
+	Action           string         `json:"action"`
 	Params           map[string]any `json:"params,omitempty"`
 }
 
@@ -289,8 +289,8 @@ type SiteSyncOutgoingUpdateRequest struct {
 
 // siteSyncOutgoingAction represents an action request for an outgoing sync.
 type siteSyncOutgoingAction struct {
-	SiteSyncOutgoing int                    `json:"site_syncs_outgoing"`
-	Action           string                 `json:"action"`
+	SiteSyncOutgoing int            `json:"site_syncs_outgoing"`
+	Action           string         `json:"action"`
 	Params           map[string]any `json:"params,omitempty"`
 }
 

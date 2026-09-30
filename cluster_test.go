@@ -103,9 +103,9 @@ func TestClusterService_GetStatus(t *testing.T) {
 				Status ClusterStatus `json:"status"`
 			}{
 				Status: ClusterStatus{
-					Cluster:    1,
-					Status:     "online",
-					TotalNodes: 3,
+					Cluster:     1,
+					Status:      "online",
+					TotalNodes:  3,
 					OnlineNodes: 3,
 				},
 			})
