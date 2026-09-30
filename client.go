@@ -49,6 +49,14 @@ type Client struct {
 	minimumMajorVersion int
 	// skipVersionCheck records serverVersion without rejecting the major.
 	skipVersionCheck bool
+	// retryPolicy is used when WithRetry was set. Otherwise the default policy applies.
+	retryPolicy RetryPolicy
+	// retryConfigured reports that WithRetry was applied.
+	retryConfigured bool
+	// rateLimit is the minimum time between request starts. Zero leaves spacing off.
+	rateLimit time.Duration
+	// transportReady stops applyTransportPolicy from wrapping the transport twice.
+	transportReady bool
 
 	// Services for interacting with different API resources.
 	// All services implement their corresponding interfaces for mock testing.
@@ -200,6 +208,10 @@ func WithTimeout(timeout time.Duration) ClientOption {
 }
 
 // WithHTTPClient sets a custom HTTP client.
+//
+// NewClient keeps this client's Timeout, cookie jar, and redirect policy.
+// It wraps Transport with the retry policy and, when requested, the rate
+// limit. The Transport value on the client passed in is left in place.
 func WithHTTPClient(httpClient *http.Client) ClientOption {
 	return func(c *Client) error {
 		c.httpClient = httpClient
@@ -324,9 +336,11 @@ func WithEnvConfig() ClientOption {
 // Client creation checks that the server is VergeOS 26 or later and that
 // the supplied credentials are accepted. /version.json does not require
 // authentication, so a wrong password is caught by one follow-up read of
-// a small table. That read is a single attempt: VergeOS locks an account
-// after a small number of failed logins, and retrying a bad password
-// locks the account for every client that shares it, including API keys.
+// a small table. A 401 from that read is not retried: VergeOS locks an
+// account after a small number of failed logins, and retrying a bad
+// password locks the account for every client that shares it, including
+// API keys. A dropped connection on that GET is retried like any other
+// idempotent request.
 //
 // A failed login is returned as an AuthError. A credential that is
 // accepted but not allowed to read the check endpoint is a PermissionError.
@@ -363,6 +377,10 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	if !hasCredentials && !hasAPIKey {
 		return nil, fmt.Errorf("vergeos: authentication required (use WithCredentials or WithAPIKey)")
 	}
+
+	// Wrap after options so WithHTTPClient and WithInsecureTLS sit inside
+	// the retry layer, and so startup checks use the same policy.
+	c.applyTransportPolicy()
 
 	// Initialize services
 	c.VMs = &VMService{client: c}
@@ -450,8 +468,8 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 		return nil, err
 	}
 
-	// One authenticated read. Do not retry: a second attempt with the
-	// same bad credentials counts toward account lockout.
+	// One authenticated read. A 401 is returned as-is. Repeating a
+	// rejected password counts toward account lockout.
 	if err := c.checkCredentials(context.Background()); err != nil {
 		return nil, err
 	}
@@ -459,12 +477,14 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	return c, nil
 }
 
-// checkCredentials performs exactly one authenticated request.
+// checkCredentials performs one authenticated request.
 //
-// Authentication failures must not be retried. The platform locks an
-// account after a configurable number of failed logins (five on the
-// system this was measured against). A retry locks that account for
-// every client sharing it, including its API keys.
+// A 401 is not retried. The platform locks an account after a
+// configurable number of failed logins (five on the system this was
+// measured against). Repeating a rejected password locks that account
+// for every client sharing it, including its API keys. A connection
+// reset before a response is retried, because the server did not
+// reject the credentials.
 func (c *Client) checkCredentials(ctx context.Context) error {
 	params := url.Values{}
 	params.Set("limit", "1")
@@ -494,6 +514,8 @@ func (c *Client) request(ctx context.Context, method, endpoint string, body any,
 		if err != nil {
 			return nil, fmt.Errorf("vergeos: failed to marshal request body: %w", err)
 		}
+		// *bytes.Reader makes http.NewRequest record GetBody, which is
+		// what a retry uses to send this payload again.
 		bodyReader = bytes.NewReader(jsonBody)
 	}
 

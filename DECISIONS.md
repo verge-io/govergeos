@@ -479,7 +479,7 @@ Two options adjust that floor:
 
 Credentials are validated too. After the version check, `NewClient()` makes one cheap authenticated request: `GET /api/v4/clusters?limit=1&fields=$key`. Clusters is a small table present on every system. If that request fails authentication, `NewClient()` returns the `AuthError`. The credential check is skipped when the version check already failed.
 
-The credential check is exactly one attempt and is never retried. VergeOS locks an account after a configurable number of failed logins (five on the system this was measured against). Retrying a bad password locks the account for every client that shares it, including its API keys. The version request does not send an `Authorization` header, so a bad password is presented only on that one authenticated read.
+A 401 from the credential check is never retried. VergeOS locks an account after a configurable number of failed logins (five on the system this was measured against). Retrying a rejected password locks the account for every client that shares it, including its API keys. The version request does not send an `Authorization` header, so a rejected password is presented only on that one authenticated read. If that GET is reset or times out before a response, it is retried like any other idempotent request (ADR-020). Those retries are not failed logins. The default cap is 3 attempts, which stays under the lockout threshold measured above.
 
 ```go
 client, err := vergeos.NewClient(
@@ -521,7 +521,7 @@ client, err = vergeos.NewClient(
 - **Simple implementation** - Two checks at startup, no caching or repeated checks needed
 - **Clear error message** - Users know exactly what's wrong and what version is required
 - **Choke point** - `NewClient()` is the natural place to validate prerequisites before any API calls
-- **Lockout safety** - One presentation of the password cannot by itself exhaust the failed-login limit
+- **Lockout safety** - A rejected password is presented once. The default retry cap cannot turn one rejection into a lockout
 
 **Consequences:**
 - `NewClient()` requests `/version.json` without credentials, then one authenticated `clusters` row, before returning
@@ -610,7 +610,9 @@ client, err := vergeos.NewClient(
 
 **Date:** 2026-01-30
 
-**Status:** Accepted
+**Status:** Superseded by ADR-020
+
+The test-only transport described below has been removed. Idempotent requests are retried in the client, and spacing is an opt-in `WithRateLimit` option. The history is kept because it records how the server fails under load.
 
 **Context:** Running the full integration test suite (~400 API calls) against a VergeOS server caused intermittent `connection reset by peer` and `EOF` errors. Investigation revealed:
 
@@ -682,4 +684,52 @@ The SDK itself does NOT include built-in rate limiting because:
 - `VMSnapshotCreateRequest.VM` is the VM $key. `Create` posts the resolved machine key.
 - Cloud-init file `owner` is `vms/<VM $key>`. `CloudInitFiles.CreateForVM` and `ListByVM` take the VM $key and do not use `VM.Machine`.
 - A call with a machine key where a VM $key is required now looks up the wrong VM, or returns not found, instead of silently targeting another machine.
+
+---
+
+## ADR-020: Retry Idempotent Requests and Optional Rate Limiting
+
+**Date:** 2026-09-30
+
+**Status:** Accepted
+
+**Context:** Under load, VergeOS drops a TCP connection instead of returning a rate-limit response. A cloud snapshot update failed once in four runs with `connection reset by peer` on the PUT. The next runs passed. The integration helper hid this with a transport that slept 50ms between requests. That workaround was not in the SDK, so a Terraform apply or an exporter scrape failed on a single reset.
+
+The standard library does not retry this. Its transport retries an idempotent request only when the connection was already reused, and it does not treat PUT or DELETE as replayable. A fresh connection that is reset while the response is being read is returned to the caller. VergeOS also does not send `Retry-After` or `X-RateLimit-*` headers. When it is overloaded it sometimes returns 429, 502, or 503, and sometimes it sends a RST or closes the connection (EOF).
+
+Repeating a rejected login is unsafe. The platform locks an account after a small number of failed logins (five on the system this was measured against), and the lock applies to every client that shares the account, including API keys. See ADR-016.
+
+**Decision:** Retry GET, PUT, and DELETE when the attempt fails before a response, or the response is 429, 502, or 503. "Before a response" means the connection was reset, the peer closed it (EOF or unexpected EOF), or the client timed out while the request context is still active. The default is 3 attempts. The delay starts at 100ms, doubles up to 2s, and uses equal jitter so a set of clients does not retry on the same instant. `WithRetry` replaces that policy. `RetryPolicy{MaxAttempts: 1}` disables it.
+
+POST is not retried. Creates and actions are not idempotent. A POST that fails with no response is returned to the caller, including a reset, a timeout, and 429, 502, and 503.
+
+HTTP 401 is never retried, for any method. A 401 from `NewClient`'s credential check is still one presentation of the password. A reset on that GET is retried, because the server did not reject the credentials. Three attempts stay under the measured lockout threshold of five.
+
+The `Timeout` on the `http.Client` remains the budget for the whole call, including backoff and later attempts. A timeout that has already cancelled the request is not retried.
+
+`WithRateLimit(interval)` is optional and off by default. It spaces the start of each attempt, including retries, by at least `interval`. Deployments that burst faster than the server's per-session API limit (50 by default) can pass `50 * time.Millisecond` instead of copying the old test transport. Integration tests do not set it, so they exercise the retry path.
+
+A response body that cannot be replayed (`GetBody` is nil) is not retried. `request` sends JSON from a `*bytes.Reader`, which records `GetBody`.
+
+**Alternatives Considered:**
+
+1. **Keep the delay only in the integration tests** - Rejected because production clients hit the same resets
+2. **Retry every method, including POST** - Rejected because a create or action may have been applied before the connection dropped
+3. **Retry 401** - Rejected because it locks the account (ADR-016)
+4. **Rate-limit by default** - Rejected because the right interval depends on the server configuration, and a default delay would slow every caller
+5. **Honor `Retry-After`** - Rejected for this change because the server does not send it
+
+**Consequences:**
+
+- A single connection reset on GET, PUT, or DELETE is retried up to the configured cap
+- POST failures are unchanged: one attempt, then the caller's error
+- 401 is one attempt
+- `WithRetry` and `WithRateLimit` are client options
+- The integration helper no longer sleeps between requests
+- A failure while reading a body after response headers were received is not retried here; the status was already delivered to `RoundTrip`
+
+**Related:**
+
+- ADR-016 (credential check and account lockout)
+- ADR-018 (the test transport this replaces)
 

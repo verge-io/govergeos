@@ -323,8 +323,14 @@ devClient, _ := vergeos.NewClient(vergeos.WithBaseURL("https://dev.example.com")
 | `WithCredentials(user, pass)` | Username and password authentication | - |
 | `WithAPIKey(token)` | API key authentication | - |
 | `WithInsecureTLS(bool)` | Skip TLS certificate verification | `false` |
-| `WithTimeout(duration)` | HTTP request timeout | `30s` |
-| `WithHTTPClient(client)` | Custom `*http.Client` | Default client |
+| `WithTimeout(duration)` | HTTP request timeout, including retries | `30s` |
+| `WithHTTPClient(client)` | Custom `*http.Client`. Its `Transport` is wrapped; the value you pass is left as-is | Default client |
+| `WithRetry(policy)` | Retry GET, PUT, and DELETE when the connection fails before a response, and on HTTP 429, 502, and 503 | 3 attempts, 100ms backoff doubling to 2s with jitter |
+| `WithRateLimit(interval)` | Minimum time between request starts, including retries | off |
+
+`WithRetry(RetryPolicy{MaxAttempts: 1})` turns retries off. A zero `MaxAttempts` keeps the default of 3. POST is not retried: creates and actions are not idempotent, and a POST that fails before a response is returned to the caller. HTTP 401 is never retried, because another attempt with the same rejected password counts toward account lockout.
+
+`WithRateLimit` is off unless you set it. VergeOS drops connections when a session exceeds its webserver API rate limit. Pass an interval such as `50*time.Millisecond` when one client issues bursts faster than that limit.
 
 ### Authentication
 
