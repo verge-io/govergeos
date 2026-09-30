@@ -31,6 +31,7 @@ func TestVMSnapshotService_List(t *testing.T) {
 
 func TestVMSnapshotService_ListByVM(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/42": stubVM(42, 42),
 		"GET /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
 			filter := r.URL.Query().Get("filter")
 			if filter != "machine eq 42" {
@@ -53,6 +54,7 @@ func TestVMSnapshotService_ListByVM(t *testing.T) {
 
 func TestVMSnapshotService_ListByVM_WithFilter(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/42": stubVM(42, 42),
 		"GET /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
 			filter := r.URL.Query().Get("filter")
 			// Should combine user filter with machine filter
@@ -136,6 +138,7 @@ func TestVMSnapshotService_Get_NotFound(t *testing.T) {
 
 func TestVMSnapshotService_GetByName(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/42": stubVM(42, 42),
 		"GET /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
 			filter := r.URL.Query().Get("filter")
 			expected := "(name eq 'daily-backup') and machine eq 42"
@@ -159,6 +162,7 @@ func TestVMSnapshotService_GetByName(t *testing.T) {
 
 func TestVMSnapshotService_GetByName_NotFound(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/42": stubVM(42, 42),
 		"GET /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, []VMSnapshot{})
 		},
@@ -175,8 +179,9 @@ func TestVMSnapshotService_GetByName_NotFound(t *testing.T) {
 
 func TestVMSnapshotService_Create(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/42": stubVM(42, 42),
 		"POST /api/v4/machine_snapshots": func(w http.ResponseWriter, r *http.Request) {
-			var req VMSnapshotCreateRequest
+			var req vmSnapshotCreateBody
 			json.NewDecoder(r.Body).Decode(&req)
 			if req.Machine != 42 {
 				t.Errorf("expected machine 42, got %d", req.Machine)
@@ -200,8 +205,8 @@ func TestVMSnapshotService_Create(t *testing.T) {
 	}))
 
 	snap, err := client.VMSnapshots.Create(context.Background(), &VMSnapshotCreateRequest{
-		Machine: 42,
-		Name:    "test-snap",
+		VM:   42,
+		Name: "test-snap",
 	})
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -223,14 +228,14 @@ func TestVMSnapshotService_Create_NilRequest(t *testing.T) {
 	}
 }
 
-func TestVMSnapshotService_Create_MissingMachine(t *testing.T) {
+func TestVMSnapshotService_Create_MissingVM(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{}))
 
 	_, err := client.VMSnapshots.Create(context.Background(), &VMSnapshotCreateRequest{
 		Name: "snap1",
 	})
 	if err == nil {
-		t.Fatal("expected error for missing machine")
+		t.Fatal("expected error for missing VM ID")
 	}
 	if !IsValidationError(err) {
 		t.Errorf("expected ValidationError, got %T: %v", err, err)
@@ -241,7 +246,7 @@ func TestVMSnapshotService_Create_MissingName(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{}))
 
 	_, err := client.VMSnapshots.Create(context.Background(), &VMSnapshotCreateRequest{
-		Machine: 42,
+		VM: 42,
 	})
 	if err == nil {
 		t.Fatal("expected error for missing name")
@@ -337,7 +342,23 @@ func TestVMSnapshotService_Delete_NotFound(t *testing.T) {
 func TestVMSnapshotService_Restore(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_snapshots/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(1), Machine: FlexInt(42), Name: "snap1"})
+			jsonResponse(w, 200, VMSnapshot{
+				Key:         FlexInt(1),
+				Machine:     FlexInt(26),
+				SnapMachine: FlexInt(63),
+				Name:        "snap1",
+			})
+		},
+		"GET /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
+			if got := r.URL.Query().Get("filter"); got != "machine eq 63" {
+				t.Errorf("filter = %q, want machine eq 63 (snap_machine)", got)
+			}
+			jsonResponse(w, 200, []VM{
+				{ID: FlexInt(63), Machine: 26, IsSnapshot: false},
+				{ID: FlexInt(45), Machine: 63, IsSnapshot: false},
+				{ID: FlexInt(77), Machine: 99, IsSnapshot: true},
+				{ID: FlexInt(90), Machine: 63, IsSnapshot: true},
+			})
 		},
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
@@ -345,8 +366,9 @@ func TestVMSnapshotService_Restore(t *testing.T) {
 			if body["action"] != "restore" {
 				t.Errorf("expected action 'restore', got %v", body["action"])
 			}
-			if int(body["vm"].(float64)) != 42 {
-				t.Errorf("expected vm 42, got %v", body["vm"])
+			// 90 is the snapshot VM $key. 63 is snap_machine, 26 is the parent machine.
+			if int(body["vm"].(float64)) != 90 {
+				t.Errorf("expected snapshot VM key 90, got %v", body["vm"])
 			}
 			params := body["params"].(map[string]any)
 			if int(params["snapshot"].(float64)) != 1 {
@@ -365,11 +387,15 @@ func TestVMSnapshotService_Restore(t *testing.T) {
 func TestVMSnapshotService_Restore_WithPowerOn(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_snapshots/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(1), Machine: FlexInt(42)})
+			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(1), Machine: FlexInt(26), SnapMachine: FlexInt(63)})
 		},
+		"GET /api/v4/vms": stubVMsByMachine(63, 90, true),
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
+			if int(body["vm"].(float64)) != 90 {
+				t.Errorf("expected snapshot VM key 90, got %v", body["vm"])
+			}
 			params := body["params"].(map[string]any)
 			if params["poweron"] != true {
 				t.Errorf("expected poweron true, got %v", params["poweron"])

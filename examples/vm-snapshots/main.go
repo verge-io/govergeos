@@ -69,7 +69,7 @@ func demonstrateSnapshots(ctx context.Context, client *vergeos.Client) {
 		fmt.Printf("\nFirst snapshot:\n")
 		fmt.Printf("  ID: %d\n", int(first.Key))
 		fmt.Printf("  Name: %s\n", first.Name)
-		fmt.Printf("  VM: %s (ID: %d)\n", first.MachineDisplay, int(first.Machine))
+		fmt.Printf("  VM: %s (machine: %d)\n", first.MachineDisplay, int(first.Machine))
 		fmt.Printf("  Created: %s\n", time.Unix(first.Created, 0).Format(time.RFC3339))
 		if first.Expires > 0 {
 			fmt.Printf("  Expires: %s\n", time.Unix(first.Expires, 0).Format(time.RFC3339))
@@ -77,20 +77,25 @@ func demonstrateSnapshots(ctx context.Context, client *vergeos.Client) {
 			fmt.Printf("  Expires: Never\n")
 		}
 
-		// List all snapshots for this VM
-		vmSnapshots, err := client.VMSnapshots.ListByVM(ctx, int(first.Machine))
+		// List snapshots for a VM. ListByVM takes the VM $key, not the machine key.
+		vms, err := client.VMs.List(ctx, vergeos.WithLimit(1))
 		if err != nil {
-			log.Printf("Failed to list VM snapshots: %v", err)
-		} else {
-			fmt.Printf("\nSnapshots for VM %d: %d total\n", int(first.Machine), len(vmSnapshots))
+			log.Printf("Failed to list VMs: %v", err)
+		} else if len(vms) > 0 {
+			vmSnapshots, err := client.VMSnapshots.ListByVM(ctx, vms[0].ID.Int())
+			if err != nil {
+				log.Printf("Failed to list VM snapshots: %v", err)
+			} else {
+				fmt.Printf("\nSnapshots for VM %d: %d total\n", vms[0].ID.Int(), len(vmSnapshots))
+			}
 		}
 	}
 
 	// Example: Creating a snapshot (commented out to avoid side effects)
 	/*
-		vmID := 123 // Replace with actual VM ID
+		vmID := 123 // Replace with the VM $key (VM.ID), not VM.Machine
 		snapshot, err := client.VMSnapshots.Create(ctx, &vergeos.VMSnapshotCreateRequest{
-			Machine:     vmID,
+			VM:          vmID,
 			Name:        "my-snapshot-" + time.Now().Format("20060102-150405"),
 			Description: "Example snapshot",
 			ExpiresType: "date",

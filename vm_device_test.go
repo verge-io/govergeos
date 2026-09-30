@@ -9,6 +9,7 @@ import (
 
 func TestVMDeviceService_List(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/42": stubVM(42, 42),
 		"GET /api/v4/machine_devices": func(w http.ResponseWriter, r *http.Request) {
 			filter := r.URL.Query().Get("filter")
 			if filter != "machine eq 42" {
@@ -147,6 +148,7 @@ func TestVMDeviceService_Get_NotFound(t *testing.T) {
 
 func TestVMDeviceService_Create(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/10": stubVM(10, 10),
 		"POST /api/v4/machine_devices": func(w http.ResponseWriter, r *http.Request) {
 			var req VMDeviceCreateRequest
 			json.NewDecoder(r.Body).Decode(&req)

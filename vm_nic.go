@@ -22,12 +22,17 @@ type VMNICService struct {
 }
 
 // List returns all NICs for a VM.
-// machineID is the VM's Machine field (not the VM's $key/ID).
-// The machine_nics table references the internal machine ID, not the VM row key.
-func (s *VMNICService) List(ctx context.Context, machineID int) ([]VMNIC, error) {
+// vmID is the VM $key (VM.ID). NICs are stored against the machine key,
+// which is resolved before querying machine_nics.
+func (s *VMNICService) List(ctx context.Context, vmID int) ([]VMNIC, error) {
+	machine, err := s.client.machineKeyForVM(ctx, vmID)
+	if err != nil {
+		return nil, err
+	}
+
 	params := url.Values{}
 	params.Set("fields", nicListFields)
-	params.Set("filter", fmt.Sprintf("machine eq %d", machineID))
+	params.Set("filter", fmt.Sprintf("machine eq %d", machine))
 
 	var nics []VMNIC
 	if err := s.client.get(ctx, "/machine_nics", params, &nics); err != nil {
@@ -55,6 +60,7 @@ func (s *VMNICService) Get(ctx context.Context, nicID int) (*VMNIC, error) {
 }
 
 // Create creates a new NIC and returns the created NIC.
+// vmID is the VM $key (VM.ID). It is resolved to the machine key stored on the NIC.
 func (s *VMNICService) Create(ctx context.Context, vmID int, req *VMNICCreateRequest) (*VMNIC, error) {
 	if req == nil {
 		return nil, &ValidationError{Message: "create request is required"}
@@ -63,8 +69,11 @@ func (s *VMNICService) Create(ctx context.Context, vmID int, req *VMNICCreateReq
 		return nil, &ValidationError{Field: "name", Message: "name is required"}
 	}
 
-	// Set the machine ID
-	req.Machine = vmID
+	machine, err := s.client.machineKeyForVM(ctx, vmID)
+	if err != nil {
+		return nil, err
+	}
+	req.Machine = machine
 
 	// Set defaults
 	if req.Enabled == nil {
@@ -134,9 +143,14 @@ func (s *VMNICService) Delete(ctx context.Context, nicID int) error {
 		return err
 	}
 
-	// If NIC is up, hot-unplug it first
+	// If NIC is up, hot-unplug it first.
+	// nic.Machine is a machine key; vm_actions wants the VM $key.
 	if nic.PowerState != "" && nic.PowerState != "down" {
-		if err := s.hotUnplug(ctx, nic.Machine, nicID); err != nil {
+		vmKey, err := s.client.vmKeyForMachine(ctx, nic.Machine, false)
+		if err != nil {
+			return fmt.Errorf("vergeos: failed to resolve VM for machine %d: %w", nic.Machine, err)
+		}
+		if err := s.hotUnplug(ctx, vmKey, nicID); err != nil {
 			return fmt.Errorf("vergeos: failed to unplug NIC before deletion: %w", err)
 		}
 	}

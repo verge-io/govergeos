@@ -124,7 +124,7 @@ func main() {
 	// Usage tip for attaching ISO to VM
 	fmt.Println("\n=== Usage Tip ===")
 	fmt.Println("To attach an ISO to a VM drive:")
-	fmt.Println("  drive, err := client.VMDrives.Create(ctx, vmMachineID, &vergeos.VMDriveCreateRequest{")
+	fmt.Println("  drive, err := client.VMDrives.Create(ctx, vmID, &vergeos.VMDriveCreateRequest{")
 	fmt.Println("      Name:      \"cdrom\",")
 	fmt.Println("      Interface: \"ide\",")
 	fmt.Println("      Media:     \"cdrom\",")

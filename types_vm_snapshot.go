@@ -5,9 +5,10 @@ package vergeos
 type VMSnapshot struct {
 	// Key is the unique identifier for the snapshot.
 	Key FlexInt `json:"$key,omitempty"`
-	// Machine is the VM ID this snapshot belongs to.
+	// Machine is the parent VM's machine key (VM.Machine), not the VM $key.
 	Machine FlexInt `json:"machine,omitempty"`
-	// SnapMachine is the internal snapshot machine reference.
+	// SnapMachine is the machine key of the snapshot's own VM row.
+	// Restore resolves this to that row's $key (is_snapshot true).
 	SnapMachine FlexInt `json:"snap_machine,omitempty"`
 	// Name is the snapshot name.
 	Name string `json:"name"`
@@ -37,8 +38,9 @@ type VMSnapshot struct {
 
 // VMSnapshotCreateRequest is the request body for creating a VM snapshot.
 type VMSnapshotCreateRequest struct {
-	// Machine is the VM ID to snapshot (required).
-	Machine int `json:"machine"`
+	// VM is the VM $key (VM.ID) to snapshot. Create resolves it to the
+	// machine key posted as "machine". It is not VM.Machine.
+	VM int `json:"-"`
 	// Name is the snapshot name (required).
 	Name string `json:"name"`
 	// Description is an optional description.

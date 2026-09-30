@@ -60,7 +60,8 @@ type VMDrive struct {
 
 // VMDriveCreateRequest is the request body for creating a drive.
 type VMDriveCreateRequest struct {
-	// Machine is the VM's machine ID.
+	// Machine is the machine key (VM.Machine) written to machine_drives.
+	// Create sets this from the VM $key argument; callers do not need to set it.
 	Machine int `json:"machine"`
 	// OrderID is the boot order ID (auto-assigned if not specified).
 	OrderID *int `json:"orderid,omitempty"`

@@ -85,9 +85,9 @@ snapshot, err := client.VMSnapshots.Get(ctx, snapshotID)
 // Get a snapshot by name within a VM
 snapshot, err := client.VMSnapshots.GetByName(ctx, vmID, "pre-upgrade")
 
-// Create a snapshot
+// Create a snapshot. VM is the VM $key (VM.ID). Create resolves the machine key.
 snapshot, err := client.VMSnapshots.Create(ctx, &vergeos.VMSnapshotCreateRequest{
-    Machine:     vmID,
+    VM:          vmID,
     Name:        "pre-upgrade",
     Description: "Snapshot before upgrade",
     ExpiresType: "date", // or "never"
@@ -119,12 +119,18 @@ err = client.VMSnapshots.Delete(ctx, snapshotID)
 
 ## VM Drives
 
+Drive, NIC, and device methods take the VM `$key` (`VM.ID`). Rows in
+`machine_drives`, `machine_nics`, and `machine_devices` are stored against
+the machine key (`VM.Machine`), which these methods resolve internally.
+`vm_actions` (hotplug, restore) uses the VM `$key`. The two numbers differ
+on a system that has been in use.
+
 ```go
 // List drives for a VM
-drives, err := client.VMDrives.List(ctx, vmMachineID)
+drives, err := client.VMDrives.List(ctx, vmID)
 
 // Create a drive
-drive, err := client.VMDrives.Create(ctx, vmMachineID, &vergeos.VMDriveCreateRequest{
+drive, err := client.VMDrives.Create(ctx, vmID, &vergeos.VMDriveCreateRequest{
     Name:      "disk0",
     Interface: "virtio",
     Media:     "disk",
@@ -143,10 +149,10 @@ drive, err := client.VMDrives.Update(ctx, driveID, &vergeos.VMDriveUpdateRequest
 
 ```go
 // List NICs for a VM
-nics, err := client.VMNICs.List(ctx, vmMachineID)
+nics, err := client.VMNICs.List(ctx, vmID)
 
 // Create a NIC
-nic, err := client.VMNICs.Create(ctx, vmMachineID, &vergeos.VMNICCreateRequest{
+nic, err := client.VMNICs.Create(ctx, vmID, &vergeos.VMNICCreateRequest{
     Name: "eth0",
     VNET: networkID,
 })

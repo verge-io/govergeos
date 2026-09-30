@@ -110,6 +110,24 @@ func initServices(c *Client) {
 	c.UpdateSourcePackages = &UpdateSourcePackageService{client: c}
 }
 
+// stubVM handles GET /vms/{id} and reports the VM's machine key.
+func stubVM(id, machine int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		jsonResponse(w, 200, VM{ID: FlexInt(id), Machine: machine})
+	}
+}
+
+// stubVMsByMachine handles GET /vms?filter=machine eq {machine}.
+func stubVMsByMachine(machine, vmID int, snapshot bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		jsonResponse(w, 200, []VM{{
+			ID:         FlexInt(vmID),
+			Machine:    machine,
+			IsSnapshot: snapshot,
+		}})
+	}
+}
+
 // jsonResponse writes a JSON response with the given status code.
 func jsonResponse(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")

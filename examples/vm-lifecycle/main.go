@@ -58,7 +58,7 @@ func main() {
 
 	// Add a virtual disk
 	fmt.Println("Adding virtual disk...")
-	drive, err := client.VMDrives.Create(ctx, vm.Machine, &vergeos.VMDriveCreateRequest{
+	drive, err := client.VMDrives.Create(ctx, vm.ID.Int(), &vergeos.VMDriveCreateRequest{
 		Name:      "disk0",
 		Interface: "virtio",
 		Media:     "disk",
@@ -78,7 +78,7 @@ func main() {
 	if len(networks) > 0 {
 		// Add a network interface
 		fmt.Println("Adding network interface...")
-		nic, err := client.VMNICs.Create(ctx, vm.Machine, &vergeos.VMNICCreateRequest{
+		nic, err := client.VMNICs.Create(ctx, vm.ID.Int(), &vergeos.VMNICCreateRequest{
 			Name: "nic0",
 			VNET: networks[0].ID.Int(),
 		})
@@ -105,7 +105,7 @@ func main() {
 
 	// List all drives for the VM
 	fmt.Println("\nVM Drives:")
-	drives, err := client.VMDrives.List(ctx, vm.Machine)
+	drives, err := client.VMDrives.List(ctx, vm.ID.Int())
 	if err != nil {
 		log.Fatalf("Failed to list drives: %v", err)
 	}
@@ -115,7 +115,7 @@ func main() {
 
 	// List all NICs for the VM
 	fmt.Println("\nVM NICs:")
-	nics, err := client.VMNICs.List(ctx, vm.Machine)
+	nics, err := client.VMNICs.List(ctx, vm.ID.Int())
 	if err != nil {
 		log.Fatalf("Failed to list NICs: %v", err)
 	}

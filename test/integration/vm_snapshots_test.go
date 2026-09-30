@@ -51,21 +51,38 @@ func TestVMSnapshots(t *testing.T) {
 	})
 
 	t.Run("ListByVM", func(t *testing.T) {
-		snapshots, err := client.VMSnapshots.List(ctx, vergeos.WithLimit(1))
-		if err != nil || len(snapshots) == 0 {
-			t.Skip("No VM snapshots available")
-		}
-
-		first := snapshots[0]
-		if first.Machine == 0 {
-			t.Skip("Snapshot has no associated VM")
-		}
-
-		vmSnapshots, err := client.VMSnapshots.ListByVM(ctx, int(first.Machine))
+		vms, err := client.VMs.List(ctx, vergeos.WithLimit(50))
 		if err != nil {
-			t.Fatalf("VMSnapshots.ListByVM failed: %v", err)
+			t.Fatalf("VMs.List failed: %v", err)
 		}
-		t.Logf("Found %d snapshots for VM %d", len(vmSnapshots), int(first.Machine))
+
+		var vm *vergeos.VM
+		for i := range vms {
+			if vms[i].IsSnapshot || vms[i].ID.Int() <= 0 || vms[i].Machine <= 0 {
+				continue
+			}
+			if vm == nil || vms[i].ID.Int() != vms[i].Machine {
+				chosen := vms[i]
+				vm = &chosen
+				if vms[i].ID.Int() != vms[i].Machine {
+					break
+				}
+			}
+		}
+		if vm == nil {
+			t.Skip("No VMs available")
+		}
+
+		vmSnapshots, err := client.VMSnapshots.ListByVM(ctx, vm.ID.Int())
+		if err != nil {
+			t.Fatalf("VMSnapshots.ListByVM(%d) failed: %v", vm.ID.Int(), err)
+		}
+		t.Logf("Found %d snapshots for VM %d (machine %d)", len(vmSnapshots), vm.ID.Int(), vm.Machine)
+		for _, snap := range vmSnapshots {
+			if int(snap.Machine) != vm.Machine {
+				t.Errorf("snapshot %d machine=%d, VM %d machine=%d", int(snap.Key), int(snap.Machine), vm.ID.Int(), vm.Machine)
+			}
+		}
 	})
 
 	t.Run("ListExpiring", func(t *testing.T) {
@@ -98,7 +115,7 @@ func TestVMSnapshotsCRUD(t *testing.T) {
 	// Create a test snapshot
 	snapshotName := "sdk-test-snapshot-" + time.Now().Format("20060102-150405")
 	snapshot, err := client.VMSnapshots.Create(ctx, &vergeos.VMSnapshotCreateRequest{
-		Machine:     vmID,
+		VM:          vmID,
 		Name:        snapshotName,
 		Description: "goVergeOS integration test snapshot - safe to delete",
 		ExpiresType: "date",
@@ -221,9 +238,9 @@ func TestVMsSnapshot(t *testing.T) {
 		t.Errorf("snapshot name = %q, want %q", fetched.Name, snapshotName)
 	}
 
-	byName, err := client.VMSnapshots.GetByName(ctx, vm.Machine, snapshotName)
+	byName, err := client.VMSnapshots.GetByName(ctx, vmID, snapshotName)
 	if err != nil {
-		t.Fatalf("snapshot %q not found on machine %d: %v", snapshotName, vm.Machine, err)
+		t.Fatalf("snapshot %q not found on VM %d: %v", snapshotName, vmID, err)
 	}
 	if int(byName.Key) != snapshotID {
 		t.Errorf("GetByName key = %d, want %d", int(byName.Key), snapshotID)

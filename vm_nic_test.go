@@ -9,6 +9,7 @@ import (
 
 func TestVMNICService_List(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/42": stubVM(42, 42),
 		"GET /api/v4/machine_nics": func(w http.ResponseWriter, r *http.Request) {
 			filter := r.URL.Query().Get("filter")
 			if filter != "machine eq 42" {
@@ -72,6 +73,7 @@ func TestVMNICService_Get_NotFound(t *testing.T) {
 
 func TestVMNICService_Create(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/10": stubVM(10, 10),
 		"POST /api/v4/machine_nics": func(w http.ResponseWriter, r *http.Request) {
 			var req VMNICCreateRequest
 			json.NewDecoder(r.Body).Decode(&req)
@@ -221,6 +223,7 @@ func TestVMNICService_Delete_NotFound(t *testing.T) {
 func TestVMNICService_Delete_HotUnplug(t *testing.T) {
 	getCalls := 0
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms": stubVMsByMachine(10, 10, false),
 		"GET /api/v4/machine_nics/1": func(w http.ResponseWriter, r *http.Request) {
 			getCalls++
 			// First call: NIC is up. After unplug action: NIC is down.
