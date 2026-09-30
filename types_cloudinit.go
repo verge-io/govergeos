@@ -4,7 +4,10 @@ package vergeos
 type CloudInitFile struct {
 	// ID is the unique identifier for the file.
 	ID FlexInt `json:"$key,omitempty"`
-	// Owner is the owner of the file.
+	// Owner is the VM this file belongs to. The value is a reference that
+	// uses the VM $key, for example "vms/12". It is not the machine key
+	// (VM.Machine). Owner is required when the file is created and cannot
+	// be changed later.
 	Owner string `json:"owner,omitempty"`
 	// Name is the file name.
 	Name string `json:"name"`
@@ -30,6 +33,11 @@ type CloudInitFile struct {
 
 // CloudInitFileCreateRequest is the request body for creating a cloud-init file.
 type CloudInitFileCreateRequest struct {
+	// Owner is the VM that owns this file (required). The value is a
+	// reference that uses the VM $key, for example "vms/12". It is not the
+	// machine key (VM.Machine). Owner cannot be changed after create.
+	// CreateForVM sets this from the VM $key.
+	Owner string `json:"owner"`
 	// Name is the file name (required).
 	Name string `json:"name"`
 	// Contents is the file contents (max 65536 bytes).

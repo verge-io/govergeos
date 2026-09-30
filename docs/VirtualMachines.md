@@ -1,7 +1,7 @@
 ---
 title: Virtual Machines
 description: Manage VM lifecycle, snapshots, drives, NICs, cloning, and migration
-tags: [vm, virtual-machine, snapshot, drive, nic, clone, migration, power-management, console, restore]
+tags: [vm, virtual-machine, snapshot, drive, nic, clone, migration, power-management, console, restore, cloud-init]
 categories: [Virtual Machines]
 ---
 
@@ -142,6 +142,23 @@ drive, err := client.VMDrives.Update(ctx, driveID, &vergeos.VMDriveUpdateRequest
     SizeGB: ptr(int64(100)), // Increase size
 })
 ```
+
+---
+
+## Cloud-Init Files
+
+Every cloud-init file belongs to one VM. `owner` is required on create, cannot be changed later, and is a reference that uses the VM $key (`vms/<VM.ID>`). It is not the machine key (`VM.Machine`).
+
+```go
+file, err := client.CloudInitFiles.CreateForVM(ctx, vm.ID.Int(), &vergeos.CloudInitFileCreateRequest{
+    Name:     "/user-data",
+    Contents: "#cloud-config\nhostname: web-01\n",
+})
+
+files, err := client.CloudInitFiles.ListByVM(ctx, vm.ID.Int())
+```
+
+`Create` takes the same request with `Owner` set to that reference.
 
 ---
 

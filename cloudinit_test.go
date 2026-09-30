@@ -3,6 +3,7 @@ package vergeos
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"testing"
 )
@@ -124,14 +125,18 @@ func TestCloudInitService_Create(t *testing.T) {
 			if req.Name != "user-data" {
 				t.Errorf("expected name 'user-data', got %q", req.Name)
 			}
+			if req.Owner != "vms/12" {
+				t.Errorf("expected owner 'vms/12', got %q", req.Owner)
+			}
 			jsonResponse(w, 200, map[string]any{"$key": 1})
 		},
 		"GET /api/v4/cloudinit_files/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, CloudInitFile{ID: 1, Name: "user-data", Contents: "#cloud-config"})
+			jsonResponse(w, 200, CloudInitFile{ID: 1, Name: "user-data", Owner: "vms/12", Contents: "#cloud-config"})
 		},
 	}))
 
 	file, err := client.CloudInitFiles.Create(context.Background(), &CloudInitFileCreateRequest{
+		Owner:    "vms/12",
 		Name:     "user-data",
 		Contents: "#cloud-config",
 	})
@@ -140,6 +145,9 @@ func TestCloudInitService_Create(t *testing.T) {
 	}
 	if file.Name != "user-data" {
 		t.Errorf("expected name 'user-data', got %q", file.Name)
+	}
+	if file.Owner != "vms/12" {
+		t.Errorf("expected owner 'vms/12', got %q", file.Owner)
 	}
 }
 
@@ -162,8 +170,142 @@ func TestCloudInitService_Create_MissingName(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for missing name")
 	}
+	var ve *ValidationError
+	if !errors.As(err, &ve) || ve.Field != "name" {
+		t.Fatalf("expected name validation error, got %v", err)
+	}
+}
+
+func TestCloudInitService_Create_MissingOwner(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{}))
+
+	_, err := client.CloudInitFiles.Create(context.Background(), &CloudInitFileCreateRequest{
+		Name: "/user-data",
+	})
+	if err == nil {
+		t.Fatal("expected error for missing owner")
+	}
+	var ve *ValidationError
+	if !errors.As(err, &ve) || ve.Field != "owner" {
+		t.Fatalf("expected owner validation error, got %v", err)
+	}
+}
+
+func TestCloudInitService_CreateForVM(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/cloudinit_files": func(w http.ResponseWriter, r *http.Request) {
+			var req CloudInitFileCreateRequest
+			json.NewDecoder(r.Body).Decode(&req)
+			if req.Owner != "vms/12" {
+				t.Errorf("expected owner 'vms/12', got %q", req.Owner)
+			}
+			if req.Name != "/user-data" {
+				t.Errorf("expected name '/user-data', got %q", req.Name)
+			}
+			jsonResponse(w, 200, map[string]any{"$key": 7})
+		},
+		"GET /api/v4/cloudinit_files/7": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, CloudInitFile{ID: 7, Name: "/user-data", Owner: "vms/12"})
+		},
+	}))
+
+	// A caller-supplied owner must not be posted. 99 stands in for a machine
+	// key that is not this VM's $key.
+	req := &CloudInitFileCreateRequest{
+		Owner:    "vms/99",
+		Name:     "/user-data",
+		Contents: "#cloud-config\n",
+	}
+	file, err := client.CloudInitFiles.CreateForVM(context.Background(), 12, req)
+	if err != nil {
+		t.Fatalf("CreateForVM failed: %v", err)
+	}
+	if file.Owner != "vms/12" {
+		t.Errorf("expected owner 'vms/12', got %q", file.Owner)
+	}
+	if req.Owner != "vms/99" {
+		t.Errorf("CreateForVM mutated request owner to %q", req.Owner)
+	}
+}
+
+func TestCloudInitService_CreateForVM_InvalidVM(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{}))
+
+	_, err := client.CloudInitFiles.CreateForVM(context.Background(), 0, &CloudInitFileCreateRequest{
+		Name: "/user-data",
+	})
+	if err == nil {
+		t.Fatal("expected error for missing VM ID")
+	}
+	var ve *ValidationError
+	if !errors.As(err, &ve) || ve.Field != "vm" {
+		t.Fatalf("expected vm validation error, got %v", err)
+	}
+}
+
+func TestCloudInitService_CreateForVM_NilRequest(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{}))
+
+	_, err := client.CloudInitFiles.CreateForVM(context.Background(), 12, nil)
+	if err == nil {
+		t.Fatal("expected error for nil request")
+	}
 	if !IsValidationError(err) {
 		t.Errorf("expected ValidationError, got %T: %v", err, err)
+	}
+}
+
+func TestCloudInitService_ListByVM(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/cloudinit_files": func(w http.ResponseWriter, r *http.Request) {
+			filter := r.URL.Query().Get("filter")
+			if filter != "owner eq 'vms/12'" {
+				t.Errorf("expected owner filter, got %q", filter)
+			}
+			jsonResponse(w, 200, []CloudInitFile{{ID: 7, Name: "/user-data", Owner: "vms/12"}})
+		},
+	}))
+
+	files, err := client.CloudInitFiles.ListByVM(context.Background(), 12)
+	if err != nil {
+		t.Fatalf("ListByVM failed: %v", err)
+	}
+	if len(files) != 1 {
+		t.Fatalf("expected 1 file, got %d", len(files))
+	}
+	if files[0].Owner != "vms/12" {
+		t.Errorf("expected owner 'vms/12', got %q", files[0].Owner)
+	}
+}
+
+func TestCloudInitService_ListByVM_WithFilter(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/cloudinit_files": func(w http.ResponseWriter, r *http.Request) {
+			filter := r.URL.Query().Get("filter")
+			expected := "owner eq 'vms/12' and name eq '/user-data'"
+			if filter != expected {
+				t.Errorf("expected filter %q, got %q", expected, filter)
+			}
+			jsonResponse(w, 200, []CloudInitFile{})
+		},
+	}))
+
+	_, err := client.CloudInitFiles.ListByVM(context.Background(), 12, WithFilter("name eq '/user-data'"))
+	if err != nil {
+		t.Fatalf("ListByVM with filter failed: %v", err)
+	}
+}
+
+func TestCloudInitService_ListByVM_InvalidVM(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{}))
+
+	_, err := client.CloudInitFiles.ListByVM(context.Background(), 0)
+	if err == nil {
+		t.Fatal("expected error for missing VM ID")
+	}
+	var ve *ValidationError
+	if !errors.As(err, &ve) || ve.Field != "vm" {
+		t.Fatalf("expected vm validation error, got %v", err)
 	}
 }
 
