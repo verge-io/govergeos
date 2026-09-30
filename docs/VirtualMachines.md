@@ -36,8 +36,20 @@ vm, err := client.VMs.Update(ctx, vmID, &vergeos.VMUpdateRequest{
 err = client.VMs.Delete(ctx, vmID)
 
 // Power operations
+// PowerOn waits until the VM is running.
 err = client.VMs.PowerOn(ctx, vmID)
+// PowerOff asks the guest to shut down (ACPI poweroff) and waits until it stops.
 err = client.VMs.PowerOff(ctx, vmID)
+// GuestShutdown sends the same poweroff request and returns immediately.
+err = client.VMs.GuestShutdown(ctx, vmID)
+// Kill is an immediate power-off (the kill action). It waits until the VM stops.
+err = client.VMs.Kill(ctx, vmID)
+// Give a slow guest more than the default 150 seconds, then kill if it is still running.
+err = client.VMs.PowerOffWithOptions(ctx, vmID, &vergeos.VMPowerOffOptions{
+    Timeout:           10 * time.Minute,
+    PollInterval:      5 * time.Second,
+    ForceAfterTimeout: true,
+})
 
 // Clone a VM
 err = client.VMs.Clone(ctx, vmID, &vergeos.VMCloneOptions{

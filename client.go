@@ -55,6 +55,12 @@ type Client struct {
 	retryConfigured bool
 	// rateLimit is the minimum time between request starts. Zero leaves spacing off.
 	rateLimit time.Duration
+	// powerWaitTimeout is the default budget for a VM power wait.
+	// Zero uses defaultPowerWaitTimeout (150s).
+	powerWaitTimeout time.Duration
+	// powerWaitInterval is how often a VM power wait reads power state.
+	// Zero uses defaultPowerWaitInterval (5s).
+	powerWaitInterval time.Duration
 	// transportReady stops applyTransportPolicy from wrapping the transport twice.
 	transportReady bool
 
@@ -205,6 +211,45 @@ func WithTimeout(timeout time.Duration) ClientOption {
 		c.httpClient.Timeout = timeout
 		return nil
 	}
+}
+
+// WithPowerWait sets the default timeout and poll interval for VM power
+// waits. PowerOn, PowerOff, and Kill use these values. A zero duration
+// leaves that setting at its default (150 seconds, polled every 5 seconds).
+// A negative duration is rejected.
+//
+// VMPowerOffOptions.Timeout and PollInterval override these defaults for
+// one shutdown. A context deadline can still end a wait sooner. A longer
+// timeout extends the wait past 150 seconds.
+func WithPowerWait(timeout, pollInterval time.Duration) ClientOption {
+	return func(c *Client) error {
+		if timeout < 0 {
+			return fmt.Errorf("power wait timeout must be >= 0, got %s", timeout)
+		}
+		if pollInterval < 0 {
+			return fmt.Errorf("power wait poll interval must be >= 0, got %s", pollInterval)
+		}
+		if timeout > 0 {
+			c.powerWaitTimeout = timeout
+		}
+		if pollInterval > 0 {
+			c.powerWaitInterval = pollInterval
+		}
+		return nil
+	}
+}
+
+// vmPowerWait returns the timeout and poll interval for a VM power wait.
+func (c *Client) vmPowerWait() (time.Duration, time.Duration) {
+	timeout := defaultPowerWaitTimeout
+	interval := defaultPowerWaitInterval
+	if c != nil && c.powerWaitTimeout > 0 {
+		timeout = c.powerWaitTimeout
+	}
+	if c != nil && c.powerWaitInterval > 0 {
+		interval = c.powerWaitInterval
+	}
+	return timeout, interval
 }
 
 // WithHTTPClient sets a custom HTTP client.

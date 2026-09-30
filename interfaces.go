@@ -18,6 +18,8 @@ type VMServiceInterface interface {
 	Delete(ctx context.Context, id int) error
 	PowerOn(ctx context.Context, id int) error
 	PowerOff(ctx context.Context, id int) error
+	PowerOffWithOptions(ctx context.Context, id int, opts *VMPowerOffOptions) error
+	Kill(ctx context.Context, id int) error
 	Reset(ctx context.Context, id int) error
 	GuestReboot(ctx context.Context, id int) error
 	GuestShutdown(ctx context.Context, id int) error

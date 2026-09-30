@@ -74,4 +74,4 @@ Services define default field sets for List vs Get operations to optimize API pa
 
 ### Power State Polling
 
-VM/Network power operations poll with 5-second intervals, max 30 retries.
+VM power waits (`PowerOn`, `PowerOff`, `Kill`) default to a 150-second timeout polled every 5 seconds. `WithPowerWait` changes that default. `PowerOffWithOptions` overrides it for one shutdown. Network power operations still poll with 5-second intervals, max 30 retries.

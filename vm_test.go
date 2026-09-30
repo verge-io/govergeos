@@ -3,7 +3,9 @@ package vergeos
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"sort"
 	"testing"
 	"time"
 )
@@ -426,8 +428,8 @@ func TestVMService_PowerOff(t *testing.T) {
 		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
-			if body["action"] != "kill" {
-				t.Errorf("expected action 'kill', got %v", body["action"])
+			if body["action"] != "poweroff" {
+				t.Errorf("expected action 'poweroff', got %v", body["action"])
 			}
 			w.WriteHeader(200)
 		},
@@ -436,6 +438,371 @@ func TestVMService_PowerOff(t *testing.T) {
 	err := client.VMs.PowerOff(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("PowerOff failed: %v", err)
+	}
+}
+
+func TestVMService_PowerOffWithOptions_NilOpts(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: false})
+		},
+	}))
+
+	if err := client.VMs.PowerOffWithOptions(context.Background(), 1, nil); err != nil {
+		t.Fatalf("PowerOffWithOptions(nil) failed: %v", err)
+	}
+}
+
+func TestVMService_PowerOff_UsesClientPowerWait(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+		},
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+		},
+	}))
+	client.powerWaitTimeout = 40 * time.Millisecond
+	client.powerWaitInterval = 5 * time.Millisecond
+
+	start := time.Now()
+	err := client.VMs.PowerOff(context.Background(), 1)
+	elapsed := time.Since(start)
+	if !IsTimeoutError(err) {
+		t.Fatalf("expected TimeoutError, got %v", err)
+	}
+	if elapsed > time.Second {
+		t.Fatalf("PowerOff waited %s; client power-wait timeout was not applied", elapsed)
+	}
+}
+
+func TestVMService_PowerOffWithOptions_ExtendsClientTimeout(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+		},
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+		},
+	}))
+	client.powerWaitTimeout = 40 * time.Millisecond
+	client.powerWaitInterval = 5 * time.Millisecond
+
+	start := time.Now()
+	err := client.VMs.PowerOff(context.Background(), 1)
+	shortWait := time.Since(start)
+	if !IsTimeoutError(err) {
+		t.Fatalf("expected TimeoutError from client default, got %v", err)
+	}
+
+	start = time.Now()
+	err = client.VMs.PowerOffWithOptions(context.Background(), 1, &VMPowerOffOptions{
+		Timeout:      200 * time.Millisecond,
+		PollInterval: 5 * time.Millisecond,
+	})
+	longWait := time.Since(start)
+	if !IsTimeoutError(err) {
+		t.Fatalf("expected TimeoutError from call timeout, got %v", err)
+	}
+	if longWait < shortWait*3 {
+		t.Fatalf("call timeout %s did not extend client timeout %s", longWait, shortWait)
+	}
+	if longWait > 2*time.Second {
+		t.Fatalf("call timeout waited %s; the fixed 150s budget is still in effect", longWait)
+	}
+}
+
+func TestVMService_PowerOffWithOptions_PollInterval(t *testing.T) {
+	var reads []time.Time
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			reads = append(reads, time.Now())
+			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+		},
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+		},
+	}))
+	// A 5ms client interval would space reads tightly. The call asks for 40ms.
+	client.powerWaitInterval = 5 * time.Millisecond
+
+	start := time.Now()
+	err := client.VMs.PowerOffWithOptions(context.Background(), 1, &VMPowerOffOptions{
+		Timeout:      180 * time.Millisecond,
+		PollInterval: 50 * time.Millisecond,
+	})
+	if !IsTimeoutError(err) {
+		t.Fatalf("expected TimeoutError, got %v", err)
+	}
+	if time.Since(start) > time.Second {
+		t.Fatalf("poll interval was not applied; wait took %s", time.Since(start))
+	}
+	if len(reads) < 3 {
+		t.Fatalf("expected several polls, got %d", len(reads))
+	}
+	gaps := make([]time.Duration, 0, len(reads)-1)
+	for i := 1; i < len(reads); i++ {
+		gaps = append(gaps, reads[i].Sub(reads[i-1]))
+	}
+	sort.Slice(gaps, func(i, j int) bool { return gaps[i] < gaps[j] })
+	median := gaps[len(gaps)/2]
+	// The client interval is 5ms. A median near 50ms shows the call interval won.
+	if median < 30*time.Millisecond {
+		t.Fatalf("median poll gap = %s, want at least 30ms", median)
+	}
+}
+
+func TestVMService_PowerOffWithOptions_TimeoutDoesNotKill(t *testing.T) {
+	var actions []string
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+		},
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			actions = append(actions, body["action"].(string))
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.PowerOffWithOptions(context.Background(), 1, &VMPowerOffOptions{
+		Timeout:      25 * time.Millisecond,
+		PollInterval: 5 * time.Millisecond,
+	})
+	if !IsTimeoutError(err) {
+		t.Fatalf("expected TimeoutError, got %v", err)
+	}
+	var timeoutErr *TimeoutError
+	if !errors.As(err, &timeoutErr) || timeoutErr.Action != "become stopped" {
+		t.Fatalf("timeout action = %v, want become stopped", err)
+	}
+	if len(actions) != 1 || actions[0] != "poweroff" {
+		t.Fatalf("actions = %v, want [poweroff]", actions)
+	}
+}
+
+func TestVMService_PowerOffWithOptions_ForceAfterTimeout(t *testing.T) {
+	var actions []string
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			killed := false
+			for _, action := range actions {
+				if action == "kill" {
+					killed = true
+				}
+			}
+			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: !killed})
+		},
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			actions = append(actions, body["action"].(string))
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.PowerOffWithOptions(context.Background(), 1, &VMPowerOffOptions{
+		Timeout:           30 * time.Millisecond,
+		PollInterval:      5 * time.Millisecond,
+		ForceAfterTimeout: true,
+	})
+	if err != nil {
+		t.Fatalf("PowerOffWithOptions force failed: %v", err)
+	}
+	if len(actions) != 2 || actions[0] != "poweroff" || actions[1] != "kill" {
+		t.Fatalf("actions = %v, want [poweroff kill]", actions)
+	}
+}
+
+func TestVMService_PowerOffWithOptions_ForceAfterTimeout_KillAlsoTimesOut(t *testing.T) {
+	var actions []string
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+		},
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			actions = append(actions, body["action"].(string))
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.PowerOffWithOptions(context.Background(), 1, &VMPowerOffOptions{
+		Timeout:           25 * time.Millisecond,
+		PollInterval:      5 * time.Millisecond,
+		ForceAfterTimeout: true,
+	})
+	if !IsTimeoutError(err) {
+		t.Fatalf("expected TimeoutError, got %v", err)
+	}
+	var timeoutErr *TimeoutError
+	if !errors.As(err, &timeoutErr) || timeoutErr.Action != "become stopped after kill" {
+		t.Fatalf("timeout action = %v, want become stopped after kill", err)
+	}
+	if len(actions) != 2 || actions[0] != "poweroff" || actions[1] != "kill" {
+		t.Fatalf("actions = %v, want [poweroff kill]", actions)
+	}
+}
+
+func TestVMService_PowerOffWithOptions_CancelledContextDoesNotKill(t *testing.T) {
+	var actions []string
+	getCalls := 0
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			getCalls++
+			// The state check is the first read. Cancel once the wait starts.
+			if getCalls >= 2 {
+				cancel()
+			}
+			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: true})
+		},
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			actions = append(actions, body["action"].(string))
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.VMs.PowerOffWithOptions(ctx, 1, &VMPowerOffOptions{
+		Timeout:           5 * time.Second,
+		PollInterval:      5 * time.Millisecond,
+		ForceAfterTimeout: true,
+	})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected context.Canceled, got %v", err)
+	}
+	if len(actions) != 1 || actions[0] != "poweroff" {
+		t.Fatalf("actions = %v, want [poweroff]", actions)
+	}
+}
+
+func TestVMService_PowerOffWithOptions_NegativeTimeout(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{}))
+
+	err := client.VMs.PowerOffWithOptions(context.Background(), 1, &VMPowerOffOptions{
+		Timeout: -time.Second,
+	})
+	if !IsValidationError(err) {
+		t.Fatalf("expected ValidationError, got %v", err)
+	}
+}
+
+func TestVMService_PowerOn_UsesClientPowerWait(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: false})
+		},
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "poweron" {
+				t.Errorf("expected action 'poweron', got %v", body["action"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+	client.powerWaitTimeout = 40 * time.Millisecond
+	client.powerWaitInterval = 5 * time.Millisecond
+
+	start := time.Now()
+	err := client.VMs.PowerOn(context.Background(), 1)
+	if !IsTimeoutError(err) {
+		t.Fatalf("expected TimeoutError, got %v", err)
+	}
+	if time.Since(start) > time.Second {
+		t.Fatalf("PowerOn waited %s; client power-wait timeout was not applied", time.Since(start))
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Kill
+// ---------------------------------------------------------------------------
+
+func TestVMService_Kill_AlreadyStopped(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{ID: 1, Name: "vm", PowerState: false})
+		},
+	}))
+
+	if err := client.VMs.Kill(context.Background(), 1); err != nil {
+		t.Fatalf("Kill (already stopped) failed: %v", err)
+	}
+}
+
+func TestVMService_Kill(t *testing.T) {
+	getCalls := 0
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/4": func(w http.ResponseWriter, r *http.Request) {
+			getCalls++
+			running := getCalls <= 1
+			jsonResponse(w, 200, VM{ID: 4, Name: "vm", PowerState: running})
+		},
+		"POST /api/v4/vm_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			if body["action"] != "kill" {
+				t.Errorf("expected action 'kill', got %v", body["action"])
+			}
+			if int(body["vm"].(float64)) != 4 {
+				t.Errorf("expected vm 4, got %v", body["vm"])
+			}
+			w.WriteHeader(200)
+		},
+	}))
+
+	if err := client.VMs.Kill(context.Background(), 4); err != nil {
+		t.Fatalf("Kill failed: %v", err)
+	}
+	if getCalls < 2 {
+		t.Fatalf("Kill returned before reading the stopped state: %d reads", getCalls)
+	}
+}
+
+func TestVMService_Kill_NotFound(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/999": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 404, map[string]string{"err": "not found"})
+		},
+	}))
+
+	err := client.VMs.Kill(context.Background(), 999)
+	if !IsNotFoundError(err) {
+		t.Fatalf("expected NotFoundError, got %v", err)
+	}
+}
+
+func TestWithPowerWait(t *testing.T) {
+	c := &Client{}
+	if err := WithPowerWait(2*time.Minute, time.Second)(c); err != nil {
+		t.Fatalf("WithPowerWait: %v", err)
+	}
+	timeout, interval := c.vmPowerWait()
+	if timeout != 2*time.Minute || interval != time.Second {
+		t.Fatalf("power wait = %s / %s, want 2m0s / 1s", timeout, interval)
+	}
+
+	// A zero duration keeps the stored value, which is the default when unset.
+	fresh := &Client{}
+	if err := WithPowerWait(0, 0)(fresh); err != nil {
+		t.Fatalf("WithPowerWait zero: %v", err)
+	}
+	timeout, interval = fresh.vmPowerWait()
+	if timeout != defaultPowerWaitTimeout || interval != defaultPowerWaitInterval {
+		t.Fatalf("default power wait = %s / %s, want %s / %s", timeout, interval, defaultPowerWaitTimeout, defaultPowerWaitInterval)
+	}
+
+	if err := WithPowerWait(-time.Second, time.Second)(c); err == nil {
+		t.Fatal("expected error for a negative timeout")
+	}
+	if err := WithPowerWait(time.Second, -time.Second)(c); err == nil {
+		t.Fatal("expected error for a negative poll interval")
 	}
 }
 
