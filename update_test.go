@@ -2,7 +2,9 @@ package vergeos
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -11,12 +13,17 @@ import (
 func TestUpdateSettingsService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/update_settings/1": func(w http.ResponseWriter, r *http.Request) {
+			fields := r.URL.Query().Get("fields")
+			if !strings.Contains(fields, "applying_updates") {
+				t.Errorf("fields %q missing applying_updates", fields)
+			}
 			jsonResponse(w, 200, UpdateSettings{
-				Key:        1,
-				Source:     1,
-				Branch:     2,
-				BranchName: "stable-4.13",
-				AutoUpdate: true,
+				Key:             1,
+				Source:          1,
+				Branch:          2,
+				BranchName:      "stable-4.13",
+				AutoUpdate:      true,
+				ApplyingUpdates: true,
 			})
 		},
 	}))
@@ -33,6 +40,161 @@ func TestUpdateSettingsService_Get(t *testing.T) {
 	}
 	if settings.Branch != 2 {
 		t.Errorf("expected branch 2, got %d", settings.Branch)
+	}
+	if !settings.ApplyingUpdates {
+		t.Error("expected applying_updates to be true")
+	}
+}
+
+func TestUpdateSettingsService_Check(t *testing.T) {
+	client := updateActionClient(t, 3, func(body map[string]any) {
+		assertUpdateActionBody(t, body, 3, updateActionRefresh, nil)
+	})
+
+	if err := client.UpdateSettings.Check(context.Background()); err != nil {
+		t.Fatalf("Check failed: %v", err)
+	}
+}
+
+func TestUpdateSettingsService_Download(t *testing.T) {
+	client := updateActionClient(t, 3, func(body map[string]any) {
+		assertUpdateActionBody(t, body, 3, updateActionDownload, nil)
+	})
+
+	if err := client.UpdateSettings.Download(context.Background()); err != nil {
+		t.Fatalf("Download failed: %v", err)
+	}
+}
+
+func TestUpdateSettingsService_Install(t *testing.T) {
+	client := updateActionClient(t, 3, func(body map[string]any) {
+		assertUpdateActionBody(t, body, 3, updateActionInstall, nil)
+	})
+
+	if err := client.UpdateSettings.Install(context.Background()); err != nil {
+		t.Fatalf("Install failed: %v", err)
+	}
+}
+
+func TestUpdateSettingsService_UpdateAll(t *testing.T) {
+	force := false
+	client := updateActionClient(t, 3, func(body map[string]any) {
+		assertUpdateActionBody(t, body, 3, updateActionAll, &force)
+	})
+
+	if err := client.UpdateSettings.UpdateAll(context.Background(), false); err != nil {
+		t.Fatalf("UpdateAll failed: %v", err)
+	}
+}
+
+func TestUpdateSettingsService_UpdateAll_Force(t *testing.T) {
+	force := true
+	client := updateActionClient(t, 7, func(body map[string]any) {
+		assertUpdateActionBody(t, body, 7, updateActionAll, &force)
+	})
+
+	if err := client.UpdateSettings.UpdateAll(context.Background(), true); err != nil {
+		t.Fatalf("UpdateAll failed: %v", err)
+	}
+}
+
+func TestUpdateSettingsService_Check_NoSource(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/update_settings/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, UpdateSettings{Key: 1})
+		},
+		"POST /api/v4/update_actions": func(w http.ResponseWriter, r *http.Request) {
+			t.Error("posted an update action with no source configured")
+			w.WriteHeader(http.StatusCreated)
+		},
+	}))
+
+	err := client.UpdateSettings.Check(context.Background())
+	if err == nil {
+		t.Fatal("expected error when no update source is configured")
+	}
+	if !IsValidationError(err) {
+		t.Fatalf("expected ValidationError, got %T: %v", err, err)
+	}
+}
+
+func TestUpdateSettingsService_Check_GetError(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/update_settings/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 500, map[string]string{"err": "internal error"})
+		},
+		"POST /api/v4/update_actions": func(w http.ResponseWriter, r *http.Request) {
+			t.Error("posted an update action after settings GET failed")
+			w.WriteHeader(http.StatusCreated)
+		},
+	}))
+
+	err := client.UpdateSettings.Check(context.Background())
+	if err == nil {
+		t.Fatal("expected error when settings GET fails")
+	}
+}
+
+func TestUpdateSettingsService_Download_PostError(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/update_settings/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, UpdateSettings{Key: 1, Source: 3})
+		},
+		"POST /api/v4/update_actions": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 422, map[string]string{"err": "value 'download' is not in list for field 'action'"})
+		},
+	}))
+
+	err := client.UpdateSettings.Download(context.Background())
+	if err == nil {
+		t.Fatal("expected error when the action POST fails")
+	}
+	if !strings.Contains(err.Error(), "failed to download updates") {
+		t.Errorf("expected download failure, got %v", err)
+	}
+}
+
+// updateActionClient serves settings with the given source and checks the action body.
+func updateActionClient(t *testing.T, source int, check func(map[string]any)) *Client {
+	t.Helper()
+	return newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/update_settings/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, UpdateSettings{Key: 1, Source: source})
+		},
+		"POST /api/v4/update_actions": func(w http.ResponseWriter, r *http.Request) {
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decode body: %v", err)
+			}
+			check(body)
+			w.WriteHeader(http.StatusCreated)
+		},
+	}))
+}
+
+func assertUpdateActionBody(t *testing.T, body map[string]any, source int, action string, force *bool) {
+	t.Helper()
+	if got, ok := body["source"].(float64); !ok || int(got) != source {
+		t.Errorf("source: got %#v, want %d", body["source"], source)
+	}
+	if body["action"] != action {
+		t.Errorf("action: got %#v, want %q", body["action"], action)
+	}
+	if force == nil {
+		if _, ok := body["force"]; ok {
+			t.Errorf("force was sent: %#v", body["force"])
+		}
+		if len(body) != 2 {
+			t.Errorf("unexpected body: %#v", body)
+		}
+		return
+	}
+	got, ok := body["force"].(bool)
+	if !ok || got != *force {
+		t.Errorf("force: got %#v, want %v", body["force"], *force)
+	}
+	if len(body) != 3 {
+		t.Errorf("unexpected body: %#v", body)
 	}
 }
 

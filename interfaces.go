@@ -1196,9 +1196,15 @@ type MachineNICServiceInterface interface {
 	Get(ctx context.Context, id int) (*MachineNIC, error)
 }
 
-// UpdateSettingsServiceInterface defines the interface for update settings operations (read-only singleton).
+// UpdateSettingsServiceInterface defines update settings reads and the
+// system-wide update actions. Check, download, and install leave nodes running.
+// UpdateAll starts the platform rolling reboot.
 type UpdateSettingsServiceInterface interface {
 	Get(ctx context.Context) (*UpdateSettings, error)
+	Check(ctx context.Context) error
+	Download(ctx context.Context) error
+	Install(ctx context.Context) error
+	UpdateAll(ctx context.Context, force bool) error
 }
 
 // UpdateBranchServiceInterface defines the interface for update branch operations (read-only).

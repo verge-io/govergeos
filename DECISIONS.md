@@ -888,3 +888,23 @@ Two behaviors in the Ansible collection are wrong for a client library. A failed
 - Callers replace `vm.ID` with `vm.Key`, and the same for the other twelve types. Method parameters that take the key as an `int` are unchanged.
 - JSON on the wire is unchanged.
 
+## ADR-027: Update Actions Use update_actions
+
+**Date:** 2026-09-30
+
+**Status:** Accepted
+
+**Context:** Settings, branches, and source packages can be read. Checking for updates, downloading them, and installing them are separate actions. pyVergeOS `UpdateSettingsManager` and the Ansible `update` module post those to `update_actions` with the source key from settings. The action that checks the source is `refresh`. `download` and `install` use those names. Applying an installed update is `all`, with `force`. The Ansible module never sends `apply`: that name has not been verified, and `all` is the action every upgrade uses. An action name outside the table's list is rejected.
+
+**Decision:** `UpdateSettings.Check` posts `{source, action: "refresh"}`. `Download` posts `download`. `Install` posts `install`. `UpdateAll` posts `all` and always includes `force`. Each method reads settings first and returns `ValidationError` when `source` is 0. The methods return `error` only. Check, download, and install do not reboot nodes. `UpdateAll` starts the platform rolling reboot. `Get` also requests `applying_updates`. Branch and source-package reads are unchanged.
+
+**Rationale:**
+- The request body matches pyVergeOS `UpdateSettingsManager._action` and the Ansible update module.
+- Install leaves the cluster running. The reboot is a separate call, so a download or install cannot imply one.
+- `force` is explicit on `all` because it decides whether workloads that cannot migrate are rebooted.
+
+**Consequences:**
+- Callers read `ApplyingUpdates`, `Installed`, and `RebootRequired` themselves. These methods do not wait.
+- A system with no update source configured cannot run the actions.
+- The platform `install` action runs its own pre-install check. There is no method for `POST /update_actions/runpreinstallcheck`.
+
