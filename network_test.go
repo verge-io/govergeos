@@ -684,9 +684,18 @@ func TestNetworkService_GetDiagnostics(t *testing.T) {
 func TestNetworkService_GetStatistics(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnet_monitor_stats_history_short": func(w http.ResponseWriter, r *http.Request) {
-			filter := r.URL.Query().Get("filter")
-			if filter != "vnet eq 1" {
-				t.Errorf("expected filter 'vnet eq 1', got %q", filter)
+			q := r.URL.Query()
+			if q.Get("filter") != "vnet eq 1" {
+				t.Errorf("expected filter 'vnet eq 1', got %q", q.Get("filter"))
+			}
+			if q.Get("sort") != "-timestamp" {
+				t.Errorf("expected sort '-timestamp', got %q", q.Get("sort"))
+			}
+			if q.Get("limit") != "100" {
+				t.Errorf("expected limit '100', got %q", q.Get("limit"))
+			}
+			if q.Get("fields") != networkMonitorStatsFields {
+				t.Errorf("expected stats fields, got %q", q.Get("fields"))
 			}
 			jsonResponse(w, 200, []NetworkMonitorStats{
 				{Key: 100, VNet: 1, Quality: 99},
@@ -728,9 +737,21 @@ func TestNetworkService_GetStatistics_Empty(t *testing.T) {
 func TestNetworkService_GetLatestStatistics(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnet_monitor_stats_history_short": func(w http.ResponseWriter, r *http.Request) {
+			q := r.URL.Query()
+			if q.Get("filter") != "vnet eq 1" {
+				t.Errorf("expected filter 'vnet eq 1', got %q", q.Get("filter"))
+			}
+			if q.Get("sort") != "-timestamp" {
+				t.Errorf("expected sort '-timestamp', got %q", q.Get("sort"))
+			}
+			if q.Get("limit") != "1" {
+				t.Errorf("expected limit '1', got %q", q.Get("limit"))
+			}
+			if q.Get("fields") != networkMonitorStatsFields {
+				t.Errorf("expected stats fields, got %q", q.Get("fields"))
+			}
 			jsonResponse(w, 200, []NetworkMonitorStats{
 				{Key: 100, VNet: 1, Quality: 99},
-				{Key: 101, VNet: 1, Quality: 95},
 			})
 		},
 	}))

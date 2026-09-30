@@ -391,27 +391,22 @@ func (s *NetworkService) GetDiagnostics(ctx context.Context, id int) (*NetworkQu
 	})
 }
 
-// GetStatistics returns the latest monitoring statistics for a network.
+// networkStatisticsHistoryLimit is how many recent samples GetStatistics returns.
+const networkStatisticsHistoryLimit = 100
+
+// GetStatistics returns recent monitoring statistics for a network, newest first.
 // Requires gateway monitoring to be enabled on the network.
+// At most 100 samples are returned.
 func (s *NetworkService) GetStatistics(ctx context.Context, id int) ([]NetworkMonitorStats, error) {
-	params := url.Values{}
-	params.Set("fields", networkMonitorStatsFields)
-	params.Set("filter", fmt.Sprintf("vnet eq %d", id))
-	params.Set("sort", "-timestamp")
-	params.Set("limit", "100")
-
-	var stats []NetworkMonitorStats
-	if err := s.client.get(ctx, "/vnet_monitor_stats_history_short", params, &stats); err != nil {
-		return nil, err
-	}
-
-	return stats, nil
+	return s.listMonitorStats(ctx, id, networkStatisticsHistoryLimit)
 }
 
 // GetLatestStatistics returns the most recent monitoring statistics for a network.
-// Returns nil if no statistics are available.
+// It requests one row with the same filter and sort as GetStatistics (limit=1)
+// instead of downloading the history window and discarding all but the first row.
+// Returns nil, nil if no statistics are available.
 func (s *NetworkService) GetLatestStatistics(ctx context.Context, id int) (*NetworkMonitorStats, error) {
-	stats, err := s.GetStatistics(ctx, id)
+	stats, err := s.listMonitorStats(ctx, id, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -419,4 +414,21 @@ func (s *NetworkService) GetLatestStatistics(ctx context.Context, id int) (*Netw
 		return nil, nil
 	}
 	return &stats[0], nil
+}
+
+// listMonitorStats reads /vnet_monitor_stats_history_short for one network,
+// newest first, limited to limit rows.
+func (s *NetworkService) listMonitorStats(ctx context.Context, id int, limit int) ([]NetworkMonitorStats, error) {
+	params := url.Values{}
+	params.Set("fields", networkMonitorStatsFields)
+	params.Set("filter", fmt.Sprintf("vnet eq %d", id))
+	params.Set("sort", "-timestamp")
+	params.Set("limit", fmt.Sprintf("%d", limit))
+
+	var stats []NetworkMonitorStats
+	if err := s.client.get(ctx, "/vnet_monitor_stats_history_short", params, &stats); err != nil {
+		return nil, err
+	}
+
+	return stats, nil
 }
