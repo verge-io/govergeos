@@ -18,6 +18,8 @@ type UpdateSettings struct {
 	RebootRequired bool `json:"reboot_required,omitempty"`
 	// Installed indicates whether updates have been installed.
 	Installed bool `json:"installed,omitempty"`
+	// ApplyingUpdates indicates whether an update is being applied.
+	ApplyingUpdates bool `json:"applying_updates,omitempty"`
 	// SnapshotCloudOnUpdate indicates whether to snapshot before updating.
 	SnapshotCloudOnUpdate bool `json:"snapshot_cloud_on_update,omitempty"`
 	// SnapshotCloudExpireSeconds is the snapshot expiration time in seconds.
@@ -52,7 +54,7 @@ type UpdateSourcePackage struct {
 
 // Field list constants for update resources
 const (
-	updateSettingsGetFields       = "$key,source,branch,branch#name as branch_name,auto_refresh,auto_update,reboot_required,installed,snapshot_cloud_on_update,snapshot_cloud_expire_seconds"
+	updateSettingsGetFields       = "$key,source,branch,branch#name as branch_name,auto_refresh,auto_update,reboot_required,installed,applying_updates,snapshot_cloud_on_update,snapshot_cloud_expire_seconds"
 	updateBranchListFields        = "$key,name,description"
 	updateSourcePackageListFields = "$key,name,branch,source,version,downloaded"
 )

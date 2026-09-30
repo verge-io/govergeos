@@ -314,6 +314,9 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 |---------|-------------|
 | `Clusters` | Cluster CRUD operations, status monitoring, and configuration |
 | `Nodes` | Node information |
+| `UpdateSettings` | Update settings, and check, download, install, and rolling apply |
+| `UpdateBranches` | Update branches (read-only) |
+| `UpdateSourcePackages` | Packages offered by an update source (read-only) |
 | `Settings` | System settings (read-only) |
 | `Schema` | API schema introspection |
 | `System` | System version and info |

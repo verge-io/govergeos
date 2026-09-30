@@ -117,3 +117,11 @@ func TestUpdateSourcePackages(t *testing.T) {
 		}
 	})
 }
+
+// TestUpdateActionsManual documents the live check for update actions.
+// Check, Download, and Install contact the update source. UpdateAll reboots
+// nodes. This suite does not call them.
+// On a lab system, call UpdateSettings.Check, Download, Install, and UpdateAll directly.
+func TestUpdateActionsManual(t *testing.T) {
+	t.Skip("manual check: update check, download, install, and apply change the system")
+}

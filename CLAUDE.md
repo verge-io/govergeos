@@ -41,7 +41,7 @@ Services are initialized in `NewClient()` (in `client.go`) and exposed as interf
 
 ### Key Design Decisions
 
-Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-026). The critical ones:
+Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-027). The critical ones:
 
 - **`$key` is `Key`**: Every resource names the row key `Key`. A separate `id` column stays `ID`.
 - **FlexInt** (`types.go`): Custom type handling VergeOS API returning IDs as int or string. String-key tables stay `string` (volumes and other SHA1 keys, resource groups as UUIDs). `StorageTier.Key` and the device-settings rows stay `int`.
@@ -55,6 +55,7 @@ Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-026). The critical one
 - **Auth source settings are merged on update**: The API replaces the settings object. `AuthSourceService.Update` reads the stored settings and merges the caller's keys before sending, so a partial update cannot drop `client_secret`. Returned auth sources omit `client_secret`. An OIDC application's `client_secret` is write-only: `Create` returns it as a `WriteOnlySecret`, and `OIDCApplication` does not keep it.
 - **VM import wait fails fast, and a repeated name is idempotent**: `VMImports` creates an import from a media-catalog file or a URL. `Wait` returns when the row is `error` or `aborted`, or when `failed_drive_count` is set, instead of using the rest of the timeout. `Create` does not post when a VM with that name already exists. `DeleteByName` removes every finished row with the name, and deletes none when several rows share it and one is still importing. `VMExports.Run` exports a VM to a NAS volume.
 - **Recipe deploy checks answers, and preview is a different method**: `Catalogs` and `VMRecipes` read catalogs, recipes, and each recipe's questions. `VMRecipeInstances.Deploy` checks answers against those question types before POST. Bool values it does not recognize are refused. Disk sizes are bytes; a value above zero and under 1 MB is refused. `Preview` is the dry run. It cannot return an instance. A successful HTTP status on that POST is `RecipePreviewPersistedError`.
+- **Update check posts refresh**: `UpdateSettings.Check`, `Download`, and `Install` post to `update_actions` using the source from settings. Check sends `refresh`. `UpdateAll` sends `all` with `force` and starts the rolling reboot. Check, download, and install do not reboot nodes.
 - **Dynamic routing restart**: BGP, OSPF, and EIGRP are flat services on `Client` (`VNetBGP` plus routers, interfaces, route maps, IP commands, OSPF commands, and EIGRP). `VNetBGP.GetOrCreate` is the per-network `vnet_bgp` row the other tables reference. Create, update, and delete return `RoutingRestartStatus`. `Pending` is `need_restart`. `WithRestartNetwork` calls `Networks.Reset` so the change takes effect.
 - **Task engine**: `TaskSchedules`, `TaskScheduleTriggers`, `TaskEvents`, and `TaskScripts` follow the pyVergeOS tables. Schedule create posts the same defaults pyVergeOS sends. Upcoming runs, a manual trigger, and a script run are row actions: `PUT /{table}/{key}?action=...`.
 
