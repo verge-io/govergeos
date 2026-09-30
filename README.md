@@ -316,6 +316,15 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 |---------|-------------|
 | `Clusters` | Cluster CRUD operations, status monitoring, and configuration |
 | `Nodes` | Node information |
+| `VGPUProfiles` | NVIDIA vGPU profile catalog (`nvidia_vgpu_profiles`, read-only) |
+| `NodeGPUs` | Node GPU configuration (`node_gpus`), including passthrough and vGPU mode |
+| `NodeGPUStats` | Current GPU stats and short/long history (read-only) |
+| `NodeGPUInstances` | GPU instances assigned to VMs (read-only) |
+| `NodeVGPUDevices` | Detected NVIDIA vGPU devices (read-only) |
+| `NodeHostGPUDevices` | Detected GPUs available for passthrough (read-only) |
+| `NodeVGPUProfiles` | vGPU profiles available on a physical GPU (read-only) |
+| `NodeMemory` | DIMM inventory and health (`node_memory`, read-only) |
+| `NodeLLDPNeighbors` | LLDP neighbors on node NICs (read-only) |
 | `UpdateSettings` | Update settings, and check, download, install, and rolling apply |
 | `UpdateBranches` | Update branches (read-only) |
 | `UpdateSourcePackages` | Packages offered by an update source (read-only) |
@@ -588,6 +597,7 @@ go test -tags=integration -v ./test/integration/ -run "CRUD"
 | `clusters_test.go` | Clusters, Network Diagnostics |
 | `dr_test.go` | Sites, Site Syncs, Cloud Snapshots |
 | `files_test.go` | Files (upload/download) |
+| `hardware_inventory_test.go` | GPUs, vGPU profiles, node memory, LLDP neighbors |
 | `logs_test.go` | System Logs |
 | `monitoring_test.go` | Alarms, Tasks |
 | `nas_test.go` | NAS Services, Users, Syncs, Snapshots, Shares |

@@ -228,6 +228,88 @@ type NodeServiceInterface interface {
 	ClearPStore(ctx context.Context, id int) error
 }
 
+// VGPUProfileServiceInterface reads the NVIDIA vGPU profile catalog.
+type VGPUProfileServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VGPUProfile, error)
+	ListByProfileType(ctx context.Context, profileType string, opts ...ListOption) ([]VGPUProfile, error)
+	Get(ctx context.Context, id int) (*VGPUProfile, error)
+	GetByName(ctx context.Context, name string) (*VGPUProfile, error)
+}
+
+// NodeGPUServiceInterface reads and updates node GPU configuration.
+type NodeGPUServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]NodeGPU, error)
+	ListByNode(ctx context.Context, nodeID int, opts ...ListOption) ([]NodeGPU, error)
+	ListByMode(ctx context.Context, mode string, opts ...ListOption) ([]NodeGPU, error)
+	ListEnabled(ctx context.Context, opts ...ListOption) ([]NodeGPU, error)
+	Get(ctx context.Context, id int) (*NodeGPU, error)
+	GetByName(ctx context.Context, name string) (*NodeGPU, error)
+	GetByNodeAndName(ctx context.Context, nodeID int, name string) (*NodeGPU, error)
+	Update(ctx context.Context, id int, req *NodeGPUUpdateRequest) (*NodeGPU, error)
+}
+
+// NodeGPUStatsServiceInterface reads current and historical GPU utilization.
+type NodeGPUStatsServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]NodeGPUStats, error)
+	Get(ctx context.Context, id int) (*NodeGPUStats, error)
+	GetByGPU(ctx context.Context, gpuID int) (*NodeGPUStats, error)
+	ListHistoryShort(ctx context.Context, opts ...ListOption) ([]NodeGPUStats, error)
+	ListHistoryShortByGPU(ctx context.Context, gpuID int, opts ...ListOption) ([]NodeGPUStats, error)
+	ListHistoryLong(ctx context.Context, opts ...ListOption) ([]NodeGPUStats, error)
+	ListHistoryLongByGPU(ctx context.Context, gpuID int, opts ...ListOption) ([]NodeGPUStats, error)
+	GetHistoryShort(ctx context.Context, id int) (*NodeGPUStats, error)
+	GetHistoryLong(ctx context.Context, id int) (*NodeGPUStats, error)
+}
+
+// NodeGPUInstanceServiceInterface reads GPU instances assigned to VMs.
+type NodeGPUInstanceServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]NodeGPUInstance, error)
+	ListByGPU(ctx context.Context, gpuID int, opts ...ListOption) ([]NodeGPUInstance, error)
+	Get(ctx context.Context, id int) (*NodeGPUInstance, error)
+}
+
+// NodeVGPUDeviceServiceInterface reads detected NVIDIA vGPU devices.
+type NodeVGPUDeviceServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]NodeVGPUDevice, error)
+	ListByNode(ctx context.Context, nodeID int, opts ...ListOption) ([]NodeVGPUDevice, error)
+	ListByVendor(ctx context.Context, vendor string, opts ...ListOption) ([]NodeVGPUDevice, error)
+	Get(ctx context.Context, id int) (*NodeVGPUDevice, error)
+}
+
+// NodeHostGPUDeviceServiceInterface reads detected passthrough GPUs.
+type NodeHostGPUDeviceServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]NodeHostGPUDevice, error)
+	ListByNode(ctx context.Context, nodeID int, opts ...ListOption) ([]NodeHostGPUDevice, error)
+	ListByVendor(ctx context.Context, vendor string, opts ...ListOption) ([]NodeHostGPUDevice, error)
+	Get(ctx context.Context, id int) (*NodeHostGPUDevice, error)
+}
+
+// NodeVGPUProfileServiceInterface reads vGPU profiles available on a physical GPU.
+type NodeVGPUProfileServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]NodeVGPUProfile, error)
+	ListByPhysicalGPU(ctx context.Context, pciDeviceID int, opts ...ListOption) ([]NodeVGPUProfile, error)
+	ListByProfileType(ctx context.Context, profileType string, opts ...ListOption) ([]NodeVGPUProfile, error)
+	Get(ctx context.Context, id int) (*NodeVGPUProfile, error)
+	GetByName(ctx context.Context, name string) (*NodeVGPUProfile, error)
+	GetByPhysicalGPUAndName(ctx context.Context, pciDeviceID int, name string) (*NodeVGPUProfile, error)
+}
+
+// NodeMemoryServiceInterface reads DIMM inventory.
+type NodeMemoryServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]NodeMemory, error)
+	ListByNode(ctx context.Context, nodeID int, opts ...ListOption) ([]NodeMemory, error)
+	ListUnhealthy(ctx context.Context, opts ...ListOption) ([]NodeMemory, error)
+	Get(ctx context.Context, id int) (*NodeMemory, error)
+}
+
+// NodeLLDPNeighborServiceInterface reads LLDP neighbors discovered on node NICs.
+type NodeLLDPNeighborServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]NodeLLDPNeighbor, error)
+	ListByNode(ctx context.Context, nodeID int, opts ...ListOption) ([]NodeLLDPNeighbor, error)
+	ListByNIC(ctx context.Context, nicID int, opts ...ListOption) ([]NodeLLDPNeighbor, error)
+	Get(ctx context.Context, id int) (*NodeLLDPNeighbor, error)
+}
+
 // ClusterServiceInterface defines the interface for Cluster operations.
 type ClusterServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]Cluster, error)
@@ -1266,6 +1348,15 @@ var (
 	_ MemberServiceInterface                  = (*MemberService)(nil)
 	_ CloudInitServiceInterface               = (*CloudInitService)(nil)
 	_ NodeServiceInterface                    = (*NodeService)(nil)
+	_ VGPUProfileServiceInterface             = (*VGPUProfileService)(nil)
+	_ NodeGPUServiceInterface                 = (*NodeGPUService)(nil)
+	_ NodeGPUStatsServiceInterface            = (*NodeGPUStatsService)(nil)
+	_ NodeGPUInstanceServiceInterface         = (*NodeGPUInstanceService)(nil)
+	_ NodeVGPUDeviceServiceInterface          = (*NodeVGPUDeviceService)(nil)
+	_ NodeHostGPUDeviceServiceInterface       = (*NodeHostGPUDeviceService)(nil)
+	_ NodeVGPUProfileServiceInterface         = (*NodeVGPUProfileService)(nil)
+	_ NodeMemoryServiceInterface              = (*NodeMemoryService)(nil)
+	_ NodeLLDPNeighborServiceInterface        = (*NodeLLDPNeighborService)(nil)
 	_ ClusterServiceInterface                 = (*ClusterService)(nil)
 	_ GroupServiceInterface                   = (*GroupService)(nil)
 	_ FileServiceInterface                    = (*FileService)(nil)
