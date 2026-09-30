@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	vergeos "github.com/verge-io/govergeos"
 )
@@ -70,7 +71,7 @@ func run(ctx context.Context, client *vergeos.Client) error {
 	// Cloud-init files require an owner, so create a throwaway VM first.
 	fmt.Println("\n=== Creating VM ===")
 	vm, err := client.VMs.Create(ctx, &vergeos.VMCreateRequest{
-		Name:        "sdk-example-cloudinit-vm",
+		Name:        "sdk-example-cloudinit-" + time.Now().Format("20060102-150405"),
 		Description: "Created by goVergeOS cloud-init example",
 		CPUCores:    1,
 		RAM:         512,
