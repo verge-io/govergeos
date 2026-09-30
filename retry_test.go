@@ -1,6 +1,7 @@
 package vergeos
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"io"
@@ -539,6 +540,7 @@ func TestRetryRealConnectionReset(t *testing.T) {
 	defer ln.Close()
 
 	var calls atomic.Int32
+	var reset atomic.Bool
 	serveDone := make(chan struct{})
 	go func() {
 		defer close(serveDone)
@@ -548,7 +550,17 @@ func TestRetryRealConnectionReset(t *testing.T) {
 				return
 			}
 			n := calls.Add(1)
+			// The client counts the request before it writes it. Reading
+			// that request first keeps the following reset or 200 off an
+			// idle connection. Go's transport otherwise peeks the 200 with
+			// a nil error and formats it as
+			// readLoopPeekFailLocked: %!w(<nil>), which is not retried.
+			if readErr := readRequestHeader(conn); readErr != nil {
+				_ = conn.Close()
+				continue
+			}
 			if n == 1 {
+				reset.Store(true)
 				if tc, ok := conn.(*net.TCPConn); ok {
 					_ = tc.SetLinger(0)
 				}
@@ -569,9 +581,22 @@ func TestRetryRealConnectionReset(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET after connection reset: %v", err)
 	}
+	if !reset.Load() {
+		t.Fatal("server did not reset the first connection")
+	}
 	if got := calls.Load(); got != 2 {
 		t.Fatalf("accepted connections = %d, want 2", got)
 	}
+}
+
+func readRequestHeader(conn net.Conn) error {
+	if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		return err
+	}
+	if _, err := http.ReadRequest(bufio.NewReader(conn)); err != nil {
+		return err
+	}
+	return conn.SetReadDeadline(time.Time{})
 }
 
 func TestRateLimitSpacesRequests(t *testing.T) {
