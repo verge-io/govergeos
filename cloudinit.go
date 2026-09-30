@@ -30,6 +30,19 @@ func (s *CloudInitService) List(ctx context.Context, opts ...ListOption) ([]Clou
 	return files, nil
 }
 
+// ListByVM returns cloud-init files owned by the VM with the given $key.
+// vmID is VM.ID (vms.$key), not VM.Machine. Files are selected with
+// owner eq 'vms/<vmID>'.
+func (s *CloudInitService) ListByVM(ctx context.Context, vmID int, opts ...ListOption) ([]CloudInitFile, error) {
+	if vmID <= 0 {
+		return nil, &ValidationError{Field: "vm", Message: "VM ID is required"}
+	}
+	owner := fmt.Sprintf("vms/%d", vmID)
+	filterOpts := []ListOption{WithFilter(fmt.Sprintf("owner eq '%s'", escapeFilterValue(owner)))}
+	filterOpts = append(filterOpts, opts...)
+	return s.List(ctx, filterOpts...)
+}
+
 // Get returns a single cloud-init file by ID.
 func (s *CloudInitService) Get(ctx context.Context, id int) (*CloudInitFile, error) {
 	params := url.Values{}
@@ -69,6 +82,9 @@ func (s *CloudInitService) Create(ctx context.Context, req *CloudInitFileCreateR
 	if req.Name == "" {
 		return nil, &ValidationError{Field: "name", Message: "name is required"}
 	}
+	if req.Owner == "" {
+		return nil, &ValidationError{Field: "owner", Message: "owner is required"}
+	}
 
 	var resp apiResponse
 	if err := s.client.post(ctx, "/cloudinit_files", req, &resp); err != nil {
@@ -83,6 +99,22 @@ func (s *CloudInitService) Create(ctx context.Context, req *CloudInitFileCreateR
 
 	// Read back the created file
 	return s.Get(ctx, id)
+}
+
+// CreateForVM creates a cloud-init file owned by the VM with the given $key.
+// vmID is VM.ID (vms.$key), not VM.Machine. The helper sets owner to
+// "vms/<vmID>" and leaves req unchanged. Any Owner already set on req is
+// not sent.
+func (s *CloudInitService) CreateForVM(ctx context.Context, vmID int, req *CloudInitFileCreateRequest) (*CloudInitFile, error) {
+	if vmID <= 0 {
+		return nil, &ValidationError{Field: "vm", Message: "VM ID is required"}
+	}
+	if req == nil {
+		return nil, &ValidationError{Message: "create request is required"}
+	}
+	owned := *req
+	owned.Owner = fmt.Sprintf("vms/%d", vmID)
+	return s.Create(ctx, &owned)
 }
 
 // Update updates a cloud-init file and returns the updated file.

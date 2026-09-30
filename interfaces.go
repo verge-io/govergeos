@@ -135,9 +135,11 @@ type MemberServiceInterface interface {
 // CloudInitServiceInterface defines the interface for CloudInit operations.
 type CloudInitServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]CloudInitFile, error)
+	ListByVM(ctx context.Context, vmID int, opts ...ListOption) ([]CloudInitFile, error)
 	Get(ctx context.Context, id int) (*CloudInitFile, error)
 	GetByName(ctx context.Context, name string) (*CloudInitFile, error)
 	Create(ctx context.Context, req *CloudInitFileCreateRequest) (*CloudInitFile, error)
+	CreateForVM(ctx context.Context, vmID int, req *CloudInitFileCreateRequest) (*CloudInitFile, error)
 	Update(ctx context.Context, id int, req *CloudInitFileUpdateRequest) (*CloudInitFile, error)
 	Delete(ctx context.Context, id int) error
 }

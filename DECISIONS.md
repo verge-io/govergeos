@@ -645,5 +645,6 @@ The SDK itself does NOT include built-in rate limiting because:
 **Consequences:**
 - `VMDrives`, `VMNICs`, and `VMDevices` `List` and `Create`, `VMDrives.GetByName`, and `VMSnapshots.ListByVM` / `GetByName` take the VM $key.
 - `VMSnapshotCreateRequest.VM` is the VM $key. `Create` posts the resolved machine key.
+- Cloud-init file `owner` is `vms/<VM $key>`. `CloudInitFiles.CreateForVM` and `ListByVM` take the VM $key and do not use `VM.Machine`.
 - A call with a machine key where a VM $key is required now looks up the wrong VM, or returns not found, instead of silently targeting another machine.
 
