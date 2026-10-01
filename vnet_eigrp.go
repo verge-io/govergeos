@@ -61,7 +61,7 @@ func (s *VNetEIGRPRouterService) GetByASN(ctx context.Context, bgpID int, asn in
 	}
 	row, err := oneRoutingRow("VNetEIGRPRouter", strconv.Itoa(asn), matched, func(row VNetEIGRPRouter) any { return row.Key })
 	if err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VNetEIGRPRouter", ID: asn}
 		}
 		return nil, err

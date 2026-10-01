@@ -48,7 +48,7 @@ func (s *NodeMemoryService) Get(ctx context.Context, id int) (*NodeMemory, error
 	var dimm NodeMemory
 	endpoint := fmt.Sprintf("/node_memory/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &dimm); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NodeMemory", ID: id}
 		}
 		return nil, err

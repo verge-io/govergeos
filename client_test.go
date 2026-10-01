@@ -1133,7 +1133,7 @@ func TestClientStatusErrorMapping(t *testing.T) {
 			status:        http.StatusNotFound,
 			body:          `{"err":"not found"}`,
 			wantError:     "vergeos: API error 404 at /groups: not found",
-			wantNotFound:  true,
+			wantNotFound:  false,
 			wantType:      "*vergeos.APIError",
 			wantAPIStatus: http.StatusNotFound,
 			wantEndpoint:  "/groups",

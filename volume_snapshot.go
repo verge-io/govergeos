@@ -59,7 +59,7 @@ func (s *VolumeSnapshotService) Get(ctx context.Context, id int) (*VolumeSnapsho
 	var snapshot VolumeSnapshot
 	endpoint := fmt.Sprintf("/volume_snapshots/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &snapshot); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VolumeSnapshot", ID: id}
 		}
 		return nil, err
@@ -127,9 +127,6 @@ func (s *VolumeSnapshotService) Update(ctx context.Context, id int, req *VolumeS
 
 	endpoint := fmt.Sprintf("/volume_snapshots/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VolumeSnapshot", ID: id}
-		}
 		return nil, err
 	}
 
@@ -140,7 +137,7 @@ func (s *VolumeSnapshotService) Update(ctx context.Context, id int, req *VolumeS
 func (s *VolumeSnapshotService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/volume_snapshots/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VolumeSnapshot", ID: id}
 		}
 		return err

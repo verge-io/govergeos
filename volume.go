@@ -44,7 +44,7 @@ func (s *VolumeService) Get(ctx context.Context, id string) (*Volume, error) {
 	var volume Volume
 	endpoint := fmt.Sprintf("/volumes/%s", id)
 	if err := s.client.get(ctx, endpoint, params, &volume); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Volume", ID: id}
 		}
 		return nil, err
@@ -120,9 +120,6 @@ func (s *VolumeService) Update(ctx context.Context, id string, req *VolumeUpdate
 
 	endpoint := fmt.Sprintf("/volumes/%s", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Volume", ID: id}
-		}
 		return nil, err
 	}
 
@@ -134,7 +131,7 @@ func (s *VolumeService) Update(ctx context.Context, id string, req *VolumeUpdate
 func (s *VolumeService) Delete(ctx context.Context, id string) error {
 	endpoint := fmt.Sprintf("/volumes/%s", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Volume", ID: id}
 		}
 		return err

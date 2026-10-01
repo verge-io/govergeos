@@ -318,8 +318,75 @@ func TestNetworkService_Update_NotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for not found")
 	}
-	if !IsNotFoundError(err) {
-		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	apiErr, ok := err.(*APIError)
+	if IsNotFoundError(err) || !ok || apiErr.StatusCode != 404 {
+		t.Errorf("expected API 404, not a missing resource, got %T: %v", err, err)
+	}
+	if apiErr != nil && apiErr.Message != "not found" {
+		t.Errorf("message = %q, want the platform message", apiErr.Message)
+	}
+}
+
+func TestNetworkService_Update_MissingReference(t *testing.T) {
+	const platform = "Unable to look up parent interface network '0': No such file or directory"
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"PUT /api/v4/vnets/18": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 404, map[string]string{"err": platform})
+		},
+		"GET /api/v4/vnets/18": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, Network{Key: 18, Name: "zzrc3-nf"})
+		},
+	}))
+
+	zero := 0
+	_, err := client.Networks.Update(context.Background(), 18, &NetworkUpdateRequest{InterfaceVnet: &zero})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if IsNotFoundError(err) {
+		t.Fatalf("reference 404 reported the network as missing: %v", err)
+	}
+	if !strings.Contains(err.Error(), platform) {
+		t.Fatalf("error = %q, want platform message", err.Error())
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok || apiErr.StatusCode != 404 || apiErr.Message != platform {
+		t.Fatalf("got %T %#v", err, err)
+	}
+
+	got, gerr := client.Networks.Get(context.Background(), 18)
+	if gerr != nil {
+		t.Fatalf("network still exists, Get failed: %v", gerr)
+	}
+	if got.Name != "zzrc3-nf" {
+		t.Fatalf("network = %+v", got)
+	}
+}
+
+func TestNetworkService_Create_MissingReference(t *testing.T) {
+	const platform = "Unable to look up parent interface network '0': No such file or directory"
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 404, map[string]string{"err": platform})
+		},
+	}))
+
+	zero := 0
+	_, err := client.Networks.Create(context.Background(), &NetworkCreateRequest{
+		Name:          "zzrc3-nf",
+		Type:          "internal",
+		Network:       "10.50.3.0/24",
+		IPAddress:     "10.50.3.1",
+		InterfaceVnet: &zero,
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if IsNotFoundError(err) {
+		t.Fatalf("reference 404 reported a missing network: %v", err)
+	}
+	if !strings.Contains(err.Error(), platform) {
+		t.Fatalf("error = %q, want platform message", err.Error())
 	}
 }
 

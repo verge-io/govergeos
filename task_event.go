@@ -62,7 +62,7 @@ func (s *TaskEventService) Get(ctx context.Context, id int) (*TaskEvent, error) 
 	var row TaskEvent
 	endpoint := fmt.Sprintf("/task_events/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &row); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TaskEvent", ID: id}
 		}
 		return nil, err
@@ -105,9 +105,6 @@ func (s *TaskEventService) Update(ctx context.Context, id int, req *TaskEventUpd
 	}
 	endpoint := fmt.Sprintf("/task_events/%d", id)
 	if err := s.client.put(ctx, endpoint, req.wire(), nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TaskEvent", ID: id}
-		}
 		return nil, err
 	}
 	return s.Get(ctx, id)
@@ -117,7 +114,7 @@ func (s *TaskEventService) Update(ctx context.Context, id int, req *TaskEventUpd
 func (s *TaskEventService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/task_events/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "TaskEvent", ID: id}
 		}
 		return err

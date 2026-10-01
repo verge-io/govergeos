@@ -35,7 +35,7 @@ func (s *VMExportService) Get(ctx context.Context, id int) (*VMExport, error) {
 	var row VMExport
 	endpoint := fmt.Sprintf("/volume_vm_exports/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &row); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VMExport", ID: id}
 		}
 		return nil, err
@@ -116,9 +116,6 @@ func (s *VMExportService) Update(ctx context.Context, id int, req *VMExportUpdat
 	}
 	endpoint := fmt.Sprintf("/volume_vm_exports/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VMExport", ID: id}
-		}
 		return nil, err
 	}
 	return s.Get(ctx, id)
@@ -131,7 +128,7 @@ func (s *VMExportService) Delete(ctx context.Context, id int) error {
 	}
 	endpoint := fmt.Sprintf("/volume_vm_exports/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VMExport", ID: id}
 		}
 		return err
@@ -316,7 +313,7 @@ func (s *VMExportService) exportAction(ctx context.Context, id int, action strin
 		body["params"] = params
 	}
 	if err := s.client.post(ctx, "/volume_vm_export_actions", body, nil); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VMExport", ID: id}
 		}
 		return err

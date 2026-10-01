@@ -60,7 +60,7 @@ func (s *CloudSnapshotService) Get(ctx context.Context, id int) (*CloudSnapshot,
 	var snapshot CloudSnapshot
 	endpoint := fmt.Sprintf("/cloud_snapshots/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &snapshot); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "CloudSnapshot", ID: id}
 		}
 		return nil, err
@@ -160,9 +160,6 @@ func (s *CloudSnapshotService) Update(ctx context.Context, id int, req *CloudSna
 
 	endpoint := fmt.Sprintf("/cloud_snapshots/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "CloudSnapshot", ID: id}
-		}
 		return nil, err
 	}
 
@@ -173,7 +170,7 @@ func (s *CloudSnapshotService) Update(ctx context.Context, id int, req *CloudSna
 func (s *CloudSnapshotService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/cloud_snapshots/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "CloudSnapshot", ID: id}
 		}
 		return err
@@ -293,7 +290,7 @@ func (s *CloudSnapshotVMService) Get(ctx context.Context, id int) (*CloudSnapsho
 	var vm CloudSnapshotVM
 	endpoint := fmt.Sprintf("/cloud_snapshot_vms/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &vm); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "CloudSnapshotVM", ID: id}
 		}
 		return nil, err
@@ -339,7 +336,7 @@ func (s *CloudSnapshotTenantService) Get(ctx context.Context, id int) (*CloudSna
 	var tenant CloudSnapshotTenant
 	endpoint := fmt.Sprintf("/cloud_snapshot_tenants/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &tenant); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "CloudSnapshotTenant", ID: id}
 		}
 		return nil, err

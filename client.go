@@ -1013,7 +1013,9 @@ func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values
 // apiStatusError maps a non-success HTTP status to an SDK error.
 // 401 is an authentication failure, 403 is a permission denial, and 409
 // is a conflict. Other statuses, including 404, are a plain APIError.
-// IsNotFoundError already checks the status code.
+// A read or delete of one row turns that 404 into NotFoundError.
+// A create or update leaves it as APIError: the 404 can name a missing
+// related row while the row being written still exists.
 func apiStatusError(status int, endpoint, message string) error {
 	switch status {
 	case http.StatusUnauthorized:

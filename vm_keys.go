@@ -22,7 +22,7 @@ func (c *Client) machineKeyForVM(ctx context.Context, vmID int) (int, error) {
 	var vm VM
 	endpoint := fmt.Sprintf("/vms/%d", vmID)
 	if err := c.get(ctx, endpoint, params, &vm); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return 0, &NotFoundError{Resource: "VM", ID: vmID}
 		}
 		return 0, err

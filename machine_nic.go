@@ -44,7 +44,7 @@ func (s *MachineNICService) Get(ctx context.Context, id int) (*MachineNIC, error
 	var nic MachineNIC
 	endpoint := fmt.Sprintf("/machine_nics/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &nic); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "MachineNIC", ID: id}
 		}
 		return nil, err

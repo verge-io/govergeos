@@ -130,9 +130,6 @@ func (s *VMImportService) Update(ctx context.Context, id string, req *VMImportUp
 	}
 	endpoint := "/vm_imports/" + url.PathEscape(id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VMImport", ID: id}
-		}
 		return nil, err
 	}
 	return s.Get(ctx, id)
@@ -145,7 +142,7 @@ func (s *VMImportService) Delete(ctx context.Context, id string) error {
 	}
 	endpoint := "/vm_imports/" + url.PathEscape(id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VMImport", ID: id}
 		}
 		return err
@@ -264,7 +261,7 @@ func (s *VMImportService) importAction(ctx context.Context, id, action string) e
 	}
 	endpoint := fmt.Sprintf("/vm_imports/%s?action=%s", url.PathEscape(id), url.QueryEscape(action))
 	if err := s.client.put(ctx, endpoint, struct{}{}, nil); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VMImport", ID: id}
 		}
 		return err
@@ -579,7 +576,7 @@ func (s *VMImportLogService) Get(ctx context.Context, id int) (*VMImportLog, err
 	var row VMImportLog
 	endpoint := fmt.Sprintf("/vm_import_logs/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &row); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VMImportLog", ID: id}
 		}
 		return nil, err

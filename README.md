@@ -516,6 +516,8 @@ if err != nil {
 }
 ```
 
+`IsNotFoundError` means that resource does not exist. A 404 from create or update is an `APIError` with the platform message, and `IsNotFoundError` is false: VergeOS also returns 404 when the request names a related row that is missing, while the row being written still exists. `Get` and `Delete` of a missing id are `NotFoundError`.
+
 ## Thread Safety
 
 The client is safe for concurrent use. Share a single client instance across multiple goroutines.

@@ -37,7 +37,7 @@ func (s *VNetIPSecService) Get(ctx context.Context, id int) (*VNetIPSec, error) 
 	var ipsec VNetIPSec
 	endpoint := fmt.Sprintf("/vnet_ipsecs/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &ipsec); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VNetIPSec", ID: id}
 		}
 		return nil, err
@@ -88,9 +88,6 @@ func (s *VNetIPSecService) Update(ctx context.Context, id int, req *VNetIPSecUpd
 
 	endpoint := fmt.Sprintf("/vnet_ipsecs/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetIPSec", ID: id}
-		}
 		return nil, err
 	}
 
@@ -101,7 +98,7 @@ func (s *VNetIPSecService) Update(ctx context.Context, id int, req *VNetIPSecUpd
 func (s *VNetIPSecService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_ipsecs/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VNetIPSec", ID: id}
 		}
 		return err
@@ -147,7 +144,7 @@ func (s *VNetIPSecPhase1Service) Get(ctx context.Context, id int) (*VNetIPSecPha
 	var phase1 VNetIPSecPhase1
 	endpoint := fmt.Sprintf("/vnet_ipsec_phase1s/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &phase1); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VNetIPSecPhase1", ID: id}
 		}
 		return nil, err
@@ -217,9 +214,6 @@ func (s *VNetIPSecPhase1Service) Update(ctx context.Context, id int, req *VNetIP
 
 	endpoint := fmt.Sprintf("/vnet_ipsec_phase1s/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetIPSecPhase1", ID: id}
-		}
 		return nil, err
 	}
 
@@ -230,7 +224,7 @@ func (s *VNetIPSecPhase1Service) Update(ctx context.Context, id int, req *VNetIP
 func (s *VNetIPSecPhase1Service) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_ipsec_phase1s/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VNetIPSecPhase1", ID: id}
 		}
 		return err
@@ -276,7 +270,7 @@ func (s *VNetIPSecPhase2Service) Get(ctx context.Context, id int) (*VNetIPSecPha
 	var phase2 VNetIPSecPhase2
 	endpoint := fmt.Sprintf("/vnet_ipsec_phase2s/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &phase2); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VNetIPSecPhase2", ID: id}
 		}
 		return nil, err
@@ -346,9 +340,6 @@ func (s *VNetIPSecPhase2Service) Update(ctx context.Context, id int, req *VNetIP
 
 	endpoint := fmt.Sprintf("/vnet_ipsec_phase2s/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetIPSecPhase2", ID: id}
-		}
 		return nil, err
 	}
 
@@ -359,7 +350,7 @@ func (s *VNetIPSecPhase2Service) Update(ctx context.Context, id int, req *VNetIP
 func (s *VNetIPSecPhase2Service) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_ipsec_phase2s/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VNetIPSecPhase2", ID: id}
 		}
 		return err
@@ -412,7 +403,7 @@ func (s *VNetIPSecConnectionService) Get(ctx context.Context, id int) (*VNetIPSe
 	var conn VNetIPSecConnection
 	endpoint := fmt.Sprintf("/vnet_ipsec_connections/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &conn); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VNetIPSecConnection", ID: id}
 		}
 		return nil, err

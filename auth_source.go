@@ -46,7 +46,7 @@ func (s *AuthSourceService) Get(ctx context.Context, id int) (*AuthSource, error
 	var source AuthSource
 	endpoint := fmt.Sprintf("/auth_sources/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &source); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "AuthSource", ID: id}
 		}
 		return nil, err
@@ -133,9 +133,6 @@ func (s *AuthSourceService) Update(ctx context.Context, id int, req *AuthSourceU
 
 	endpoint := fmt.Sprintf("/auth_sources/%d", id)
 	if err := s.client.put(ctx, endpoint, &body, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "AuthSource", ID: id}
-		}
 		return nil, err
 	}
 
@@ -147,7 +144,7 @@ func (s *AuthSourceService) Update(ctx context.Context, id int, req *AuthSourceU
 func (s *AuthSourceService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/auth_sources/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "AuthSource", ID: id}
 		}
 		return err
@@ -166,7 +163,7 @@ func (s *AuthSourceService) readSettings(ctx context.Context, id int) (map[strin
 	}
 	endpoint := fmt.Sprintf("/auth_sources/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &raw); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "AuthSource", ID: id}
 		}
 		return nil, err

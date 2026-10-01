@@ -101,7 +101,7 @@ func (s *VMDriveService) Get(ctx context.Context, driveID int) (*VMDrive, error)
 	var drive VMDrive
 	endpoint := fmt.Sprintf("/machine_drives/%d", driveID)
 	if err := s.client.get(ctx, endpoint, params, &drive); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VMDrive", ID: driveID}
 		}
 		return nil, err
@@ -255,9 +255,6 @@ func (s *VMDriveService) Update(ctx context.Context, driveID int, req *VMDriveUp
 
 	endpoint := fmt.Sprintf("/machine_drives/%d", driveID)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VMDrive", ID: driveID}
-		}
 		return nil, err
 	}
 
@@ -278,7 +275,7 @@ func (s *VMDriveService) Delete(ctx context.Context, driveID int) error {
 	// Get drive to check power state and get VM ID
 	drive, err := s.Get(ctx, driveID)
 	if err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VMDrive", ID: driveID}
 		}
 		return err
@@ -298,7 +295,7 @@ func (s *VMDriveService) Delete(ctx context.Context, driveID int) error {
 
 	endpoint := fmt.Sprintf("/machine_drives/%d", driveID)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VMDrive", ID: driveID}
 		}
 		return err

@@ -1159,8 +1159,9 @@ func TestRouting_UpdateNotFound(t *testing.T) {
 		},
 	}))
 	_, _, err := client.VNetBGPInterfaces.Update(context.Background(), 9, &VNetBGPInterfaceUpdateRequest{Name: strPtr("uplink")})
-	if !IsNotFoundError(err) {
-		t.Fatalf("expected NotFoundError, got %v", err)
+	apiErr, ok := err.(*APIError)
+	if IsNotFoundError(err) || !ok || apiErr.StatusCode != 404 {
+		t.Fatalf("expected API 404, not a missing resource, got %T: %v", err, err)
 	}
 }
 

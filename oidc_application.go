@@ -114,9 +114,6 @@ func (s *OIDCApplicationService) Update(ctx context.Context, id int, req *OIDCAp
 
 	endpoint := fmt.Sprintf("/oidc_applications/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "OIDCApplication", ID: id}
-		}
 		return nil, err
 	}
 
@@ -127,7 +124,7 @@ func (s *OIDCApplicationService) Update(ctx context.Context, id int, req *OIDCAp
 func (s *OIDCApplicationService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/oidc_applications/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "OIDCApplication", ID: id}
 		}
 		return err
@@ -145,7 +142,7 @@ func (s *OIDCApplicationService) get(ctx context.Context, id int, fields string)
 	var raw json.RawMessage
 	endpoint := fmt.Sprintf("/oidc_applications/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &raw); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, WriteOnlySecret{}, &NotFoundError{Resource: "OIDCApplication", ID: id}
 		}
 		return nil, WriteOnlySecret{}, err

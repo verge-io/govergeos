@@ -39,7 +39,7 @@ func (s *NASServiceService) Get(ctx context.Context, id int) (*NASService, error
 	var service NASService
 	endpoint := fmt.Sprintf("/vm_services/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &service); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NASService", ID: id}
 		}
 		return nil, err
@@ -117,9 +117,6 @@ func (s *NASServiceService) Update(ctx context.Context, id int, req *NASServiceU
 
 	endpoint := fmt.Sprintf("/vm_services/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "NASService", ID: id}
-		}
 		return nil, err
 	}
 
@@ -130,7 +127,7 @@ func (s *NASServiceService) Update(ctx context.Context, id int, req *NASServiceU
 func (s *NASServiceService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vm_services/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "NASService", ID: id}
 		}
 		return err
@@ -175,7 +172,7 @@ func (s *NASServiceUserService) Get(ctx context.Context, id string) (*NASService
 	var user NASServiceUser
 	endpoint := fmt.Sprintf("/vm_service_users/%s", id)
 	if err := s.client.get(ctx, endpoint, params, &user); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NASServiceUser", ID: id}
 		}
 		return nil, err
@@ -253,9 +250,6 @@ func (s *NASServiceUserService) Update(ctx context.Context, id string, req *NASS
 
 	endpoint := fmt.Sprintf("/vm_service_users/%s", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "NASServiceUser", ID: id}
-		}
 		return nil, err
 	}
 
@@ -266,7 +260,7 @@ func (s *NASServiceUserService) Update(ctx context.Context, id string, req *NASS
 func (s *NASServiceUserService) Delete(ctx context.Context, id string) error {
 	endpoint := fmt.Sprintf("/vm_service_users/%s", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "NASServiceUser", ID: id}
 		}
 		return err

@@ -286,8 +286,9 @@ func TestTaskScheduleService_Update_NotFound(t *testing.T) {
 	}))
 
 	_, err := client.TaskSchedules.Update(context.Background(), 9, &TaskScheduleUpdateRequest{Name: &name})
-	if !IsNotFoundError(err) {
-		t.Fatalf("got %v", err)
+	apiErr, ok := err.(*APIError)
+	if IsNotFoundError(err) || !ok || apiErr.StatusCode != 404 {
+		t.Fatalf("expected API 404, not a missing resource, got %T: %v", err, err)
 	}
 }
 

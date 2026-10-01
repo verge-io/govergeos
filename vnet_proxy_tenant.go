@@ -46,7 +46,7 @@ func (s *VNetProxyTenantService) Get(ctx context.Context, id int) (*VNetProxyTen
 	var mapping VNetProxyTenant
 	endpoint := fmt.Sprintf("/vnet_proxy_tenants/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &mapping); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VNetProxyTenant", ID: id}
 		}
 		return nil, err
@@ -150,9 +150,6 @@ func (s *VNetProxyTenantService) Update(ctx context.Context, id int, req *VNetPr
 
 	endpoint := fmt.Sprintf("/vnet_proxy_tenants/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetProxyTenant", ID: id}
-		}
 		return nil, err
 	}
 	return s.Get(ctx, id)
@@ -162,7 +159,7 @@ func (s *VNetProxyTenantService) Update(ctx context.Context, id int, req *VNetPr
 func (s *VNetProxyTenantService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_proxy_tenants/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VNetProxyTenant", ID: id}
 		}
 		return err

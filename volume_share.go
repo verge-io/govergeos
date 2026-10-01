@@ -43,7 +43,7 @@ func (s *VolumeCIFSShareService) Get(ctx context.Context, id string) (*VolumeCIF
 	var share VolumeCIFSShare
 	endpoint := fmt.Sprintf("/volume_cifs_shares/%s", id)
 	if err := s.client.get(ctx, endpoint, params, &share); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VolumeCIFSShare", ID: id}
 		}
 		return nil, err
@@ -119,9 +119,6 @@ func (s *VolumeCIFSShareService) Update(ctx context.Context, id string, req *Vol
 
 	endpoint := fmt.Sprintf("/volume_cifs_shares/%s", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VolumeCIFSShare", ID: id}
-		}
 		return nil, err
 	}
 
@@ -133,7 +130,7 @@ func (s *VolumeCIFSShareService) Update(ctx context.Context, id string, req *Vol
 func (s *VolumeCIFSShareService) Delete(ctx context.Context, id string) error {
 	endpoint := fmt.Sprintf("/volume_cifs_shares/%s", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VolumeCIFSShare", ID: id}
 		}
 		return err
@@ -178,7 +175,7 @@ func (s *VolumeNFSShareService) Get(ctx context.Context, id string) (*VolumeNFSS
 	var share VolumeNFSShare
 	endpoint := fmt.Sprintf("/volume_nfs_shares/%s", id)
 	if err := s.client.get(ctx, endpoint, params, &share); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VolumeNFSShare", ID: id}
 		}
 		return nil, err
@@ -254,9 +251,6 @@ func (s *VolumeNFSShareService) Update(ctx context.Context, id string, req *Volu
 
 	endpoint := fmt.Sprintf("/volume_nfs_shares/%s", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VolumeNFSShare", ID: id}
-		}
 		return nil, err
 	}
 
@@ -268,7 +262,7 @@ func (s *VolumeNFSShareService) Update(ctx context.Context, id string, req *Volu
 func (s *VolumeNFSShareService) Delete(ctx context.Context, id string) error {
 	endpoint := fmt.Sprintf("/volume_nfs_shares/%s", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VolumeNFSShare", ID: id}
 		}
 		return err

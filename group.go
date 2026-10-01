@@ -37,7 +37,7 @@ func (s *GroupService) Get(ctx context.Context, id int) (*Group, error) {
 	var group Group
 	endpoint := fmt.Sprintf("/groups/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &group); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Group", ID: id}
 		}
 		return nil, err
@@ -95,7 +95,7 @@ func (s *GroupService) Update(ctx context.Context, id int, req *GroupUpdateReque
 func (s *GroupService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/groups/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Group", ID: id}
 		}
 		return err

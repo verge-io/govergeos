@@ -47,7 +47,7 @@ func (s *VMDeviceService) Get(ctx context.Context, deviceID int) (*VMDevice, err
 	var device VMDevice
 	endpoint := fmt.Sprintf("/machine_devices/%d", deviceID)
 	if err := s.client.get(ctx, endpoint, params, &device); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VMDevice", ID: deviceID}
 		}
 		return nil, err
@@ -202,9 +202,6 @@ func (s *VMDeviceService) Update(ctx context.Context, deviceID int, req *VMDevic
 
 	endpoint := fmt.Sprintf("/machine_devices/%d", deviceID)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VMDevice", ID: deviceID}
-		}
 		return nil, err
 	}
 
@@ -274,7 +271,7 @@ func (s *VMDeviceService) updateSettings(ctx context.Context, device *VMDevice, 
 func (s *VMDeviceService) Delete(ctx context.Context, deviceID int) error {
 	endpoint := fmt.Sprintf("/machine_devices/%d", deviceID)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VMDevice", ID: deviceID}
 		}
 		return err

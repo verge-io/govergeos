@@ -52,7 +52,7 @@ func (s *NetworkService) Get(ctx context.Context, id int) (*Network, error) {
 	var network Network
 	endpoint := fmt.Sprintf("/vnets/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &network); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Network", ID: id}
 		}
 		return nil, err
@@ -126,9 +126,6 @@ func (s *NetworkService) Update(ctx context.Context, id int, req *NetworkUpdateR
 
 	endpoint := fmt.Sprintf("/vnets/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Network", ID: id}
-		}
 		return nil, err
 	}
 
@@ -140,7 +137,7 @@ func (s *NetworkService) Update(ctx context.Context, id int, req *NetworkUpdateR
 func (s *NetworkService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnets/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Network", ID: id}
 		}
 		return err
@@ -333,7 +330,7 @@ func (s *NetworkService) GetQuery(ctx context.Context, id string) (*NetworkQuery
 	var query NetworkQuery
 	endpoint := fmt.Sprintf("/vnet_queries/%s", id)
 	if err := s.client.get(ctx, endpoint, params, &query); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NetworkQuery", ID: id}
 		}
 		return nil, err

@@ -39,7 +39,7 @@ func (s *VNetBGPService) GetByNetwork(ctx context.Context, networkID int) (*VNet
 	name := fmt.Sprintf("vnet:%d", networkID)
 	row, err := oneRoutingRow("VNetBGP", name, rows, func(row VNetBGP) any { return row.Key })
 	if err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VNetBGP", ID: networkID}
 		}
 		return nil, err

@@ -37,7 +37,7 @@ func (s *SiteService) Get(ctx context.Context, id int) (*Site, error) {
 	var site Site
 	endpoint := fmt.Sprintf("/sites/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &site); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Site", ID: id}
 		}
 		return nil, err
@@ -113,9 +113,6 @@ func (s *SiteService) Update(ctx context.Context, id int, req *SiteUpdateRequest
 
 	endpoint := fmt.Sprintf("/sites/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Site", ID: id}
-		}
 		return nil, err
 	}
 
@@ -126,7 +123,7 @@ func (s *SiteService) Update(ctx context.Context, id int, req *SiteUpdateRequest
 func (s *SiteService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/sites/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Site", ID: id}
 		}
 		return err
@@ -236,7 +233,7 @@ func (s *SiteSyncIncomingService) Get(ctx context.Context, id int) (*SiteSyncInc
 	var sync SiteSyncIncoming
 	endpoint := fmt.Sprintf("/site_syncs_incoming/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &sync); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "SiteSyncIncoming", ID: id}
 		}
 		return nil, err
@@ -317,9 +314,6 @@ func (s *SiteSyncIncomingService) Update(ctx context.Context, id int, req *SiteS
 
 	endpoint := fmt.Sprintf("/site_syncs_incoming/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "SiteSyncIncoming", ID: id}
-		}
 		return nil, err
 	}
 
@@ -330,7 +324,7 @@ func (s *SiteSyncIncomingService) Update(ctx context.Context, id int, req *SiteS
 func (s *SiteSyncIncomingService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/site_syncs_incoming/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "SiteSyncIncoming", ID: id}
 		}
 		return err
@@ -401,7 +395,7 @@ func (s *SiteSyncOutgoingService) Get(ctx context.Context, id int) (*SiteSyncOut
 	var sync SiteSyncOutgoing
 	endpoint := fmt.Sprintf("/site_syncs_outgoing/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &sync); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "SiteSyncOutgoing", ID: id}
 		}
 		return nil, err
@@ -470,9 +464,6 @@ func (s *SiteSyncOutgoingService) Update(ctx context.Context, id int, req *SiteS
 
 	endpoint := fmt.Sprintf("/site_syncs_outgoing/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "SiteSyncOutgoing", ID: id}
-		}
 		return nil, err
 	}
 
@@ -483,7 +474,7 @@ func (s *SiteSyncOutgoingService) Update(ctx context.Context, id int, req *SiteS
 func (s *SiteSyncOutgoingService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/site_syncs_outgoing/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "SiteSyncOutgoing", ID: id}
 		}
 		return err
@@ -602,7 +593,7 @@ func (s *SiteSyncProfilePeriodService) Get(ctx context.Context, id int) (*SiteSy
 	var period SiteSyncProfilePeriod
 	endpoint := fmt.Sprintf("/site_syncs_outgoing_profile_periods/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &period); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: id}
 		}
 		return nil, err
@@ -647,9 +638,6 @@ func (s *SiteSyncProfilePeriodService) Update(ctx context.Context, id int, req *
 
 	endpoint := fmt.Sprintf("/site_syncs_outgoing_profile_periods/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: id}
-		}
 		return nil, err
 	}
 
@@ -660,7 +648,7 @@ func (s *SiteSyncProfilePeriodService) Update(ctx context.Context, id int, req *
 func (s *SiteSyncProfilePeriodService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/site_syncs_outgoing_profile_periods/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "SiteSyncProfilePeriod", ID: id}
 		}
 		return err

@@ -38,7 +38,7 @@ func (s *SnapshotProfileService) Get(ctx context.Context, id int) (*SnapshotProf
 	var profile SnapshotProfile
 	endpoint := fmt.Sprintf("/snapshot_profiles/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &profile); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "SnapshotProfile", ID: id}
 		}
 		return nil, err
@@ -105,9 +105,6 @@ func (s *SnapshotProfileService) Update(ctx context.Context, id int, req *Snapsh
 
 	endpoint := fmt.Sprintf("/snapshot_profiles/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "SnapshotProfile", ID: id}
-		}
 		return nil, err
 	}
 
@@ -119,7 +116,7 @@ func (s *SnapshotProfileService) Update(ctx context.Context, id int, req *Snapsh
 func (s *SnapshotProfileService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/snapshot_profiles/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "SnapshotProfile", ID: id}
 		}
 		return err
@@ -167,7 +164,7 @@ func (s *SnapshotProfilePeriodService) Get(ctx context.Context, id int) (*Snapsh
 	var period SnapshotProfilePeriod
 	endpoint := fmt.Sprintf("/snapshot_profile_periods/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &period); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "SnapshotProfilePeriod", ID: id}
 		}
 		return nil, err
@@ -240,9 +237,6 @@ func (s *SnapshotProfilePeriodService) Update(ctx context.Context, id int, req *
 
 	endpoint := fmt.Sprintf("/snapshot_profile_periods/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "SnapshotProfilePeriod", ID: id}
-		}
 		return nil, err
 	}
 
@@ -254,7 +248,7 @@ func (s *SnapshotProfilePeriodService) Update(ctx context.Context, id int, req *
 func (s *SnapshotProfilePeriodService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/snapshot_profile_periods/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "SnapshotProfilePeriod", ID: id}
 		}
 		return err

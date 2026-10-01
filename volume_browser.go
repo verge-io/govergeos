@@ -98,7 +98,7 @@ func (s *VolumeBrowserService) GetJob(ctx context.Context, id string) (*VolumeBr
 	var job VolumeBrowserJob
 	endpoint := fmt.Sprintf("/volume_browser/%s", id)
 	if err := s.client.get(ctx, endpoint, params, &job); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VolumeBrowserJob", ID: id}
 		}
 		return nil, err

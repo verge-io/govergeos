@@ -50,7 +50,7 @@ func (s *VMNICService) Get(ctx context.Context, nicID int) (*VMNIC, error) {
 	var nic VMNIC
 	endpoint := fmt.Sprintf("/machine_nics/%d", nicID)
 	if err := s.client.get(ctx, endpoint, params, &nic); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VMNIC", ID: nicID}
 		}
 		return nil, err
@@ -121,9 +121,6 @@ func (s *VMNICService) Update(ctx context.Context, nicID int, req *VMNICUpdateRe
 
 	endpoint := fmt.Sprintf("/machine_nics/%d", nicID)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VMNIC", ID: nicID}
-		}
 		return nil, err
 	}
 
@@ -137,7 +134,7 @@ func (s *VMNICService) Delete(ctx context.Context, nicID int) error {
 	// Get NIC to check power state and get VM ID
 	nic, err := s.Get(ctx, nicID)
 	if err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VMNIC", ID: nicID}
 		}
 		return err
@@ -157,7 +154,7 @@ func (s *VMNICService) Delete(ctx context.Context, nicID int) error {
 
 	endpoint := fmt.Sprintf("/machine_nics/%d", nicID)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VMNIC", ID: nicID}
 		}
 		return err

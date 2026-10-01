@@ -46,7 +46,7 @@ func (s *TaskScheduleTriggerService) Get(ctx context.Context, id int) (*TaskSche
 	var row TaskScheduleTrigger
 	endpoint := fmt.Sprintf("/task_schedule_triggers/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &row); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TaskScheduleTrigger", ID: id}
 		}
 		return nil, err
@@ -81,7 +81,7 @@ func (s *TaskScheduleTriggerService) Create(ctx context.Context, req *TaskSchedu
 func (s *TaskScheduleTriggerService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/task_schedule_triggers/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "TaskScheduleTrigger", ID: id}
 		}
 		return err

@@ -121,7 +121,7 @@ func (s *UpdateBranchService) Get(ctx context.Context, id int) (*UpdateBranch, e
 	var branch UpdateBranch
 	endpoint := fmt.Sprintf("/update_branches/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &branch); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "UpdateBranch", ID: id}
 		}
 		return nil, err
@@ -166,7 +166,7 @@ func (s *UpdateSourcePackageService) Get(ctx context.Context, id int) (*UpdateSo
 	var pkg UpdateSourcePackage
 	endpoint := fmt.Sprintf("/update_source_packages/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &pkg); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "UpdateSourcePackage", ID: id}
 		}
 		return nil, err

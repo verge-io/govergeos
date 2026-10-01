@@ -257,6 +257,10 @@ func TestFileService_Update_NotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for not found")
 	}
+	apiErr, ok := err.(*APIError)
+	if IsNotFoundError(err) || !ok || apiErr.StatusCode != 404 {
+		t.Fatalf("expected API 404, not a missing resource, got %T: %v", err, err)
+	}
 }
 
 func TestFileService_Delete(t *testing.T) {

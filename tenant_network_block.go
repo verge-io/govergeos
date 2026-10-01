@@ -47,7 +47,7 @@ func (s *TenantNetworkBlockService) Get(ctx context.Context, id int) (*TenantNet
 	var block TenantNetworkBlock
 	endpoint := fmt.Sprintf("/vnet_cidrs/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &block); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TenantNetworkBlock", ID: id}
 		}
 		return nil, err
@@ -148,7 +148,7 @@ func (s *TenantNetworkBlockService) Delete(ctx context.Context, id int, opts ...
 
 	endpoint := fmt.Sprintf("/vnet_cidrs/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TenantNetworkBlock", ID: id}
 		}
 		return nil, err

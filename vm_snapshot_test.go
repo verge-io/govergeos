@@ -304,8 +304,9 @@ func TestVMSnapshotService_Update_NotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for not found")
 	}
-	if !IsNotFoundError(err) {
-		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	apiErr, ok := err.(*APIError)
+	if IsNotFoundError(err) || !ok || apiErr.StatusCode != 404 {
+		t.Errorf("expected API 404, not a missing resource, got %T: %v", err, err)
 	}
 }
 

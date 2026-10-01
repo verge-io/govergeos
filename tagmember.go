@@ -50,7 +50,7 @@ func (s *TagMemberService) Get(ctx context.Context, id int) (*TagMember, error) 
 	var member TagMember
 	endpoint := fmt.Sprintf("/tag_members/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &member); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TagMember", ID: id}
 		}
 		return nil, err
@@ -100,9 +100,6 @@ func (s *TagMemberService) Update(ctx context.Context, id int, req *TagMemberUpd
 
 	endpoint := fmt.Sprintf("/tag_members/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TagMember", ID: id}
-		}
 		return nil, err
 	}
 
@@ -114,7 +111,7 @@ func (s *TagMemberService) Update(ctx context.Context, id int, req *TagMemberUpd
 func (s *TagMemberService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tag_members/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "TagMember", ID: id}
 		}
 		return err

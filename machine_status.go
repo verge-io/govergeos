@@ -54,7 +54,7 @@ func (s *MachineStatusService) GetByKey(ctx context.Context, key int) (*MachineS
 	var status MachineStatus
 	endpoint := fmt.Sprintf("/machine_status/%d", key)
 	if err := s.client.get(ctx, endpoint, params, &status); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "MachineStatus", ID: key}
 		}
 		return nil, err

@@ -48,7 +48,7 @@ func (s *TaskScheduleService) Get(ctx context.Context, id int) (*TaskSchedule, e
 	var row TaskSchedule
 	endpoint := fmt.Sprintf("/task_schedules/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &row); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TaskSchedule", ID: id}
 		}
 		return nil, err
@@ -123,9 +123,6 @@ func (s *TaskScheduleService) Update(ctx context.Context, id int, req *TaskSched
 
 	endpoint := fmt.Sprintf("/task_schedules/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TaskSchedule", ID: id}
-		}
 		return nil, err
 	}
 	return s.Get(ctx, id)
@@ -138,7 +135,7 @@ func (s *TaskScheduleService) Update(ctx context.Context, id int, req *TaskSched
 func (s *TaskScheduleService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/task_schedules/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "TaskSchedule", ID: id}
 		}
 		return err
@@ -173,7 +170,7 @@ func (s *TaskScheduleService) GetSchedule(ctx context.Context, id int, query *Ta
 	endpoint := fmt.Sprintf("/task_schedules/%d?action=get_schedule", id)
 	raw, err := s.client.putRaw(ctx, endpoint, body)
 	if err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TaskSchedule", ID: id}
 		}
 		return nil, err
@@ -381,7 +378,7 @@ func putAction(ctx context.Context, client *Client, resource string, id int, end
 	}
 	raw, err := client.putRaw(ctx, endpoint, body)
 	if err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: resource, ID: id}
 		}
 		return nil, err
