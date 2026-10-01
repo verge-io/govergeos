@@ -16,8 +16,10 @@ import (
 //
 // Run with:
 //
-//	VERGEOS_HOST=https://your-host VERGEOS_USERNAME=user VERGEOS_PASSWORD=pass \
+//	VERGEOS_HOST=your-host VERGEOS_USERNAME=user VERGEOS_PASSWORD=pass \
 //	  go test -tags=integration -v ./test/integration/ -run TestVersion
+//
+// VERGEOS_HOST may omit the scheme. WithEnvConfig treats that as https://.
 func TestVersionEnforcement(t *testing.T) {
 	t.Run("NewClient_SucceedsOnV26Server", func(t *testing.T) {
 		host := os.Getenv("VERGEOS_HOST")
@@ -28,10 +30,13 @@ func TestVersionEnforcement(t *testing.T) {
 			t.Skip("Skipping integration test: VERGEOS_HOST, VERGEOS_USERNAME, and VERGEOS_PASSWORD must be set")
 		}
 
-		// NewClient should succeed because the server is running v26 or later
+		// NewClient should succeed because the server is running v26 or later.
+		// Credentials are applied first so WithEnvConfig fills in the host
+		// (including a bare host) without replacing this username and password
+		// when VERGEOS_API_KEY is also set.
 		client, err := vergeos.NewClient(
-			vergeos.WithBaseURL(host),
 			vergeos.WithCredentials(username, password),
+			vergeos.WithEnvConfig(),
 			vergeos.WithInsecureTLS(true),
 			vergeos.WithTimeout(30*time.Second),
 		)
