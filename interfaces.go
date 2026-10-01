@@ -86,7 +86,8 @@ type VMDeviceServiceInterface interface {
 }
 
 // VMImportServiceInterface defines VM import jobs.
-// Create accepts a media-catalog file or a URL (OVA or disk image).
+// Create accepts an OVA or OVF from a media-catalog file, a URL, a NAS path, or a shared object.
+// A bare disk image belongs on VMDrives with Media set to import.
 // Wait returns as soon as the import row reports a failure.
 // DeleteByName removes every finished row with that name.
 type VMImportServiceInterface interface {

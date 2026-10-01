@@ -148,7 +148,8 @@ func (s *VMDriveService) GetByName(ctx context.Context, vmID int, name string) (
 
 // Create creates a new drive and returns the created drive.
 // vmID is the VM $key (VM.Key). It is resolved to the machine key stored on the drive.
-// For import media, this method waits for the import to complete.
+// Media "import" attaches a media-catalog disk image (qcow2, vmdk, vhd, raw, img).
+// VMImports rejects those file types. For import media, this method waits for the import to complete.
 func (s *VMDriveService) Create(ctx context.Context, vmID int, req *VMDriveCreateRequest) (*VMDrive, error) {
 	if req == nil {
 		return nil, &ValidationError{Message: "create request is required"}

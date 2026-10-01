@@ -79,7 +79,9 @@ consoleURL, err := client.VMs.GetConsoleURL(ctx, vmID)
 
 ## VM Import and Export
 
-Import an OVA or a disk image (qcow2, vmdk, vhd, raw) from a file already in the media catalog, or from an http(s) URL. The URL is downloaded into the catalog and then imported. `Wait` returns as soon as the import reports an error, an abort, or a failed drive. It does not sit through the rest of the timeout.
+Import an OVA or OVF from a file already in the media catalog, from an http(s) URL, from a NAS volume path, or from a shared object. The URL is downloaded into the catalog and then imported. `Wait` returns as soon as the import reports an error, an abort, or a failed drive. It does not sit through the rest of the timeout.
+
+`vm_imports` accepts an OVA or OVF. VergeOS 26.1 rejects a bare disk image (qcow2, vmdk, vhd, raw, img) with status `error` and `Unknown Import file type`. The import row has no field that selects a disk-image mode. Attach that file to an existing VM with `VMDrives.Create` and `Media` set to `import`.
 
 VergeOS keeps every import row and does not require those names to be unique. `Create` does not post again when a VM with that name already exists (`AlreadyExisted`). `GetByName` returns `AmbiguousNameError` when two rows share a name. `DeleteByName` removes every finished row with the name, and leaves them all in place when one of several rows is still importing.
 
@@ -95,8 +97,8 @@ if !imp.AlreadyExisted {
 logs, err := client.VMImports.Logs(ctx, imp.Key)
 
 imp, err = client.VMImports.Create(ctx, &vergeos.VMImportCreateRequest{
-    Name: "cloud-image",
-    URL:  "https://example.com/images/disk.qcow2",
+    Name: "from-ova",
+    URL:  "https://example.com/images/guest.ova",
 })
 
 err = client.VMImports.DeleteByName(ctx, "imported-vm")
@@ -187,6 +189,16 @@ drive, err := client.VMDrives.Create(ctx, vmID, &vergeos.VMDriveCreateRequest{
     Interface: "virtio",
     Media:     "disk",
     SizeGB:    50,
+})
+
+// Attach a media-catalog disk image (qcow2, vmdk, vhd, raw, img).
+// Create waits until the drive leaves status "importing".
+// VMImports rejects these file types.
+fileID := 41
+drive, err = client.VMDrives.Create(ctx, vmID, &vergeos.VMDriveCreateRequest{
+    Name:  "imported-disk",
+    Media: "import",
+    File:  fileID,
 })
 
 // Update a drive (resize)

@@ -21,6 +21,7 @@ type VMDrive struct {
 	//   - usb, pflash, direct, tpm_state
 	Interface string `json:"interface,omitempty"`
 	// Media is the media type (disk, cdrom, efidisk, import, 9p, dir, clone, nonpersistent, etc.).
+	// "import" copies a media-catalog disk image onto this drive.
 	Media string `json:"media,omitempty"`
 	// File is the file ID (for cdrom/import).
 	File FlexInt `json:"media_source,omitempty"`
@@ -72,8 +73,9 @@ type VMDriveCreateRequest struct {
 	// Interface is the disk interface. Valid values: virtio-scsi (default), virtio, ide, ahci, nvme, usb, etc.
 	Interface string `json:"interface,omitempty"`
 	// Media is the media type (disk, cdrom, efidisk, import, etc.).
+	// "import" copies a media-catalog disk image (qcow2, vmdk, vhd, raw, img) onto this drive.
 	Media string `json:"media,omitempty"`
-	// File is the file ID (for cdrom/import).
+	// File is the media-catalog file ID (for cdrom/import).
 	File int `json:"media_source,omitempty"`
 	// SizeGB is the disk size in GB.
 	SizeGB int64 `json:"-"`
