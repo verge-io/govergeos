@@ -49,5 +49,6 @@ Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
 
 ### Fixed
 
+- `CloudInitFiles.GetContents` reads the file body from `GET /cloudinit_files/{id}?download=1`. VergeOS omits `contents` from list and get responses, including `fields=all`, so `Contents` stayed empty on every read, including the file returned by `Create` and `CreateForVM`. Assign the string to `Contents` when the file object should carry the body. This is the request pyVergeOS `get_content()` uses.
 - Documentation and comments described a bare disk image (qcow2, vmdk, vhd, raw, img) as a `VMImports` source, the same call as an OVA. VergeOS 26.1 rejects those types on `vm_imports` with `Unknown Import file type`. The catalog disk-image path is `VMDrives.Create` with `Media` set to `import`.
 - `NetworkService.GetLatestStatistics` requests a single row (`sort=-timestamp`, `limit=1`) from `/vnet_monitor_stats_history_short`. It previously called `GetStatistics`, which downloads up to 100 history rows and returns only the first. `GetStatistics` is unchanged.

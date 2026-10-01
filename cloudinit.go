@@ -2,7 +2,10 @@ package vergeos
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 )
 
@@ -44,6 +47,7 @@ func (s *CloudInitService) ListByVM(ctx context.Context, vmID int, opts ...ListO
 }
 
 // Get returns a single cloud-init file by ID.
+// The response does not include the file body. GetContents reads it.
 func (s *CloudInitService) Get(ctx context.Context, id int) (*CloudInitFile, error) {
 	params := url.Values{}
 	params.Set("fields", cloudInitListFields)
@@ -58,6 +62,42 @@ func (s *CloudInitService) Get(ctx context.Context, id int) (*CloudInitFile, err
 	}
 
 	return &file, nil
+}
+
+// GetContents reads the cloud-init file body.
+//
+// VergeOS returns the body only from GET /cloudinit_files/{id}?download=1.
+// List, Get, and the file returned by Create leave Contents empty, including
+// a request for fields=all. Assign the result to Contents when the file
+// object should carry the body. pyVergeOS get_content() uses this request.
+func (s *CloudInitService) GetContents(ctx context.Context, id int) (string, error) {
+	endpoint := fmt.Sprintf("/cloudinit_files/%d", id)
+	params := url.Values{}
+	params.Set("download", "1")
+
+	resp, err := s.client.request(ctx, http.MethodGet, endpoint, nil, params)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+	if err != nil {
+		return "", fmt.Errorf("vergeos: failed to read response body: %w", err)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		errMsg := string(body)
+		var apiResp apiResponse
+		if json.Unmarshal(body, &apiResp) == nil && apiResp.Err != "" {
+			errMsg = apiResp.Err
+		}
+		if resp.StatusCode == http.StatusNotFound {
+			return "", &NotFoundError{Resource: "CloudInitFile", ID: id}
+		}
+		return "", apiStatusError(resp.StatusCode, endpoint, errMsg)
+	}
+
+	return string(body), nil
 }
 
 // GetByName returns a cloud-init file by name.
@@ -81,6 +121,7 @@ func (s *CloudInitService) GetByName(ctx context.Context, name string) (*CloudIn
 }
 
 // Create creates a new cloud-init file and returns the created file.
+// The returned file's Contents is empty. GetContents reads the stored body.
 func (s *CloudInitService) Create(ctx context.Context, req *CloudInitFileCreateRequest) (*CloudInitFile, error) {
 	if req == nil {
 		return nil, &ValidationError{Message: "create request is required"}

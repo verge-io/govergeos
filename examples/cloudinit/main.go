@@ -152,15 +152,20 @@ final_message: "System ready after $UPTIME seconds"
 	fmt.Printf("Name: %s\n", cloudInitFile.Name)
 	fmt.Printf("Owner: %s\n", cloudInitFile.Owner)
 	fmt.Printf("Size: %d bytes\n", cloudInitFile.FileSize)
+	// Get leaves Contents empty. The body is GET ?download=1.
+	contents, err := client.CloudInitFiles.GetContents(ctx, cloudInitFile.Key.Int())
+	if err != nil {
+		return fmt.Errorf("read cloud-init file: %w", err)
+	}
 	fmt.Printf("Contents Preview:\n")
 	// Show first few lines of contents
 	lines := 0
-	for i, c := range cloudInitFile.Contents {
+	for i, c := range contents {
 		fmt.Print(string(c))
 		if c == '\n' {
 			lines++
 			if lines >= 5 {
-				fmt.Printf("  ... (%d more bytes)\n", len(cloudInitFile.Contents)-i-1)
+				fmt.Printf("  ... (%d more bytes)\n", len(contents)-i-1)
 				break
 			}
 		}

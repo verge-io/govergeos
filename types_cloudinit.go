@@ -19,7 +19,10 @@ type CloudInitFile struct {
 	UsedBytes int64 `json:"used_bytes,omitempty"`
 	// Modified is the last modified timestamp.
 	Modified int64 `json:"modified,omitempty"`
-	// Contents is the file contents (max 65536 bytes).
+	// Contents is the file body (max 65536 bytes on write).
+	// List, Get, and the file returned by Create leave this empty.
+	// VergeOS omits the body from those responses, including fields=all.
+	// GetContents reads it from GET /cloudinit_files/{id}?download=1.
 	Contents string `json:"contents,omitempty"`
 	// ContainsVariables indicates whether the file contains variables.
 	// This is automatically set based on the Render field.
