@@ -577,9 +577,15 @@ type startupRequest struct {
 // version document, then one authenticated clusters read.
 func newStartupServer(t *testing.T, version string, clusterStatus int, clusterBody string) (*httptest.Server, *[]startupRequest) {
 	t.Helper()
+	return newStartupServerTLS(t, false, version, clusterStatus, clusterBody)
+}
+
+// newStartupServerTLS is newStartupServer over HTTP or HTTPS.
+func newStartupServerTLS(t *testing.T, useTLS bool, version string, clusterStatus int, clusterBody string) (*httptest.Server, *[]startupRequest) {
+	t.Helper()
 
 	seen := &[]startupRequest{}
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, hasBasicAuth := r.BasicAuth()
 		*seen = append(*seen, startupRequest{
 			path:          r.URL.Path,
@@ -601,7 +607,13 @@ func newStartupServer(t *testing.T, version string, clusterStatus int, clusterBo
 		default:
 			http.NotFound(w, r)
 		}
-	}))
+	})
+	var server *httptest.Server
+	if useTLS {
+		server = httptest.NewTLSServer(handler)
+	} else {
+		server = httptest.NewServer(handler)
+	}
 	t.Cleanup(server.Close)
 	return server, seen
 }
@@ -778,6 +790,50 @@ func TestNewClientEnvAPIKeyWinsOverPassword(t *testing.T) {
 	}
 	if checks[0].hasBasicAuth {
 		t.Fatal("basic auth was sent alongside the API key")
+	}
+}
+
+// TestNewClientBareHostKeepsExplicitCredentials matches the option order
+// used by the version-enforcement integration test: credentials first, then
+// WithEnvConfig, so a bare VERGEOS_HOST becomes https and an API key in the
+// environment does not replace the username and password.
+func TestNewClientBareHostKeepsExplicitCredentials(t *testing.T) {
+	clearEnvVars()
+	defer clearEnvVars()
+
+	server, seen := newStartupServerTLS(t, true, "26.1.8", http.StatusOK, `[]`)
+	bareHost := strings.TrimPrefix(server.URL, "https://")
+	if strings.Contains(bareHost, "://") {
+		t.Fatalf("test host %q still has a scheme", bareHost)
+	}
+	_ = os.Setenv("VERGEOS_HOST", bareHost)
+	_ = os.Setenv("VERGEOS_API_KEY", "env-key-must-not-win")
+
+	client, err := NewClient(
+		WithCredentials("admin", "correct-password"),
+		WithEnvConfig(),
+		WithInsecureTLS(true),
+		WithTimeout(30*time.Second),
+	)
+	if err != nil {
+		t.Fatalf("NewClient returned error: %v", err)
+	}
+	if client.baseURL != "https://"+bareHost {
+		t.Fatalf("baseURL = %q, want %q", client.baseURL, "https://"+bareHost)
+	}
+	if client.serverVersion != "26.1.8" {
+		t.Fatalf("serverVersion = %q, want 26.1.8", client.serverVersion)
+	}
+
+	checks := credentialChecks(*seen)
+	if len(checks) != 1 {
+		t.Fatalf("credential checks = %d, want exactly one", len(checks))
+	}
+	if !checks[0].hasBasicAuth || checks[0].username != "admin" || checks[0].password != "correct-password" {
+		t.Fatalf("credential check = %#v, want the explicit username and password", checks[0])
+	}
+	if strings.HasPrefix(checks[0].authorization, "Bearer ") {
+		t.Fatalf("Authorization = %q, want basic auth from the explicit credentials", checks[0].authorization)
 	}
 }
 
