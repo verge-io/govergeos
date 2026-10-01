@@ -51,7 +51,7 @@ type VMImport struct {
 	File *FlexInt `json:"file,omitempty"`
 	// Volume is the NAS volume key when the source is a volume.
 	Volume string `json:"volume,omitempty"`
-	// VolumePath is the path of the image inside Volume.
+	// VolumePath is the OVA or OVF path inside Volume.
 	VolumePath string `json:"volume_path,omitempty"`
 	// SharedObject is the shared-object key for a tenant import.
 	SharedObject *FlexInt `json:"shared_object,omitempty"`
@@ -173,9 +173,11 @@ func (v *VMImport) UnmarshalJSON(data []byte) error {
 // VMImportCreateRequest creates a vm_imports row from one source.
 //
 // Set File, URL, Volume, or SharedObject. File is a media-catalog file $key
-// (an OVA, OVF, or a disk image such as qcow2, vmdk, vhd, or raw). URL is
-// downloaded into the media catalog and then imported. Volume is a NAS
-// volume key, with VolumePath naming the image on that volume.
+// for an OVA or OVF. VergeOS rejects a bare disk image on vm_imports
+// (qcow2, vmdk, vhd, raw, img) with "Unknown Import file type". Attach
+// that file with VMDrives.Create and Media set to import. URL is downloaded
+// into the media catalog and then imported. Volume is a NAS volume key, with
+// VolumePath naming the OVA or OVF on that volume.
 //
 // Importing defaults to true, so the platform starts the import as part of
 // the create. Set it to false to create the row and call Start later.
@@ -186,16 +188,16 @@ func (v *VMImport) UnmarshalJSON(data []byte) error {
 type VMImportCreateRequest struct {
 	// Name is the VM name (required).
 	Name string
-	// File is an existing media-catalog file $key.
+	// File is an existing media-catalog file $key (OVA or OVF).
 	File *int
-	// URL is an http or https address of an OVA or disk image.
+	// URL is an http or https address of an OVA or OVF.
 	// Create downloads it into the media catalog, then imports that file.
 	URL string
 	// FileName is the catalog name used for URL. The default is the URL's file name.
 	FileName string
 	// Volume is a NAS volume key.
 	Volume string
-	// VolumePath is the image path on Volume.
+	// VolumePath is the OVA or OVF path on Volume.
 	VolumePath string
 	// SharedObject is a shared-object key.
 	SharedObject *int

@@ -218,13 +218,13 @@ devClient, _ := vergeos.NewClient(
 |---------|-------------|
 | `VMs` | VM CRUD, power control, clone, snapshot, migrate, console |
 | `VMSnapshots` | VM snapshot CRUD, restore, expiration management |
-| `VMDrives` | VM disk management (attach, resize, detach) |
+| `VMDrives` | VM disk management (attach, resize, detach), including a catalog disk image with media `import` |
 | `VMNICs` | VM network interface management |
 | `VMDevices` | VM device management (USB, TPM, vGPU) |
 | `Catalogs` | Recipe catalogs (read) |
 | `VMRecipes` | VM recipes and their questions (read) |
 | `VMRecipeInstances` | Deploy a VM from a recipe, or preview that deploy |
-| `VMImports` | Import an OVA or disk image from a file or URL, with status, logs, and delete |
+| `VMImports` | Import an OVA or OVF from a file or URL, with status, logs, and delete |
 | `VMImportLogs` | Log lines for VM imports |
 | `VMExports` | Export a VM to a NAS volume |
 

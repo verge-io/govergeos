@@ -66,8 +66,10 @@ func (s *VMImportService) GetByName(ctx context.Context, name string) (*VMImport
 
 // Create imports a VM from a media-catalog file, a URL, a NAS volume path, or a shared object.
 //
-// A URL is stored as a media-catalog file first. OVA, OVF, and disk images
-// (qcow2, vmdk, vhd, raw) use the same call. Importing defaults to true.
+// A URL is stored as a media-catalog file first. The source file is an OVA or
+// OVF. VergeOS rejects a bare disk image (qcow2, vmdk, vhd, raw, img) on
+// vm_imports with status error and "Unknown Import file type". Attach that
+// file with VMDrives.Create and Media set to import. Importing defaults to true.
 //
 // When a non-snapshot VM with the requested name already exists, Create
 // returns that import instead of posting another one. AlreadyExisted is set.
