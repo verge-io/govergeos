@@ -77,8 +77,7 @@ func main() {
 	}
 
 	for _, group := range groups {
-		fmt.Printf("- %s (ID: %d, Type: %s)\n",
-			group.Name, group.Key, group.Type)
+		fmt.Printf("- %s (ID: %d)\n", group.Name, group.Key)
 	}
 
 	// Show group memberships

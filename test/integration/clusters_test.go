@@ -183,7 +183,7 @@ func TestNetworkDiagnosticsStatistics(t *testing.T) {
 	// Find a running external/internal network for diagnostics
 	var runningNetwork *vergeos.Network
 	for _, net := range networks {
-		if net.PowerState && (net.Type == "external" || net.Type == "internal") {
+		if net.Running && (net.Type == "external" || net.Type == "internal") {
 			runningNetwork = &net
 			if net.Type == "external" {
 				break // Prefer external

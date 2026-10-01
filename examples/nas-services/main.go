@@ -55,8 +55,7 @@ func main() {
 	fmt.Printf("Found %d NAS service(s)\n", len(services))
 	for _, svc := range services {
 		fmt.Printf("  - %s (ID: %d, VM: %d)\n", svc.Name, svc.Key, svc.VM)
-		fmt.Printf("    Enabled: %v, Max Imports: %d, Max Syncs: %d\n",
-			svc.Enabled, svc.MaxImports, svc.MaxSyncs)
+		fmt.Printf("    Max Imports: %d, Max Syncs: %d\n", svc.MaxImports, svc.MaxSyncs)
 	}
 
 	if len(services) == 0 {

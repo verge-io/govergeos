@@ -148,7 +148,7 @@ func (s *NetworkService) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-// PowerOn powers on a network and waits for it to start.
+// PowerOn powers on a network and waits until Running is true.
 func (s *NetworkService) PowerOn(ctx context.Context, id int) error {
 	// Get current state
 	network, err := s.Get(ctx, id)
@@ -175,7 +175,7 @@ func (s *NetworkService) PowerOn(ctx context.Context, id int) error {
 	return s.waitForPowerState(ctx, id, true)
 }
 
-// PowerOff powers off a network and waits for it to stop.
+// PowerOff powers off a network and waits until Running is false.
 func (s *NetworkService) PowerOff(ctx context.Context, id int) error {
 	// Get current state
 	network, err := s.Get(ctx, id)
@@ -203,7 +203,7 @@ func (s *NetworkService) PowerOff(ctx context.Context, id int) error {
 	return s.waitForPowerState(ctx, id, false)
 }
 
-// waitForPowerState waits for a network to reach the desired power state.
+// waitForPowerState waits until Running matches desiredState.
 func (s *NetworkService) waitForPowerState(ctx context.Context, id int, desiredState bool) error {
 	stateDesc := "stopped"
 	if desiredState {
