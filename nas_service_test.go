@@ -34,7 +34,7 @@ func TestNASServiceService_List(t *testing.T) {
 func TestNASServiceService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vm_services/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, NASService{Key: 1, Name: "nas1", VM: 100, Enabled: true})
+			jsonResponse(w, 200, NASService{Key: 1, Name: "nas1", VM: 100, MaxImports: 4})
 		},
 	}))
 
@@ -45,8 +45,8 @@ func TestNASServiceService_Get(t *testing.T) {
 	if svc.Name != "nas1" {
 		t.Errorf("expected name 'nas1', got %q", svc.Name)
 	}
-	if !svc.Enabled {
-		t.Error("expected enabled to be true")
+	if svc.VM != 100 || svc.MaxImports != 4 {
+		t.Errorf("expected vm 100 max_imports 4, got %d/%d", svc.VM, svc.MaxImports)
 	}
 }
 

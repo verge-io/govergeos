@@ -23,9 +23,8 @@ type UserAPIKey struct {
 	LastLoginIP string `json:"lastlogin_ip,omitempty"`
 	// Created is the creation timestamp (Unix epoch).
 	Created int64 `json:"created,omitempty"`
-	// ExpiresType is the expiration type: never, date.
-	ExpiresType string `json:"expires_type,omitempty"`
-	// Expires is the expiration timestamp (Unix epoch). 0 means never expires.
+	// Expires is the expiration timestamp (Unix epoch). 0 means the key does not expire.
+	// expires_type is not returned. Create and update still send it.
 	Expires int64 `json:"expires,omitempty"`
 }
 
@@ -81,7 +80,7 @@ const (
 )
 
 // userAPIKeyListFields are the fields to request when listing API keys.
-const userAPIKeyListFields = "$key,user,user#name as user_name,name,description,lastlogin_stamp,lastlogin_ip,created,expires,ip_allow_list,ip_deny_list,expires_type"
+const userAPIKeyListFields = "$key,user,user#name as user_name,name,description,lastlogin_stamp,lastlogin_ip,created,expires,ip_allow_list,ip_deny_list"
 
 // userAPIKeyGetFields are the fields to request when getting a single API key.
 const userAPIKeyGetFields = userAPIKeyListFields

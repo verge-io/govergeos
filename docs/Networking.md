@@ -11,6 +11,8 @@ Manage virtual networks, firewall rules, DNS, IP addressing, and dynamic routing
 
 ## Networks
 
+The live state of a network is `Running` (`machine#status#running`). VergeOS does not return a `powerstate` column on `vnets`. `PowerOn` and `PowerOff` wait on `Running`.
+
 ```go
 // List all networks
 networks, err := client.Networks.List(ctx)

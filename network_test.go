@@ -71,14 +71,20 @@ func TestNetworkService_List_Empty(t *testing.T) {
 func TestNetworkService_List_MachineStatus(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vnets": func(w http.ResponseWriter, r *http.Request) {
+			fields := r.URL.Query().Get("fields")
 			for _, f := range []string{"machine", "nic", "nic_dmz", "machine#status#running as running", "machine#status#status as status"} {
-				if !strings.Contains(r.URL.Query().Get("fields"), f) {
+				if !strings.Contains(fields, f) {
 					t.Errorf("expected fields to contain %q", f)
+				}
+			}
+			for _, f := range []string{"powerstate", "bgp_asn"} {
+				if strings.Contains(fields, f) {
+					t.Errorf("fields must not request %q", f)
 				}
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(200)
-			w.Write([]byte(`[{"$key":1,"name":"internal","powerstate":false,"machine":42,"nic":7,"nic_dmz":8,"running":true,"status":"running"}]`))
+			w.Write([]byte(`[{"$key":1,"name":"internal","machine":42,"nic":7,"nic_dmz":8,"running":true,"status":"running"}]`))
 		},
 	}))
 

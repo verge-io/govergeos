@@ -9,12 +9,6 @@ type NASService struct {
 	VM FlexInt `json:"vm,omitempty"`
 	// Name is the service name (derived from VM name).
 	Name string `json:"name,omitempty"`
-	// Enabled indicates whether the service is enabled.
-	Enabled bool `json:"enabled"`
-	// Created is the creation timestamp (Unix epoch).
-	Created int64 `json:"created,omitempty"`
-	// Modified is the last modified timestamp (Unix epoch).
-	Modified int64 `json:"modified,omitempty"`
 
 	// Service configuration
 	// MaxImports is the maximum number of concurrent imports (1-200, default 4).
@@ -64,7 +58,7 @@ type NASServiceUpdateRequest struct {
 }
 
 // nasServiceListFields are the fields to request when listing NAS services.
-const nasServiceListFields = "$key,vm,name,enabled,created,modified,max_imports,max_syncs,disable_swap,read_ahead_kb_default,cifs,nfs,antivirus"
+const nasServiceListFields = "$key,vm,name,max_imports,max_syncs,disable_swap,read_ahead_kb_default,cifs,nfs,antivirus"
 
 // nasServiceGetFields are the fields to request when getting a single NAS service.
 const nasServiceGetFields = nasServiceListFields

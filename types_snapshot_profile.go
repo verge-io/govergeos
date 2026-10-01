@@ -63,8 +63,6 @@ type SnapshotProfilePeriod struct {
 	Month int `json:"month,omitempty"`
 	// Retention is how long to keep snapshots in seconds (required).
 	Retention int `json:"retention,omitempty"`
-	// SkipMissed skips taking a snapshot if the schedule was missed.
-	SkipMissed bool `json:"skip_missed,omitempty"`
 	// MaxTier is the maximum storage tier for storing snapshots (1-5, default "1").
 	// Tiers higher than max will be demoted to this tier.
 	MaxTier string `json:"max_tier,omitempty"`
@@ -101,8 +99,6 @@ type SnapshotProfilePeriodCreateRequest struct {
 	Month *int `json:"month,omitempty"`
 	// Retention is how long to keep snapshots in seconds (required).
 	Retention int `json:"retention"`
-	// SkipMissed skips taking a snapshot if the schedule was missed.
-	SkipMissed *bool `json:"skip_missed,omitempty"`
 	// MaxTier is the maximum storage tier (1-5).
 	MaxTier *string `json:"max_tier,omitempty"`
 	// Quiesce temporarily freezes disk activity while taking the snapshot.
@@ -131,8 +127,6 @@ type SnapshotProfilePeriodUpdateRequest struct {
 	Month *int `json:"month,omitempty"`
 	// Retention is how long to keep snapshots in seconds.
 	Retention *int `json:"retention,omitempty"`
-	// SkipMissed skips taking a snapshot if the schedule was missed.
-	SkipMissed *bool `json:"skip_missed,omitempty"`
 	// MaxTier is the maximum storage tier (1-5).
 	MaxTier *string `json:"max_tier,omitempty"`
 	// Quiesce temporarily freezes disk activity while taking the snapshot.
@@ -144,7 +138,7 @@ type SnapshotProfilePeriodUpdateRequest struct {
 }
 
 // snapshotProfilePeriodListFields are the fields to request when listing periods.
-const snapshotProfilePeriodListFields = "$key,profile,name,frequency,minute,hour,day_of_week,day_of_month,month,retention,skip_missed,max_tier,quiesce,min_snapshots,immutable,estimated_snapshot_count"
+const snapshotProfilePeriodListFields = "$key,profile,name,frequency,minute,hour,day_of_week,day_of_month,month,retention,max_tier,quiesce,min_snapshots,immutable,estimated_snapshot_count"
 
 // snapshotProfilePeriodGetFields are the fields to request when getting a single period.
 const snapshotProfilePeriodGetFields = snapshotProfilePeriodListFields

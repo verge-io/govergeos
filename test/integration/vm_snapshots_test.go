@@ -161,7 +161,7 @@ func TestVMSnapshotsCRUD(t *testing.T) {
 	if err != nil {
 		t.Errorf("VMSnapshots.SetNeverExpires failed: %v", err)
 	} else {
-		t.Logf("Set snapshot to never expire: ExpiresType=%s, Expires=%d", snapshot.ExpiresType, snapshot.Expires)
+		t.Logf("Set snapshot to never expire: Expires=%d", snapshot.Expires)
 	}
 
 	// Test SetExpires (7 days from now)
@@ -170,7 +170,7 @@ func TestVMSnapshotsCRUD(t *testing.T) {
 	if err != nil {
 		t.Errorf("VMSnapshots.SetExpires failed: %v", err)
 	} else {
-		t.Logf("Set snapshot expires: ExpiresType=%s, Expires=%d", snapshot.ExpiresType, snapshot.Expires)
+		t.Logf("Set snapshot expires: Expires=%d", snapshot.Expires)
 	}
 
 	// Test GetByName

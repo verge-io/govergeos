@@ -258,6 +258,7 @@ func (s *VMSnapshotService) Restore(ctx context.Context, id int, opts *VMSnapsho
 }
 
 // SetNeverExpires sets a snapshot to never expire.
+// VergeOS stores that as Expires 0. expires_type is a write argument and is not returned.
 func (s *VMSnapshotService) SetNeverExpires(ctx context.Context, id int) (*VMSnapshot, error) {
 	expiresType := "never"
 	return s.Update(ctx, id, &VMSnapshotUpdateRequest{

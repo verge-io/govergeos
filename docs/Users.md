@@ -58,7 +58,7 @@ member, err := client.Members.Add(ctx, groupID, "username")
 
 ## User API Keys
 
-Manage API keys for programmatic access.
+Manage API keys for programmatic access. Reads do not include `expires_type`. `Expires` is 0 when the key does not expire. Create and update still send `expires_type`.
 
 ```go
 // List all API keys

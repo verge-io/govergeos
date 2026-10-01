@@ -17,13 +17,10 @@ type VMSnapshot struct {
 	// Created is the creation timestamp (Unix epoch).
 	Created int64 `json:"created,omitempty"`
 	// Expires is the expiration timestamp (Unix epoch). 0 means never expires.
+	// expires_type is a write argument and is not stored. A later read uses this field.
 	Expires int64 `json:"expires,omitempty"`
-	// ExpiresType is the expiration type ("never" or "date").
-	ExpiresType string `json:"expires_type,omitempty"`
 	// CreatedManually indicates whether the snapshot was created manually.
 	CreatedManually bool `json:"created_manually,omitempty"`
-	// Quiesce indicates whether the snapshot should quiesce the filesystem.
-	Quiesce bool `json:"quiesce,omitempty"`
 	// Quiesced indicates whether the snapshot was quiesced.
 	Quiesced bool `json:"quiesced,omitempty"`
 	// QueueDelete indicates whether the snapshot is queued for deletion.
@@ -45,11 +42,13 @@ type VMSnapshotCreateRequest struct {
 	Name string `json:"name"`
 	// Description is an optional description.
 	Description string `json:"description,omitempty"`
-	// ExpiresType is the expiration type ("never" or "date"). Defaults to "date".
+	// ExpiresType is a write argument ("never" or "date"). Defaults to "date".
+	// VergeOS does not store or return it. "never" sets Expires to 0.
 	ExpiresType string `json:"expires_type,omitempty"`
 	// Expires is the expiration timestamp (Unix epoch). Defaults to 3 days from creation.
 	Expires *int64 `json:"expires,omitempty"`
-	// Quiesce indicates whether to quiesce the filesystem (requires guest agent).
+	// Quiesce asks the guest agent to freeze the filesystem while the snapshot is taken.
+	// The snapshot row does not return this value.
 	Quiesce *bool `json:"quiesce,omitempty"`
 }
 
@@ -59,7 +58,8 @@ type VMSnapshotUpdateRequest struct {
 	Name *string `json:"name,omitempty"`
 	// Description is the snapshot description.
 	Description *string `json:"description,omitempty"`
-	// ExpiresType is the expiration type ("never" or "date").
+	// ExpiresType is a write argument ("never" or "date").
+	// VergeOS does not store or return it. "never" sets Expires to 0.
 	ExpiresType *string `json:"expires_type,omitempty"`
 	// Expires is the expiration timestamp (Unix epoch).
 	Expires *int64 `json:"expires,omitempty"`
@@ -73,6 +73,6 @@ type VMSnapshotRestoreOptions struct {
 
 // Field list constants for VM snapshot resources.
 const (
-	vmSnapshotListFields = "$key,machine,snap_machine,name,description,created,expires,expires_type,created_manually,quiesce,quiesced,queue_delete,snapshot_period,machine#$display as machine_display,machine#snapshot_profile#$display as snapshot_profile"
+	vmSnapshotListFields = "$key,machine,snap_machine,name,description,created,expires,created_manually,quiesced,queue_delete,snapshot_period,machine#$display as machine_display,machine#snapshot_profile#$display as snapshot_profile"
 	vmSnapshotGetFields  = vmSnapshotListFields
 )

@@ -8,6 +8,13 @@ Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
 
 ### Breaking
 
+- Removed read fields that VergeOS 26 does not return. They were always the zero value.
+  - `VMSnapshot.ExpiresType` and `VMSnapshot.Quiesce`. `expires_type` remains a write argument on create and update (`never` stores `Expires` as 0). `Quiesce` remains on create. The snapshot row does not return either field.
+  - `SnapshotProfilePeriod.SkipMissed`, including create and update. `snapshot_profile_periods` has no `skip_missed` column, and a write was discarded.
+  - `UserAPIKey.ExpiresType` on the key. Create and update still send `expires_type`. Read `Expires`; 0 means the key does not expire.
+  - `Network.PowerState` and the read field `Network.BGPASN`. The live state is `Network.Running` (`machine#status#running`). `PowerOn` and `PowerOff` wait on `Running`. Create can still send `bgp_asn`.
+  - `NASService.Enabled`, `NASService.Created`, and `NASService.Modified`.
+  - `Group.Type`.
 - The Go field for `$key` is `Key`. These types previously named that field `ID`. JSON is unchanged (`$key`).
   - `FlexInt`, renamed from `ID`: `VM`, `Network`, `VMNIC`, `VMDrive`, `VMDevice`, `Group`, `File`, `Member`, `CloudInitFile`. Use `vm.Key` where code used `vm.ID`, and the same for the other types in this list.
   - `int`, renamed from `ID`: `USBDeviceSettings`, `TPMDeviceSettings`, `VGPUDeviceSettings`.

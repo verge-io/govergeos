@@ -142,7 +142,7 @@ snapshot, err := client.VMSnapshots.Create(ctx, &vergeos.VMSnapshotCreateRequest
     VM:          vmID,
     Name:        "pre-upgrade",
     Description: "Snapshot before upgrade",
-    ExpiresType: "date", // or "never"
+    ExpiresType: "date", // write-only: "never" stores Expires as 0. Not returned.
 })
 
 // Update a snapshot

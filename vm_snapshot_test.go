@@ -100,10 +100,10 @@ func TestVMSnapshotService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/machine_snapshots/1": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMSnapshot{
-				Key:         FlexInt(1),
-				Machine:     FlexInt(42),
-				Name:        "snap1",
-				ExpiresType: "never",
+				Key:     FlexInt(1),
+				Machine: FlexInt(42),
+				Name:    "snap1",
+				Expires: 0,
 			})
 		},
 	}))
@@ -115,8 +115,8 @@ func TestVMSnapshotService_Get(t *testing.T) {
 	if snap.Name != "snap1" {
 		t.Errorf("expected name 'snap1', got %q", snap.Name)
 	}
-	if snap.ExpiresType != "never" {
-		t.Errorf("expected expires_type 'never', got %q", snap.ExpiresType)
+	if snap.Expires != 0 {
+		t.Errorf("expected expires 0 for a snapshot that does not expire, got %d", snap.Expires)
 	}
 }
 
@@ -196,10 +196,9 @@ func TestVMSnapshotService_Create(t *testing.T) {
 		},
 		"GET /api/v4/machine_snapshots/5": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, VMSnapshot{
-				Key:         FlexInt(5),
-				Machine:     FlexInt(42),
-				Name:        "test-snap",
-				ExpiresType: "date",
+				Key:     FlexInt(5),
+				Machine: FlexInt(42),
+				Name:    "test-snap",
 			})
 		},
 	}))
@@ -421,7 +420,7 @@ func TestVMSnapshotService_SetNeverExpires(t *testing.T) {
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/machine_snapshots/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(1), ExpiresType: "never"})
+			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(1), Expires: 0})
 		},
 	}))
 
@@ -429,8 +428,8 @@ func TestVMSnapshotService_SetNeverExpires(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SetNeverExpires failed: %v", err)
 	}
-	if snap.ExpiresType != "never" {
-		t.Errorf("expected expires_type 'never', got %q", snap.ExpiresType)
+	if snap.Expires != 0 {
+		t.Errorf("expected expires 0 after never, got %d", snap.Expires)
 	}
 }
 
@@ -449,7 +448,7 @@ func TestVMSnapshotService_SetExpires(t *testing.T) {
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/machine_snapshots/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(1), ExpiresType: "date", Expires: expireTS})
+			jsonResponse(w, 200, VMSnapshot{Key: FlexInt(1), Expires: expireTS})
 		},
 	}))
 
