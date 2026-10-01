@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -387,5 +389,104 @@ func TestFileService_UploadWithChunkSize(t *testing.T) {
 	}
 	if chunkCount != 2 {
 		t.Errorf("expected 2 chunks, got %d", chunkCount)
+	}
+}
+
+// chunkUploadAttempt is one PUT observed by the upload retry test server.
+type chunkUploadAttempt struct {
+	filepos string
+	body    string
+	closed  bool
+}
+
+// TestFileService_UploadRetriesTransientConnectionClose proves a chunk PUT
+// is replayed after the peer closes the connection. The server closes the
+// first attempt of each chunk and accepts the retry, which is the failure
+// Files.Upload used to return as a single EOF.
+func TestFileService_UploadRetriesTransientConnectionClose(t *testing.T) {
+	content := "abcdefghijklmnop"
+	chunkSize := 8
+
+	var mu sync.Mutex
+	var attempts []chunkUploadAttempt
+
+	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/api/v4/files/1" {
+			jsonResponse(w, http.StatusOK, File{Key: 1, Name: "chunked.bin", Filesize: int64(len(content))})
+			return
+		}
+		if r.Method != http.MethodPut || r.URL.Path != "/api/v4/files/1" {
+			http.NotFound(w, r)
+			return
+		}
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		filepos := r.URL.Query().Get("filepos")
+
+		mu.Lock()
+		prior := 0
+		for _, attempt := range attempts {
+			if attempt.filepos == filepos {
+				prior++
+			}
+		}
+		closed := prior == 0
+		attempts = append(attempts, chunkUploadAttempt{filepos: filepos, body: string(body), closed: closed})
+		mu.Unlock()
+
+		if !closed {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			http.Error(w, "hijack unsupported", http.StatusInternalServerError)
+			return
+		}
+		conn, bufrw, err := hj.Hijack()
+		if err != nil {
+			return
+		}
+		_ = bufrw.Flush()
+		_ = conn.Close()
+	}))
+	srv.EnableHTTP2 = false
+	srv.StartTLS()
+	t.Cleanup(srv.Close)
+
+	client := newPolicyClient(t, srv.Client().Transport, fastRetry(3))
+	client.baseURL = srv.URL
+	initServices(client)
+
+	file, err := client.Files.UploadWithChunkSize(context.Background(), 1, strings.NewReader(content), int64(len(content)), chunkSize)
+	if err != nil {
+		t.Fatalf("UploadWithChunkSize: %v", err)
+	}
+	if file.Name != "chunked.bin" {
+		t.Fatalf("name = %q, want chunked.bin", file.Name)
+	}
+
+	mu.Lock()
+	got := append([]chunkUploadAttempt(nil), attempts...)
+	mu.Unlock()
+
+	want := []chunkUploadAttempt{
+		{filepos: "0", body: "abcdefgh", closed: true},
+		{filepos: "0", body: "abcdefgh", closed: false},
+		{filepos: "8", body: "ijklmnop", closed: true},
+		{filepos: "8", body: "ijklmnop", closed: false},
+	}
+	if len(got) != len(want) {
+		t.Fatalf("attempts = %+v, want %+v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("attempt %d = %+v, want %+v", i, got[i], want[i])
+		}
 	}
 }

@@ -277,11 +277,13 @@ func (s *FileService) UploadFromFile(ctx context.Context, localPath string, req 
 
 // uploadChunk uploads a single chunk of data to a file.
 func (s *FileService) uploadChunk(ctx context.Context, id int, data []byte, offset int64) error {
-	// Build URL with filepos parameter
+	// Build URL with filepos parameter. A retry repeats this request, so
+	// the chunk offset stays the same.
 	u := fmt.Sprintf("%s%s/files/%d?filepos=%d", s.client.baseURL, apiBasePath, id, offset)
 
-	// Create request with binary body
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, u, nil)
+	// *bytes.Reader makes http.NewRequest record GetBody, which is what a
+	// retry uses to send this chunk again.
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, u, bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("vergeos: failed to create request: %w", err)
 	}
@@ -299,10 +301,6 @@ func (s *FileService) uploadChunk(ctx context.Context, id int, data []byte, offs
 	// connections between chunks, causing "use of closed network connection"
 	// errors when the HTTP client attempts to reuse them.
 	req.Close = true
-
-	// Set body
-	req.Body = io.NopCloser(bytes.NewReader(data))
-	req.ContentLength = int64(len(data))
 
 	// Execute request
 	resp, err := s.client.httpClient.Do(req)
