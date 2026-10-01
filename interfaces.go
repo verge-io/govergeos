@@ -210,6 +210,7 @@ type CloudInitServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]CloudInitFile, error)
 	ListByVM(ctx context.Context, vmID int, opts ...ListOption) ([]CloudInitFile, error)
 	Get(ctx context.Context, id int) (*CloudInitFile, error)
+	GetContents(ctx context.Context, id int) (string, error)
 	GetByName(ctx context.Context, name string) (*CloudInitFile, error)
 	Create(ctx context.Context, req *CloudInitFileCreateRequest) (*CloudInitFile, error)
 	CreateForVM(ctx context.Context, vmID int, req *CloudInitFileCreateRequest) (*CloudInitFile, error)

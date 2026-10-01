@@ -219,6 +219,10 @@ file, err := client.CloudInitFiles.CreateForVM(ctx, vm.Key.Int(), &vergeos.Cloud
     Contents: "#cloud-config\nhostname: web-01\n",
 })
 
+// List and Get leave Contents empty. VergeOS returns the body only from
+// GET /cloudinit_files/{id}?download=1.
+contents, err := client.CloudInitFiles.GetContents(ctx, file.Key.Int())
+
 files, err := client.CloudInitFiles.ListByVM(ctx, vm.Key.Int())
 ```
 

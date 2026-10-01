@@ -72,6 +72,17 @@ func TestCloudInitFileCreateForVM(t *testing.T) {
 	if got.Name != "/user-data" {
 		t.Fatalf("Get name = %q, want /user-data", got.Name)
 	}
+	// The metadata read omits the body. download=1 returns it.
+	if got.Contents != "" {
+		t.Fatalf("Get contents = %q, want empty", got.Contents)
+	}
+	downloaded, err := client.CloudInitFiles.GetContents(ctx, fileID)
+	if err != nil {
+		t.Fatalf("CloudInitFiles.GetContents(%d) failed: %v", fileID, err)
+	}
+	if downloaded != contents {
+		t.Fatalf("GetContents = %q, want %q", downloaded, contents)
+	}
 
 	listed, err := client.CloudInitFiles.ListByVM(ctx, vmID)
 	if err != nil {

@@ -53,6 +53,9 @@ func TestCloudInitService_List_WithFilter(t *testing.T) {
 func TestCloudInitService_Get(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/cloudinit_files/1": func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Query().Get("download") != "" {
+				t.Errorf("Get sent download=%q", r.URL.Query().Get("download"))
+			}
 			jsonResponse(w, 200, CloudInitFile{Key: 1, Name: "user-data", Contents: "#cloud-config"})
 		},
 	}))
@@ -82,6 +85,80 @@ func TestCloudInitService_Get_NotFound(t *testing.T) {
 	}
 	if !IsNotFoundError(err) {
 		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	}
+}
+
+func TestCloudInitService_GetContents(t *testing.T) {
+	const body = "#cloud-config\nhostname: zzrc\n"
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/cloudinit_files/1": func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Query().Get("download") != "1" {
+				t.Errorf("download=%q, want 1", r.URL.Query().Get("download"))
+			}
+			w.Header().Set("Content-Type", "application/octet-stream")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(body))
+		},
+	}))
+
+	got, err := client.CloudInitFiles.GetContents(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("GetContents failed: %v", err)
+	}
+	if got != body {
+		t.Errorf("contents = %q, want %q", got, body)
+	}
+}
+
+func TestCloudInitService_GetContents_Empty(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/cloudinit_files/1": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		},
+	}))
+
+	got, err := client.CloudInitFiles.GetContents(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("GetContents failed: %v", err)
+	}
+	if got != "" {
+		t.Errorf("contents = %q, want empty", got)
+	}
+}
+
+func TestCloudInitService_GetContents_NotFound(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/cloudinit_files/999": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, http.StatusNotFound, map[string]string{"err": "not found"})
+		},
+	}))
+
+	_, err := client.CloudInitFiles.GetContents(context.Background(), 999)
+	if err == nil {
+		t.Fatal("expected error for not found")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	}
+	var notFound *NotFoundError
+	if !errors.As(err, &notFound) || notFound.Resource != "CloudInitFile" {
+		t.Errorf("expected CloudInitFile NotFoundError, got %v", err)
+	}
+}
+
+func TestCloudInitService_GetContents_APIError(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/cloudinit_files/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, http.StatusForbidden, map[string]string{"err": "permission denied"})
+		},
+	}))
+
+	_, err := client.CloudInitFiles.GetContents(context.Background(), 1)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !IsPermissionError(err) {
+		t.Errorf("expected PermissionError, got %T: %v", err, err)
 	}
 }
 
