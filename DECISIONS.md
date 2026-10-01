@@ -714,7 +714,7 @@ The `Timeout` on the `http.Client` remains the budget for the whole call, includ
 
 `WithRateLimit(interval)` is optional and off by default. It spaces the start of each attempt, including retries, by at least `interval`. Deployments that burst faster than the server's per-session API limit (50 by default) can pass `50 * time.Millisecond` instead of copying the old test transport. Integration tests do not set it, so they exercise the retry path.
 
-A response body that cannot be replayed (`GetBody` is nil) is not retried. `request` sends JSON from a `*bytes.Reader`, which records `GetBody`.
+A response body that cannot be replayed (`GetBody` is nil) is not retried. `request` sends JSON from a `*bytes.Reader`, which records `GetBody`. Chunk uploads do the same: `uploadChunk` passes the chunk bytes as a `*bytes.Reader`, so a dropped connection retries that PUT at the same `filepos`.
 
 **Alternatives Considered:**
 
