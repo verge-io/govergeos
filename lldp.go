@@ -48,7 +48,7 @@ func (s *NodeLLDPNeighborService) Get(ctx context.Context, id int) (*NodeLLDPNei
 	var neighbor NodeLLDPNeighbor
 	endpoint := fmt.Sprintf("/node_lldp_neighbors/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &neighbor); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NodeLLDPNeighbor", ID: id}
 		}
 		return nil, err

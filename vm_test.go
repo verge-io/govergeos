@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 )
@@ -361,8 +362,45 @@ func TestVMService_Update_NotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for not found")
 	}
-	if !IsNotFoundError(err) {
-		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	apiErr, ok := err.(*APIError)
+	if IsNotFoundError(err) || !ok || apiErr.StatusCode != 404 {
+		t.Errorf("expected API 404, not a missing resource, got %T: %v", err, err)
+	}
+}
+
+func TestVMService_Update_MissingSnapshotProfile(t *testing.T) {
+	const platform = "Error from put in trigger 'put:machines/{machine}?snapshot_profile={snapshot_profile}' table 'vms' - No such file or directory\n"
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"PUT /api/v4/vms/44": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 404, map[string]string{"err": platform})
+		},
+		"GET /api/v4/vms/44": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VM{Key: 44, Name: "zzrc3-nf-vm"})
+		},
+	}))
+
+	profile := 99999
+	_, err := client.VMs.Update(context.Background(), 44, &VMUpdateRequest{SnapshotProfile: &profile})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if IsNotFoundError(err) {
+		t.Fatalf("reference 404 reported the VM as missing: %v", err)
+	}
+	if !strings.Contains(err.Error(), "snapshot_profile") {
+		t.Fatalf("error = %q, want platform message", err.Error())
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok || apiErr.StatusCode != 404 || apiErr.Message != platform {
+		t.Fatalf("got %T %#v", err, err)
+	}
+
+	got, gerr := client.VMs.Get(context.Background(), 44)
+	if gerr != nil {
+		t.Fatalf("VM still exists, Get failed: %v", gerr)
+	}
+	if got.Name != "zzrc3-nf-vm" {
+		t.Fatalf("vm = %+v", got)
 	}
 }
 

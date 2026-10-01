@@ -32,7 +32,7 @@ func (s *TaskScriptService) Get(ctx context.Context, id int) (*TaskScript, error
 	var row TaskScript
 	endpoint := fmt.Sprintf("/task_scripts/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &row); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TaskScript", ID: id}
 		}
 		return nil, err
@@ -99,9 +99,6 @@ func (s *TaskScriptService) Update(ctx context.Context, id int, req *TaskScriptU
 	}
 	endpoint := fmt.Sprintf("/task_scripts/%d", id)
 	if err := s.client.put(ctx, endpoint, req.wire(), nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TaskScript", ID: id}
-		}
 		return nil, err
 	}
 	return s.Get(ctx, id)
@@ -111,7 +108,7 @@ func (s *TaskScriptService) Update(ctx context.Context, id int, req *TaskScriptU
 func (s *TaskScriptService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/task_scripts/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "TaskScript", ID: id}
 		}
 		return err

@@ -37,7 +37,7 @@ func (s *WebhookURLService) Get(ctx context.Context, id int) (*WebhookURL, error
 	var webhook WebhookURL
 	endpoint := fmt.Sprintf("/webhook_urls/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &webhook); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "WebhookURL", ID: id}
 		}
 		return nil, err
@@ -104,9 +104,6 @@ func (s *WebhookURLService) Update(ctx context.Context, id int, req *WebhookURLU
 
 	endpoint := fmt.Sprintf("/webhook_urls/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "WebhookURL", ID: id}
-		}
 		return nil, err
 	}
 
@@ -117,7 +114,7 @@ func (s *WebhookURLService) Update(ctx context.Context, id int, req *WebhookURLU
 func (s *WebhookURLService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/webhook_urls/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "WebhookURL", ID: id}
 		}
 		return err
@@ -198,7 +195,7 @@ func (s *WebhookService) Get(ctx context.Context, id int) (*Webhook, error) {
 	var webhook Webhook
 	endpoint := fmt.Sprintf("/webhooks/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &webhook); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Webhook", ID: id}
 		}
 		return nil, err
@@ -211,7 +208,7 @@ func (s *WebhookService) Get(ctx context.Context, id int) (*Webhook, error) {
 func (s *WebhookService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/webhooks/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Webhook", ID: id}
 		}
 		return err

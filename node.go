@@ -57,7 +57,7 @@ func (s *NodeService) Get(ctx context.Context, id int) (*Node, error) {
 	var node Node
 	endpoint := fmt.Sprintf("/nodes/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &node); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Node", ID: id}
 		}
 		return nil, err

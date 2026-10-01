@@ -54,7 +54,7 @@ func (s *TenantExternalIPService) Get(ctx context.Context, id int) (*TenantExter
 	var address TenantExternalIP
 	endpoint := fmt.Sprintf("/vnet_addresses/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &address); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TenantExternalIP", ID: id}
 		}
 		return nil, err
@@ -162,7 +162,7 @@ func (s *TenantExternalIPService) Delete(ctx context.Context, id int, opts ...Pa
 
 	endpoint := fmt.Sprintf("/vnet_addresses/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TenantExternalIP", ID: id}
 		}
 		return nil, err

@@ -68,7 +68,7 @@ func (s *AlarmService) Get(ctx context.Context, id int) (*Alarm, error) {
 	var alarm Alarm
 	endpoint := fmt.Sprintf("/alarms/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &alarm); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Alarm", ID: id}
 		}
 		return nil, err
@@ -85,9 +85,6 @@ func (s *AlarmService) Update(ctx context.Context, id int, req *AlarmUpdateReque
 
 	endpoint := fmt.Sprintf("/alarms/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Alarm", ID: id}
-		}
 		return nil, err
 	}
 
@@ -122,7 +119,7 @@ func (s *AlarmService) Resolve(ctx context.Context, id int) error {
 func (s *AlarmService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/alarms/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Alarm", ID: id}
 		}
 		return err
@@ -164,7 +161,7 @@ func (s *AlarmTypeService) Get(ctx context.Context, key string) (*AlarmType, err
 	var alarmType AlarmType
 	endpoint := fmt.Sprintf("/alarm_types/%s", key)
 	if err := s.client.get(ctx, endpoint, params, &alarmType); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "AlarmType", ID: key}
 		}
 		return nil, err

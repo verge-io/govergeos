@@ -51,7 +51,7 @@ func (s *BillingService) Get(ctx context.Context, id int) (*BillingRecord, error
 	var record BillingRecord
 	endpoint := fmt.Sprintf("/billing/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &record); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "BillingRecord", ID: id}
 		}
 		return nil, err

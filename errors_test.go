@@ -174,9 +174,12 @@ func TestIsNotFoundError_Wrapped(t *testing.T) {
 }
 
 func TestIsNotFoundError_APIError404(t *testing.T) {
-	err := &APIError{StatusCode: 404, Endpoint: "/vms/1", Message: "not found"}
-	if !IsNotFoundError(err) {
-		t.Error("expected true for 404 APIError")
+	err := &APIError{StatusCode: 404, Endpoint: "/vms/1", Message: "Unable to look up parent interface network '0'"}
+	if IsNotFoundError(err) {
+		t.Error("a 404 APIError is not a missing resource")
+	}
+	if !statusNotFound(err) {
+		t.Error("statusNotFound should report the HTTP 404")
 	}
 }
 

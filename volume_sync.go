@@ -49,7 +49,7 @@ func (s *VolumeSyncService) Get(ctx context.Context, id string) (*VolumeSync, er
 	var sync VolumeSync
 	endpoint := fmt.Sprintf("/volume_syncs/%s", id)
 	if err := s.client.get(ctx, endpoint, params, &sync); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VolumeSync", ID: id}
 		}
 		return nil, err
@@ -130,9 +130,6 @@ func (s *VolumeSyncService) Update(ctx context.Context, id string, req *VolumeSy
 
 	endpoint := fmt.Sprintf("/volume_syncs/%s", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VolumeSync", ID: id}
-		}
 		return nil, err
 	}
 
@@ -143,7 +140,7 @@ func (s *VolumeSyncService) Update(ctx context.Context, id string, req *VolumeSy
 func (s *VolumeSyncService) Delete(ctx context.Context, id string) error {
 	endpoint := fmt.Sprintf("/volume_syncs/%s", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VolumeSync", ID: id}
 		}
 		return err

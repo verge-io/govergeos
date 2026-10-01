@@ -135,7 +135,7 @@ func getRow[T any](ctx context.Context, client *Client, endpoint string, id int,
 	var row T
 	path := fmt.Sprintf("%s/%d", endpoint, id)
 	if err := client.get(ctx, path, params, &row); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: resource, ID: id}
 		}
 		return nil, err
@@ -154,9 +154,6 @@ func postKey(ctx context.Context, client *Client, endpoint string, body any) (in
 func putRow(ctx context.Context, client *Client, endpoint string, id int, body any, resource string) error {
 	path := fmt.Sprintf("%s/%d", endpoint, id)
 	if err := client.put(ctx, path, body, nil); err != nil {
-		if IsNotFoundError(err) {
-			return &NotFoundError{Resource: resource, ID: id}
-		}
 		return err
 	}
 	return nil
@@ -165,7 +162,7 @@ func putRow(ctx context.Context, client *Client, endpoint string, id int, body a
 func deleteRow(ctx context.Context, client *Client, endpoint string, id int, resource string) error {
 	path := fmt.Sprintf("%s/%d", endpoint, id)
 	if err := client.delete(ctx, path); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: resource, ID: id}
 		}
 		return err

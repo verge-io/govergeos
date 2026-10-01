@@ -50,7 +50,7 @@ func (s *TenantSnapshotService) Get(ctx context.Context, id int) (*TenantSnapsho
 	var snapshot TenantSnapshot
 	endpoint := fmt.Sprintf("/tenant_snapshots/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &snapshot); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TenantSnapshot", ID: id}
 		}
 		return nil, err
@@ -94,9 +94,6 @@ func (s *TenantSnapshotService) Update(ctx context.Context, id int, req *TenantS
 
 	endpoint := fmt.Sprintf("/tenant_snapshots/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantSnapshot", ID: id}
-		}
 		return nil, err
 	}
 
@@ -107,7 +104,7 @@ func (s *TenantSnapshotService) Update(ctx context.Context, id int, req *TenantS
 func (s *TenantSnapshotService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tenant_snapshots/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "TenantSnapshot", ID: id}
 		}
 		return err

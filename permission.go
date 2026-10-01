@@ -56,7 +56,7 @@ func (s *PermissionService) Get(ctx context.Context, id int) (*Permission, error
 	var permission Permission
 	endpoint := fmt.Sprintf("/permissions/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &permission); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Permission", ID: id}
 		}
 		return nil, err
@@ -114,9 +114,6 @@ func (s *PermissionService) Update(ctx context.Context, id int, req *PermissionU
 
 	endpoint := fmt.Sprintf("/permissions/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Permission", ID: id}
-		}
 		return nil, err
 	}
 
@@ -127,7 +124,7 @@ func (s *PermissionService) Update(ctx context.Context, id int, req *PermissionU
 func (s *PermissionService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/permissions/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Permission", ID: id}
 		}
 		return err

@@ -46,7 +46,7 @@ func (s *FileService) Get(ctx context.Context, id int) (*File, error) {
 	var file File
 	endpoint := fmt.Sprintf("/files/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &file); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "File", ID: id}
 		}
 		return nil, err
@@ -114,7 +114,7 @@ func (s *FileService) Update(ctx context.Context, id int, req *FileUpdateRequest
 func (s *FileService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/files/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "File", ID: id}
 		}
 		return err

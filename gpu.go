@@ -45,7 +45,7 @@ func (s *VGPUProfileService) Get(ctx context.Context, id int) (*VGPUProfile, err
 	var profile VGPUProfile
 	endpoint := fmt.Sprintf("/nvidia_vgpu_profiles/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &profile); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VGPUProfile", ID: id}
 		}
 		return nil, err
@@ -120,7 +120,7 @@ func (s *NodeGPUService) Get(ctx context.Context, id int) (*NodeGPU, error) {
 	var gpu NodeGPU
 	endpoint := fmt.Sprintf("/node_gpus/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &gpu); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NodeGPU", ID: id}
 		}
 		return nil, err
@@ -172,9 +172,6 @@ func (s *NodeGPUService) Update(ctx context.Context, id int, req *NodeGPUUpdateR
 
 	endpoint := fmt.Sprintf("/node_gpus/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "NodeGPU", ID: id}
-		}
 		return nil, err
 	}
 	return s.Get(ctx, id)
@@ -271,7 +268,7 @@ func (s *NodeGPUStatsService) get(ctx context.Context, path string, id int) (*No
 	var stats NodeGPUStats
 	endpoint := fmt.Sprintf("%s/%d", path, id)
 	if err := s.client.get(ctx, endpoint, params, &stats); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NodeGPUStats", ID: id}
 		}
 		return nil, err
@@ -312,7 +309,7 @@ func (s *NodeGPUInstanceService) Get(ctx context.Context, id int) (*NodeGPUInsta
 	var instance NodeGPUInstance
 	endpoint := fmt.Sprintf("/node_gpu_instances/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &instance); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NodeGPUInstance", ID: id}
 		}
 		return nil, err
@@ -362,7 +359,7 @@ func (s *NodeVGPUDeviceService) Get(ctx context.Context, id int) (*NodeVGPUDevic
 	var device NodeVGPUDevice
 	endpoint := fmt.Sprintf("/node_nvidia_vgpu_devices/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &device); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NodeVGPUDevice", ID: id}
 		}
 		return nil, err
@@ -412,7 +409,7 @@ func (s *NodeHostGPUDeviceService) Get(ctx context.Context, id int) (*NodeHostGP
 	var device NodeHostGPUDevice
 	endpoint := fmt.Sprintf("/node_host_gpu_devices/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &device); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NodeHostGPUDevice", ID: id}
 		}
 		return nil, err
@@ -463,7 +460,7 @@ func (s *NodeVGPUProfileService) Get(ctx context.Context, id int) (*NodeVGPUProf
 	var profile NodeVGPUProfile
 	endpoint := fmt.Sprintf("/node_nvidia_vgpu_profiles/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &profile); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NodeVGPUProfile", ID: id}
 		}
 		return nil, err

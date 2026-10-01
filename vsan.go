@@ -38,7 +38,7 @@ func (s *StorageTierService) Get(ctx context.Context, tier int) (*StorageTier, e
 	var storageTier StorageTier
 	endpoint := fmt.Sprintf("/storage_tiers/%d", tier)
 	if err := s.client.get(ctx, endpoint, params, &storageTier); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "StorageTier", ID: tier}
 		}
 		return nil, err
@@ -85,7 +85,7 @@ func (s *ClusterTierService) Get(ctx context.Context, id int) (*ClusterTier, err
 	var tier ClusterTier
 	endpoint := fmt.Sprintf("/cluster_tiers/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &tier); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "ClusterTier", ID: id}
 		}
 		return nil, err
@@ -159,7 +159,7 @@ func (s *MachineDrivePhysService) Get(ctx context.Context, id int) (*MachineDriv
 	var drive MachineDrivePhys
 	endpoint := fmt.Sprintf("/machine_drive_phys/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &drive); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "MachineDrivePhys", ID: id}
 		}
 		return nil, err
@@ -260,7 +260,7 @@ func (s *ClusterStatsHistoryService) GetShort(ctx context.Context, id int) (*Clu
 	var stats ClusterStatsHistory
 	endpoint := fmt.Sprintf("/cluster_stats_history_short/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &stats); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "ClusterStatsHistory", ID: id}
 		}
 		return nil, err
@@ -277,7 +277,7 @@ func (s *ClusterStatsHistoryService) GetLong(ctx context.Context, id int) (*Clus
 	var stats ClusterStatsHistory
 	endpoint := fmt.Sprintf("/cluster_stats_history_long/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &stats); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "ClusterStatsHistory", ID: id}
 		}
 		return nil, err

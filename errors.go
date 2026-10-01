@@ -281,20 +281,33 @@ func IsTimeoutError(err error) bool {
 	return errors.As(err, &timeoutErr)
 }
 
-// IsNotFoundError returns true if the error is a NotFoundError or a 404 API error.
+// IsNotFoundError reports whether err means the requested resource does not exist.
+//
+// That is a NotFoundError: a read or delete of that resource, or a name lookup
+// that matched nothing. A 404 APIError is not enough. VergeOS returns 404 when
+// a create or update names a related row that is missing, and the row being
+// written can still exist. The APIError carries the platform message.
 func IsNotFoundError(err error) bool {
 	if err == nil {
 		return false
 	}
 	var notFound *NotFoundError
-	if errors.As(err, &notFound) {
+	return errors.As(err, &notFound)
+}
+
+// statusNotFound reports an HTTP 404, or an error already rewritten as
+// NotFoundError. Get and Delete of one row use it so a missing id stays
+// NotFoundError. Update does not: a 404 on a field write can name a missing
+// related row while that row still exists.
+func statusNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	if IsNotFoundError(err) {
 		return true
 	}
 	var apiErr *APIError
-	if errors.As(err, &apiErr) {
-		return apiErr.StatusCode == 404
-	}
-	return false
+	return errors.As(err, &apiErr) && apiErr.StatusCode == 404
 }
 
 // IsAuthError returns true if the error is an AuthError or a 401 API error.

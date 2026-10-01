@@ -40,7 +40,7 @@ func (s *TenantService) Get(ctx context.Context, id int) (*Tenant, error) {
 	var tenant Tenant
 	endpoint := fmt.Sprintf("/tenants/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &tenant); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Tenant", ID: id}
 		}
 		return nil, err
@@ -107,9 +107,6 @@ func (s *TenantService) Update(ctx context.Context, id int, req *TenantUpdateReq
 
 	endpoint := fmt.Sprintf("/tenants/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Tenant", ID: id}
-		}
 		return nil, err
 	}
 
@@ -121,7 +118,7 @@ func (s *TenantService) Update(ctx context.Context, id int, req *TenantUpdateReq
 func (s *TenantService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tenants/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Tenant", ID: id}
 		}
 		return err
@@ -425,7 +422,7 @@ func (s *TenantNodeService) Get(ctx context.Context, id int) (*TenantNode, error
 	var node TenantNode
 	endpoint := fmt.Sprintf("/tenant_nodes/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &node); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TenantNode", ID: id}
 		}
 		return nil, err
@@ -498,9 +495,6 @@ func (s *TenantNodeService) Update(ctx context.Context, id int, req *TenantNodeU
 
 	endpoint := fmt.Sprintf("/tenant_nodes/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantNode", ID: id}
-		}
 		return nil, err
 	}
 
@@ -512,7 +506,7 @@ func (s *TenantNodeService) Update(ctx context.Context, id int, req *TenantNodeU
 func (s *TenantNodeService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tenant_nodes/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "TenantNode", ID: id}
 		}
 		return err
@@ -645,7 +639,7 @@ func (s *TenantStatusService) GetByKey(ctx context.Context, key int) (*TenantSta
 	var status TenantStatus
 	endpoint := fmt.Sprintf("/tenant_status/%d", key)
 	if err := s.client.get(ctx, endpoint, params, &status); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TenantStatus", ID: key}
 		}
 		return nil, err
@@ -706,7 +700,7 @@ func (s *TenantStatsHistoryShortService) Get(ctx context.Context, id int) (*Tena
 	var stats TenantStatsHistoryShort
 	endpoint := fmt.Sprintf("/tenant_stats_history_short/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &stats); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TenantStatsHistoryShort", ID: id}
 		}
 		return nil, err
@@ -755,7 +749,7 @@ func (s *TenantStorageService) Get(ctx context.Context, id int) (*TenantStorage,
 	var storage TenantStorage
 	endpoint := fmt.Sprintf("/tenant_storage/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &storage); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TenantStorage", ID: id}
 		}
 		return nil, err
@@ -802,9 +796,6 @@ func (s *TenantStorageService) Update(ctx context.Context, id int, req *TenantSt
 
 	endpoint := fmt.Sprintf("/tenant_storage/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TenantStorage", ID: id}
-		}
 		return nil, err
 	}
 
@@ -816,7 +807,7 @@ func (s *TenantStorageService) Update(ctx context.Context, id int, req *TenantSt
 func (s *TenantStorageService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tenant_storage/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "TenantStorage", ID: id}
 		}
 		return err

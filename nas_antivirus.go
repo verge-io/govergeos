@@ -43,7 +43,7 @@ func (s *NASServiceAntivirusService) Get(ctx context.Context, id int) (*NASServi
 	var row NASServiceAntivirus
 	endpoint := fmt.Sprintf("/vm_service_antivirus/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &row); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "NASServiceAntivirus", ID: id}
 		}
 		return nil, err
@@ -84,9 +84,6 @@ func (s *NASServiceAntivirusService) Update(ctx context.Context, id int, req *NA
 
 	endpoint := fmt.Sprintf("/vm_service_antivirus/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "NASServiceAntivirus", ID: id}
-		}
 		return nil, err
 	}
 	return s.Get(ctx, id)

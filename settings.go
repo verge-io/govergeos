@@ -37,7 +37,7 @@ func (s *SettingsService) Get(ctx context.Context, id int) (*Setting, error) {
 	var setting Setting
 	endpoint := fmt.Sprintf("/settings/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &setting); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Setting", ID: id}
 		}
 		return nil, err

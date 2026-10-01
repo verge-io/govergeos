@@ -55,7 +55,7 @@ func (s *CloudInitService) Get(ctx context.Context, id int) (*CloudInitFile, err
 	var file CloudInitFile
 	endpoint := fmt.Sprintf("/cloudinit_files/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &file); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "CloudInitFile", ID: id}
 		}
 		return nil, err
@@ -172,9 +172,6 @@ func (s *CloudInitService) Update(ctx context.Context, id int, req *CloudInitFil
 
 	endpoint := fmt.Sprintf("/cloudinit_files/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "CloudInitFile", ID: id}
-		}
 		return nil, err
 	}
 
@@ -186,7 +183,7 @@ func (s *CloudInitService) Update(ctx context.Context, id int, req *CloudInitFil
 func (s *CloudInitService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/cloudinit_files/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "CloudInit", ID: id}
 		}
 		return err

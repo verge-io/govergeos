@@ -60,7 +60,7 @@ func (s *TaskService) Get(ctx context.Context, id int) (*Task, error) {
 	var task Task
 	endpoint := fmt.Sprintf("/tasks/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &task); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Task", ID: id}
 		}
 		return nil, err
@@ -146,9 +146,6 @@ func (s *TaskService) Update(ctx context.Context, id int, req *TaskUpdateRequest
 
 	endpoint := fmt.Sprintf("/tasks/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Task", ID: id}
-		}
 		return nil, err
 	}
 
@@ -160,7 +157,7 @@ func (s *TaskService) Update(ctx context.Context, id int, req *TaskUpdateRequest
 func (s *TaskService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tasks/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Task", ID: id}
 		}
 		return err

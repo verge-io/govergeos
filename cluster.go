@@ -37,7 +37,7 @@ func (s *ClusterService) Get(ctx context.Context, id int) (*Cluster, error) {
 	var cluster Cluster
 	endpoint := fmt.Sprintf("/clusters/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &cluster); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Cluster", ID: id}
 		}
 		return nil, err
@@ -76,7 +76,7 @@ func (s *ClusterService) GetStatus(ctx context.Context, id int) (*ClusterStatus,
 	}
 	endpoint := fmt.Sprintf("/clusters/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &cluster); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Cluster", ID: id}
 		}
 		return nil, err
@@ -123,9 +123,6 @@ func (s *ClusterService) Update(ctx context.Context, id int, req *ClusterUpdateR
 
 	endpoint := fmt.Sprintf("/clusters/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Cluster", ID: id}
-		}
 		return nil, err
 	}
 
@@ -138,7 +135,7 @@ func (s *ClusterService) Update(ctx context.Context, id int, req *ClusterUpdateR
 func (s *ClusterService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/clusters/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Cluster", ID: id}
 		}
 		return err

@@ -45,7 +45,7 @@ func (s *VMRecipeInstanceService) Get(ctx context.Context, id int) (*VMRecipeIns
 	var instance VMRecipeInstance
 	endpoint := fmt.Sprintf("/vm_recipe_instances/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &instance); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VMRecipeInstance", ID: id}
 		}
 		return nil, err

@@ -56,7 +56,7 @@ func (s *MachineStatsService) Get(ctx context.Context, id int) (*MachineStats, e
 	var stats MachineStats
 	endpoint := fmt.Sprintf("/machine_stats/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &stats); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "MachineStats", ID: id}
 		}
 		return nil, err

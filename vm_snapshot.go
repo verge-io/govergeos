@@ -95,7 +95,7 @@ func (s *VMSnapshotService) Get(ctx context.Context, id int) (*VMSnapshot, error
 	var snapshot VMSnapshot
 	endpoint := fmt.Sprintf("/machine_snapshots/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &snapshot); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VMSnapshot", ID: id}
 		}
 		return nil, err
@@ -191,9 +191,6 @@ func (s *VMSnapshotService) Update(ctx context.Context, id int, req *VMSnapshotU
 
 	endpoint := fmt.Sprintf("/machine_snapshots/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VMSnapshot", ID: id}
-		}
 		return nil, err
 	}
 
@@ -205,7 +202,7 @@ func (s *VMSnapshotService) Update(ctx context.Context, id int, req *VMSnapshotU
 func (s *VMSnapshotService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/machine_snapshots/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VMSnapshot", ID: id}
 		}
 		return err

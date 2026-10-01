@@ -38,7 +38,7 @@ func (s *TagCategoryService) Get(ctx context.Context, id int) (*TagCategory, err
 	var category TagCategory
 	endpoint := fmt.Sprintf("/tag_categories/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &category); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "TagCategory", ID: id}
 		}
 		return nil, err
@@ -99,9 +99,6 @@ func (s *TagCategoryService) Update(ctx context.Context, id int, req *TagCategor
 
 	endpoint := fmt.Sprintf("/tag_categories/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "TagCategory", ID: id}
-		}
 		return nil, err
 	}
 
@@ -114,7 +111,7 @@ func (s *TagCategoryService) Update(ctx context.Context, id int, req *TagCategor
 func (s *TagCategoryService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/tag_categories/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "TagCategory", ID: id}
 		}
 		return err

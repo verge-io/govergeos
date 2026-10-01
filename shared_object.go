@@ -75,7 +75,7 @@ func (s *SharedObjectService) Get(ctx context.Context, id int) (*SharedObject, e
 	var object SharedObject
 	endpoint := fmt.Sprintf("/shared_objects/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &object); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "SharedObject", ID: id}
 		}
 		return nil, err
@@ -203,7 +203,7 @@ func (s *SharedObjectService) Refresh(ctx context.Context, id int) error {
 func (s *SharedObjectService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/shared_objects/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "SharedObject", ID: id}
 		}
 		return err

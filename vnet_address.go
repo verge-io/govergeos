@@ -51,7 +51,7 @@ func (s *VNetAddressService) Get(ctx context.Context, id int) (*VNetAddress, err
 	var address VNetAddress
 	endpoint := fmt.Sprintf("/vnet_addresses/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &address); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VNetAddress", ID: id}
 		}
 		return nil, err
@@ -117,9 +117,6 @@ func (s *VNetAddressService) Update(ctx context.Context, id int, req *VNetAddres
 
 	endpoint := fmt.Sprintf("/vnet_addresses/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VNetAddress", ID: id}
-		}
 		return nil, err
 	}
 
@@ -130,7 +127,7 @@ func (s *VNetAddressService) Update(ctx context.Context, id int, req *VNetAddres
 func (s *VNetAddressService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vnet_addresses/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VNetAddress", ID: id}
 		}
 		return err

@@ -43,7 +43,7 @@ func (s *MemberService) Get(ctx context.Context, id int) (*Member, error) {
 	var member Member
 	endpoint := fmt.Sprintf("/members/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &member); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Member", ID: id}
 		}
 		return nil, err
@@ -87,9 +87,6 @@ func (s *MemberService) Update(ctx context.Context, id int, req *MemberUpdateReq
 
 	endpoint := fmt.Sprintf("/members/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Member", ID: id}
-		}
 		return nil, err
 	}
 
@@ -101,7 +98,7 @@ func (s *MemberService) Update(ctx context.Context, id int, req *MemberUpdateReq
 func (s *MemberService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/members/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Member", ID: id}
 		}
 		return err

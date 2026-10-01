@@ -60,7 +60,7 @@ func (s *VMService) Get(ctx context.Context, id int) (*VM, error) {
 	var vm VM
 	endpoint := fmt.Sprintf("/vms/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &vm); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VM", ID: id}
 		}
 		return nil, err
@@ -144,9 +144,6 @@ func (s *VMService) Update(ctx context.Context, id int, req *VMUpdateRequest) (*
 
 	endpoint := fmt.Sprintf("/vms/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "VM", ID: id}
-		}
 		return nil, err
 	}
 
@@ -158,7 +155,7 @@ func (s *VMService) Update(ctx context.Context, id int, req *VMUpdateRequest) (*
 func (s *VMService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/vms/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "VM", ID: id}
 		}
 		return err
@@ -581,7 +578,7 @@ func (s *VMService) GetGuestAgentInfo(ctx context.Context, id int) (*GuestInfo, 
 	var resp vmDashboardResponse
 	endpoint := fmt.Sprintf("/vms/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &resp); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "VM", ID: id}
 		}
 		return nil, err

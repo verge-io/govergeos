@@ -38,7 +38,7 @@ func (s *CertificateService) Get(ctx context.Context, id int) (*Certificate, err
 	var cert Certificate
 	endpoint := fmt.Sprintf("/certificates/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &cert); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Certificate", ID: id}
 		}
 		return nil, err
@@ -68,7 +68,7 @@ func (s *CertificateService) GetWithKeys(ctx context.Context, id int) (*Certific
 	var cert Certificate
 	endpoint := fmt.Sprintf("/certificates/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &cert); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "Certificate", ID: id}
 		}
 		return nil, err
@@ -104,9 +104,6 @@ func (s *CertificateService) Update(ctx context.Context, id int, req *Certificat
 
 	endpoint := fmt.Sprintf("/certificates/%d", id)
 	if err := s.client.put(ctx, endpoint, req, nil); err != nil {
-		if IsNotFoundError(err) {
-			return nil, &NotFoundError{Resource: "Certificate", ID: id}
-		}
 		return nil, err
 	}
 
@@ -117,7 +114,7 @@ func (s *CertificateService) Update(ctx context.Context, id int, req *Certificat
 func (s *CertificateService) Delete(ctx context.Context, id int) error {
 	endpoint := fmt.Sprintf("/certificates/%d", id)
 	if err := s.client.delete(ctx, endpoint); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return &NotFoundError{Resource: "Certificate", ID: id}
 		}
 		return err

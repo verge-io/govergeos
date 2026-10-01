@@ -37,7 +37,7 @@ func (s *ResourceGroupService) Get(ctx context.Context, id int) (*ResourceGroup,
 	var group ResourceGroup
 	endpoint := fmt.Sprintf("/resource_groups/%d", id)
 	if err := s.client.get(ctx, endpoint, params, &group); err != nil {
-		if IsNotFoundError(err) {
+		if statusNotFound(err) {
 			return nil, &NotFoundError{Resource: "ResourceGroup", ID: id}
 		}
 		return nil, err
