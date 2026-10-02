@@ -1,7 +1,7 @@
 ---
 title: Tenants
-description: Manage multi-tenant virtual data centers, nodes, storage, snapshots, recipes, Layer 2 networks, shared objects, and the tenant UI proxy
-tags: [tenant, multi-tenant, vdc, tenant-node, tenant-storage, tenant-snapshot, tenant-recipe, layer2, isolation, clone, vnet-proxy, shared-object]
+description: Manage multi-tenant virtual data centers, nodes, storage, snapshots, recipes, Layer 2 networks, network blocks, external IPs, shared objects, status, stats, and the tenant UI proxy
+tags: [tenant, multi-tenant, vdc, tenant-node, tenant-storage, tenant-snapshot, tenant-recipe, layer2, network-block, external-ip, parent-firewall, isolation, clone, vnet-proxy, shared-object, tenant-status, tenant-stats]
 categories: [Tenants]
 ---
 
@@ -246,6 +246,61 @@ err = client.TenantLayer2Networks.Delete(ctx, assignmentID)
 
 ---
 
+## Tenant Network Blocks
+
+CIDR blocks on a parent network (`vnet_cidrs`) assigned to a tenant. Owner is `tenants/{id}`.
+
+`Create` and `Delete` return `ParentFirewallStatus`. VergeOS leaves `need_fw_apply` set on the parent network; `Pending` is that flag. Pass `WithApplyParentFirewall` to apply the parent network's rules in the same call.
+
+```go
+// List all network blocks, or only those owned by a tenant
+blocks, err := client.TenantNetworkBlocks.List(ctx)
+blocks, err = client.TenantNetworkBlocks.ListByTenant(ctx, tenantID)
+
+block, err := client.TenantNetworkBlocks.Get(ctx, blockID)
+block, err = client.TenantNetworkBlocks.GetByTenantAndCIDR(ctx, tenantID, "192.168.100.0/24")
+
+// Assign a CIDR; apply parent firewall rules in the same call
+block, fwStatus, err := client.TenantNetworkBlocks.Create(ctx, &vergeos.TenantNetworkBlockCreateRequest{
+    Tenant:      tenantID,
+    VNet:        parentNetworkID,
+    CIDR:        "192.168.100.0/24",
+    Description: "customer-a LAN",
+}, vergeos.WithApplyParentFirewall())
+fmt.Println(fwStatus.NetworkID, fwStatus.Applied, fwStatus.Pending)
+
+fwStatus, err = client.TenantNetworkBlocks.Delete(ctx, int(block.Key), vergeos.WithApplyParentFirewall())
+```
+
+---
+
+## Tenant External IPs
+
+Virtual IPs on a parent network (`vnet_addresses`) given to a tenant. Owner is `tenants/{id}` and type is `virtual`. Generic address management stays on `VNetAddresses`.
+
+`Create` and `Delete` return `ParentFirewallStatus` the same way as tenant network blocks. Pass `WithApplyParentFirewall` to apply the parent network's rules in the same call.
+
+```go
+addresses, err := client.TenantExternalIPs.List(ctx)
+addresses, err = client.TenantExternalIPs.ListByTenant(ctx, tenantID)
+
+address, err := client.TenantExternalIPs.Get(ctx, addressID)
+address, err = client.TenantExternalIPs.GetByTenantAndIP(ctx, tenantID, "203.0.113.50")
+
+address, fwStatus, err := client.TenantExternalIPs.Create(ctx, &vergeos.TenantExternalIPCreateRequest{
+    Tenant:      tenantID,
+    VNet:        parentNetworkID,
+    IP:          "203.0.113.50",
+    Hostname:    "customer-a-ui",
+    Description: "customer-a UI address",
+}, vergeos.WithApplyParentFirewall())
+fmt.Println(fwStatus.NetworkID, fwStatus.Applied, fwStatus.Pending)
+
+fwStatus, err = client.TenantExternalIPs.Delete(ctx, int(address.Key), vergeos.WithApplyParentFirewall())
+```
+
+---
+
 ## Network proxy
 
 Publish tenant UIs through one address on a parent network. Each tenant gets an FQDN. A network has one proxy.
@@ -279,6 +334,33 @@ if err != nil {
 }
 
 vms, err := tenantClient.VMs.List(ctx)
+```
+
+---
+
+## Tenant Status
+
+Read-only runtime status for tenants (`tenant_status`). Each tenant has one status row. `Get` looks up by tenant key.
+
+```go
+statuses, err := client.TenantStatus.List(ctx)
+status, err := client.TenantStatus.Get(ctx, tenantID)
+status, err = client.TenantStatus.GetByKey(ctx, statusRowKey)
+fmt.Println(status.Status, status.State, status.Running)
+```
+
+---
+
+## Tenant Stats History (short)
+
+High-resolution short-term stats for tenants (`tenant_stats_history_short`). Records auto-expire based on system settings.
+
+```go
+stats, err := client.TenantStatsHistoryShort.List(ctx)
+stats, err = client.TenantStatsHistoryShort.ListByTenant(ctx, tenantID)
+latest, err := client.TenantStatsHistoryShort.GetLatest(ctx, tenantID)
+row, err := client.TenantStatsHistoryShort.Get(ctx, statsRowID)
+fmt.Println(latest.RAMUsed, latest.TotalCPU, latest.Tier0Used)
 ```
 
 ---

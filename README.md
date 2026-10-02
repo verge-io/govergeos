@@ -298,8 +298,10 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | `TenantRecipeInstances` | Deploy a tenant from a recipe |
 | `TenantSnapshots` | Tenant snapshot management |
 | `TenantLayer2Networks` | Layer 2 network assignments to tenants |
-| `TenantNetworkBlocks` | CIDR blocks assigned to a tenant (`vnet_cidrs`) |
-| `TenantExternalIPs` | Virtual IPs given to a tenant (`vnet_addresses`) |
+| `TenantNetworkBlocks` | CIDR blocks assigned to a tenant (`vnet_cidrs`). Create/Delete return `ParentFirewallStatus`; `WithApplyParentFirewall` applies parent rules |
+| `TenantExternalIPs` | Virtual IPs given to a tenant (`vnet_addresses`). Create/Delete return `ParentFirewallStatus`; `WithApplyParentFirewall` applies parent rules |
+| `TenantStatus` | Tenant runtime status (`tenant_status`, read-only) |
+| `TenantStatsHistoryShort` | Short-term tenant stats history (`tenant_stats_history_short`, read-only) |
 | `SharedObjects` | VMs shared with a tenant (`shared_objects`), including import and refresh |
 
 ### Users & Groups
@@ -357,6 +359,10 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | `StorageTiers` | System-wide storage tier capacity, usage, deduplication (read-only) |
 | `ClusterTiers` | Cluster-specific tier status, redundancy, encryption (read-only) |
 | `MachineDrivePhys` | Physical drive metrics: temperature, wear, SMART, VSAN status (read-only) |
+| `MachineStatus` | Machine runtime status: power, node, guest agent (`machine_status`, read-only) |
+| `MachineStats` | Per-machine CPU, RAM, and temperature metrics (`machine_stats`, read-only) |
+| `MachineDriveStats` | Per-drive I/O statistics (`machine_drive_stats`, read-only) |
+| `MachineNICs` | Per-NIC traffic counters and link status (`machine_nics`, read-only) |
 | `ClusterStatsHistory` | Historical cluster stats: RAM, CPU, nodes, machines (read-only) |
 
 ### Backup & DR

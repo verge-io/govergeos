@@ -1,7 +1,7 @@
 ---
 title: System
-description: Query nodes, clusters, settings, and system version information
-tags: [node, cluster, settings, system, version, status, infrastructure]
+description: Query nodes, clusters, settings, system version, and machine metrics
+tags: [node, cluster, settings, system, version, status, infrastructure, machine-status, machine-stats, machine-nic, machine-drive-stats]
 categories: [System]
 ---
 
@@ -57,6 +57,30 @@ neighbors, err := client.NodeLLDPNeighbors.ListByNode(ctx, nodeID)
 for _, neighbor := range neighbors {
     fmt.Println(neighbor.NIC, neighbor.ChassisName(), neighbor.PortID())
 }
+```
+
+---
+
+## Machine metrics
+
+Read-only machine tables. `MachineStatus` and `MachineStats` key off the machine ID (`VM.Machine` for a VM). `MachineNICs` and `MachineDriveStats` expose per-NIC and per-drive counters.
+
+```go
+// Runtime status for a machine (power, node, guest agent)
+status, err := client.MachineStatus.Get(ctx, machineID)
+statuses, err := client.MachineStatus.List(ctx)
+
+// CPU, RAM, and temperature metrics
+stats, err := client.MachineStats.GetByMachine(ctx, machineID)
+stats, err = client.MachineStats.Get(ctx, statsRowID)
+
+// Per-NIC traffic and link status (physical nodes)
+nics, err := client.MachineNICs.ListByMachine(ctx, machineID)
+nic, err := client.MachineNICs.Get(ctx, nicID)
+
+// Per-drive I/O stats
+driveStats, err := client.MachineDriveStats.ListPhysical(ctx)
+driveStat, err := client.MachineDriveStats.GetByDrive(ctx, driveID)
 ```
 
 ---
