@@ -29,6 +29,8 @@ Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
 
 ### Added
 
+- `TenantRecipes` and `TenantRecipeInstances` mirror VM recipes for catalog tenant templates (`tenant_recipes`, `tenant_recipe_instances`). List and get recipes (including by catalog and by name), read questions from `recipe_questions`, and `Deploy` a tenant from a recipe with the same answer validation as VM recipe deploy.
+
 - `TenantSnapshots.Create` and `TenantSnapshotCreateRequest` take a tenant snapshot from the parent (`POST /tenant_snapshots`). Fields: tenant (required), name (optional; platform may assign), profile, period, min_snapshots, description, expires, and type (`full` / `partial_include` / `partial_exclude`, default `full`). `TenantSnapshot.Type` is returned on list and get.
 
 - `TenantCreateRequest` and `TenantUpdateRequest` accept `ui_address` (address row ID) and `ui_fqdn`, so callers can set or move the tenant UI address. VergeOS accepts both on the `tenants` table; when `ui_address` is omitted on create, the platform still defaults to the first assigned external IP.

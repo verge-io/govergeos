@@ -1,7 +1,7 @@
 ---
 title: Tenants
-description: Manage multi-tenant virtual data centers, nodes, storage, snapshots, Layer 2 networks, shared objects, and the tenant UI proxy
-tags: [tenant, multi-tenant, vdc, tenant-node, tenant-storage, tenant-snapshot, layer2, isolation, clone, vnet-proxy, shared-object]
+description: Manage multi-tenant virtual data centers, nodes, storage, snapshots, recipes, Layer 2 networks, shared objects, and the tenant UI proxy
+tags: [tenant, multi-tenant, vdc, tenant-node, tenant-storage, tenant-snapshot, tenant-recipe, layer2, isolation, clone, vnet-proxy, shared-object]
 categories: [Tenants]
 ---
 
@@ -156,6 +156,44 @@ err = client.TenantSnapshots.Refresh(ctx, tenantID)
 
 // Delete a snapshot
 err = client.TenantSnapshots.Delete(ctx, snapshotID)
+```
+
+---
+
+
+## Tenant Recipes
+
+List catalog tenant recipes and deploy a tenant from one.
+
+```go
+// List tenant recipes (filter downloaded with WithFilter("downloaded eq 1"))
+recipes, err := client.TenantRecipes.List(ctx)
+
+// List recipes in a catalog
+recipes, err := client.TenantRecipes.ListByCatalog(ctx, catalogID)
+
+// Get a recipe by key or exact name
+recipe, err := client.TenantRecipes.Get(ctx, recipeID)
+recipe, err = client.TenantRecipes.GetByName(ctx, "30-Day Trial (POC)")
+
+// Read the deploy form questions (answer keys and types)
+questions, err := client.TenantRecipes.Questions(ctx, recipe.Key)
+
+// Deploy creates a tenant. Answers are checked against the recipe's questions
+// before the request is sent (same rules as VM recipe deploy).
+instance, err := client.TenantRecipeInstances.Deploy(ctx, &vergeos.TenantRecipeDeployRequest{
+    Recipe: recipe.Key,
+    Name:   "customer-a",
+    Answers: vergeos.RecipeAnswers{
+        "YB_USER_NAME":     "admin",
+        "YB_USER_PASSWORD": "secure-password",
+    },
+})
+
+// List and get instances (Get includes stored answers)
+instances, err := client.TenantRecipeInstances.ListByRecipe(ctx, recipe.Key)
+instance, err = client.TenantRecipeInstances.Get(ctx, int(instance.Key))
+instance, err = client.TenantRecipeInstances.GetByName(ctx, "customer-a")
 ```
 
 ---
