@@ -29,6 +29,8 @@ Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
 
 ### Added
 
+- `TenantCreateRequest` and `TenantUpdateRequest` accept `ui_address` (address row ID) and `ui_fqdn`, so callers can set or move the tenant UI address. VergeOS accepts both on the `tenants` table; when `ui_address` is omitted on create, the platform still defaults to the first assigned external IP.
+
 - Billing, NAS antivirus, and tenant shares matching pyVergeOS: `Billing` (`billing`, plus `POST /billing_actions` action `generate`), `NASServiceAntivirus` (`vm_service_antivirus`), and `SharedObjects` (`shared_objects`). Sharing a VM posts a machine snapshot with `expires_type` `never` and `created_manually` true, then the share. Import and refresh post `shared_object_actions`.
 - Hardware inventory services matching pyVergeOS: `VGPUProfiles` (`nvidia_vgpu_profiles`), `NodeGPUs` (`node_gpus`, including mode update), `NodeGPUStats` (current stats plus short and long history), `NodeGPUInstances`, `NodeVGPUDevices`, `NodeHostGPUDevices`, `NodeVGPUProfiles`, `NodeMemory` (`node_memory`, with `IsHealthy`), and `NodeLLDPNeighbors` (`node_lldp_neighbors`).
 - `UpdateSettings.Check`, `Download`, and `Install` post to `update_actions` for the source configured in settings. Check sends action `refresh`. Download and install use those names. None of them reboot nodes. `UpdateAll` posts action `all` with `force` and starts the platform rolling reboot. `Get` also returns `applying_updates`.
