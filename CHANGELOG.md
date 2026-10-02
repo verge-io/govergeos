@@ -29,6 +29,8 @@ Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
 
 ### Added
 
+- `TenantSnapshots.Create` and `TenantSnapshotCreateRequest` take a tenant snapshot from the parent (`POST /tenant_snapshots`). Fields: tenant (required), name (optional; platform may assign), profile, period, min_snapshots, description, expires, and type (`full` / `partial_include` / `partial_exclude`, default `full`). `TenantSnapshot.Type` is returned on list and get.
+
 - `TenantCreateRequest` and `TenantUpdateRequest` accept `ui_address` (address row ID) and `ui_fqdn`, so callers can set or move the tenant UI address. VergeOS accepts both on the `tenants` table; when `ui_address` is omitted on create, the platform still defaults to the first assigned external IP.
 
 - Billing, NAS antivirus, and tenant shares matching pyVergeOS: `Billing` (`billing`, plus `POST /billing_actions` action `generate`), `NASServiceAntivirus` (`vm_service_antivirus`), and `SharedObjects` (`shared_objects`). Sharing a VM posts a machine snapshot with `expires_type` `never` and `created_manually` true, then the share. Import and refresh post `shared_object_actions`.

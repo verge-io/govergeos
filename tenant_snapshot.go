@@ -7,7 +7,7 @@ import (
 )
 
 // TenantSnapshotService handles tenant snapshot operations.
-// Tenant snapshots are created automatically by snapshot profiles or manually via tenant actions.
+// Tenant snapshots are created with Create (POST /tenant_snapshots), by snapshot profiles, or via Refresh.
 type TenantSnapshotService struct {
 	client *Client
 }
@@ -84,6 +84,29 @@ func (s *TenantSnapshotService) GetByName(ctx context.Context, tenantID int, nam
 		return nil, err
 	}
 	return got, nil
+}
+
+// Create creates a tenant snapshot and returns the created snapshot.
+// Creation is a POST on /tenant_snapshots; tenant_snapshot_actions only offers refresh.
+func (s *TenantSnapshotService) Create(ctx context.Context, req *TenantSnapshotCreateRequest) (*TenantSnapshot, error) {
+	if req == nil {
+		return nil, &ValidationError{Message: "create request is required"}
+	}
+	if req.Tenant <= 0 {
+		return nil, &ValidationError{Field: "tenant", Message: "tenant is required"}
+	}
+
+	var resp apiResponse
+	if err := s.client.post(ctx, "/tenant_snapshots", req, &resp); err != nil {
+		return nil, err
+	}
+
+	id, err := getKey(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.Get(ctx, id)
 }
 
 // Update updates a tenant snapshot and returns the updated snapshot.

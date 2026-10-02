@@ -1171,6 +1171,7 @@ type TenantSnapshotServiceInterface interface {
 	ListExpiring(ctx context.Context, days int, opts ...ListOption) ([]TenantSnapshot, error)
 	Get(ctx context.Context, id int) (*TenantSnapshot, error)
 	GetByName(ctx context.Context, tenantID int, name string) (*TenantSnapshot, error)
+	Create(ctx context.Context, req *TenantSnapshotCreateRequest) (*TenantSnapshot, error)
 	Update(ctx context.Context, id int, req *TenantSnapshotUpdateRequest) (*TenantSnapshot, error)
 	Delete(ctx context.Context, id int) error
 	Refresh(ctx context.Context, tenantID int) error

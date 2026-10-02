@@ -276,3 +276,134 @@ func TestTenantSnapshotService_SetExpires(t *testing.T) {
 		t.Errorf("expected expires %d, got %d", expiry, snapshot.Expires)
 	}
 }
+
+func TestTenantSnapshotService_Create(t *testing.T) {
+	minSnaps := 2
+	expires := int64(1700000000)
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/tenant_snapshots": func(w http.ResponseWriter, r *http.Request) {
+			var req TenantSnapshotCreateRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				t.Fatalf("decode request: %v", err)
+			}
+			if req.Tenant != 10 {
+				t.Errorf("expected tenant 10, got %d", req.Tenant)
+			}
+			if req.Name != "pre-upgrade" {
+				t.Errorf("expected name 'pre-upgrade', got %q", req.Name)
+			}
+			if req.Description != "before upgrade" {
+				t.Errorf("expected description 'before upgrade', got %q", req.Description)
+			}
+			if req.Profile != "daily" {
+				t.Errorf("expected profile 'daily', got %q", req.Profile)
+			}
+			if req.Period != "nightly" {
+				t.Errorf("expected period 'nightly', got %q", req.Period)
+			}
+			if req.MinSnapshots == nil || *req.MinSnapshots != minSnaps {
+				t.Errorf("expected min_snapshots %d, got %v", minSnaps, req.MinSnapshots)
+			}
+			if req.Expires == nil || *req.Expires != expires {
+				t.Errorf("expected expires %d, got %v", expires, req.Expires)
+			}
+			if req.Type != TenantSnapshotTypeFull {
+				t.Errorf("expected type %q, got %q", TenantSnapshotTypeFull, req.Type)
+			}
+			jsonResponse(w, 200, apiResponse{Key: float64(5)})
+		},
+		"GET /api/v4/tenant_snapshots/5": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, TenantSnapshot{
+				Key:          5,
+				Tenant:       10,
+				Name:         "pre-upgrade",
+				Description:  "before upgrade",
+				Profile:      "daily",
+				Period:       "nightly",
+				MinSnapshots: minSnaps,
+				Expires:      expires,
+				Type:         TenantSnapshotTypeFull,
+			})
+		},
+	}))
+
+	snap, err := client.TenantSnapshots.Create(context.Background(), &TenantSnapshotCreateRequest{
+		Tenant:       10,
+		Name:         "pre-upgrade",
+		Description:  "before upgrade",
+		Profile:      "daily",
+		Period:       "nightly",
+		MinSnapshots: &minSnaps,
+		Expires:      &expires,
+		Type:         TenantSnapshotTypeFull,
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+	if snap.Key.Int() != 5 {
+		t.Errorf("expected key 5, got %d", snap.Key.Int())
+	}
+	if snap.Name != "pre-upgrade" {
+		t.Errorf("expected name 'pre-upgrade', got %q", snap.Name)
+	}
+	if snap.Type != TenantSnapshotTypeFull {
+		t.Errorf("expected type %q, got %q", TenantSnapshotTypeFull, snap.Type)
+	}
+}
+
+func TestTenantSnapshotService_Create_WithoutName(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/tenant_snapshots": func(w http.ResponseWriter, r *http.Request) {
+			var req TenantSnapshotCreateRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				t.Fatalf("decode request: %v", err)
+			}
+			if req.Tenant != 10 {
+				t.Errorf("expected tenant 10, got %d", req.Tenant)
+			}
+			if req.Name != "" {
+				t.Errorf("expected empty name, got %q", req.Name)
+			}
+			jsonResponse(w, 200, apiResponse{Key: float64(6)})
+		},
+		"GET /api/v4/tenant_snapshots/6": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, TenantSnapshot{Key: 6, Tenant: 10, Name: "auto-assigned", Type: TenantSnapshotTypeFull})
+		},
+	}))
+
+	snap, err := client.TenantSnapshots.Create(context.Background(), &TenantSnapshotCreateRequest{
+		Tenant: 10,
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+	if snap.Name != "auto-assigned" {
+		t.Errorf("expected server-assigned name, got %q", snap.Name)
+	}
+}
+
+func TestTenantSnapshotService_Create_NilRequest(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{}))
+
+	_, err := client.TenantSnapshots.Create(context.Background(), nil)
+	if err == nil {
+		t.Fatal("expected error for nil request")
+	}
+	if !IsValidationError(err) {
+		t.Errorf("expected ValidationError, got %T: %v", err, err)
+	}
+}
+
+func TestTenantSnapshotService_Create_MissingTenant(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{}))
+
+	_, err := client.TenantSnapshots.Create(context.Background(), &TenantSnapshotCreateRequest{
+		Name: "snap1",
+	})
+	if err == nil {
+		t.Fatal("expected error for missing tenant")
+	}
+	if !IsValidationError(err) {
+		t.Errorf("expected ValidationError, got %T: %v", err, err)
+	}
+}
