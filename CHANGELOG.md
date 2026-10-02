@@ -46,6 +46,10 @@ Breaking change: the `$key` field is named `Key` on every type. Types that expos
 - `NewClient` records HTTP options and builds the client once, after every option has run. `WithHTTPClient` supplies the base. Timeout, TLS, and rate limit settings are applied to a copy, in either order, and the `*http.Client` you pass in is not modified. Skipping certificate verification requires an `*http.Transport`; any other transport type makes `NewClient` return an error instead of dropping the setting.
 - `WithEnvConfig` treats a `VERGEOS_HOST` with no scheme as `https://`, and rejects any other scheme with an error that names the variable. `VERGEOS_INSECURE=true` skips TLS verification, the same as `VERGEOS_VERIFY_SSL=false`; setting both to conflicting values is an error. When an API key and username/password are both configured, the API key is used. That applies to `WithEnvConfig` and to `WithAPIKey` together with `WithCredentials`.
 - `VMService.PowerOff` sends the `poweroff` action and waits for the VM to stop. It previously sent `kill`, which is a hard power-off. Callers that need the hard stop, including the docker-machine driver's force stop, should call `Kill`.
+- `NewClient` accepts VergeOS major 26 and every later major. It previously required an exact match on 26, so the next year-based release would fail client creation. Callers can raise the floor or skip the rejection with the existing options; the credential check still runs.
+- `NewClient` follows the version check with one `clusters` read (`limit=1`) so a wrong password fails at construction. `/version.json` does not require authentication, so a bad credential previously surfaced only on the first real API call. The version request does not send credentials, and a failed login is not retried.
+- HTTP 403 is `PermissionError` and 409 is `ConflictError`. 401 remains `AuthError`, so callers can tell a missing permission from a bad password.
+- GET, PUT, and DELETE retry connection resets, timeouts before a response, and HTTP 429, 502, and 503. POST and 401 stay single-attempt.
 
 ### Added
 
@@ -66,6 +70,12 @@ Breaking change: the `$key` field is named `Key` on every type. Types that expos
 ### Fixed
 
 - `NetworkService.GetLatestStatistics` requests a single row (`sort=-timestamp`, `limit=1`) from `/vnet_monitor_stats_history_short`. It previously called `GetStatistics`, which downloads up to 100 history rows and returns only the first. `GetStatistics` is unchanged.
+- `GetByName` returns `AmbiguousNameError` with the matching keys when more than one row shares the name, instead of the first row and a nil error. `Tags.GetByName` takes the category, the same way snapshot-profile periods take a profile.
+- Filter name literals use VergeOS backslash escapes (`\\`, `'`, `{`). Apostrophe doubling was SQL quoting and could match the wrong object or return HTTP 422. Every `GetByName` also compares the returned name with the requested name and treats a mismatch as not found.
+- `CloudInitFiles.Create` requires a VM owner (`vms/<id>`). VergeOS rejects creates that omit it, and the field cannot be changed later. `CreateForVM` and `ListByVM` set that reference so callers do not pass the machine key.
+- Public methods that identify a VM take the VM `$key` and resolve the machine key internally. Snapshot restore, drive and NIC delete, and VM-scoped lookups previously mixed the two keys; on a system in use those numbers differ and the call can hit another VM.
+- `VMs.Snapshot` creates the row through `VMSnapshots.Create` (`machine_snapshots`), converts retention into an expires timestamp, and sends the quiesce action only when `Quiesce` is set. It previously posted `quiesce_snapshot` and returned success without inserting a snapshot row.
+- Guest reboot, user enable/disable, webhook send, node maintenance, clear-pstore, volume sync, and outgoing throttle use the action names and endpoints VergeOS accepts. Those methods previously posted names or tables the API rejects.
 
 ## v0.3.0 - 2026-07-09
 
