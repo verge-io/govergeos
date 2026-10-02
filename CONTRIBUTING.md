@@ -89,7 +89,7 @@ A nightly run is already scheduled and stays skipped until a dedicated lab exist
 
 ## Releases
 
-Tag and publish from the Release workflow. That is the step that was missed when v0.3.1 merged without a tag. Cutting that existing tag is a separate decision; this workflow only creates a tag when someone runs it.
+Tag and publish from the Release workflow. The workflow creates an annotated tag and the GitHub release when someone runs it. Existing tags such as v0.3.1 are left in place; the workflow refuses a version that is already tagged.
 
 Supported VergeOS versions, how long a deprecated method stays, and the criteria for tagging v1.0.0 are in [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 

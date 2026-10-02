@@ -4,8 +4,6 @@
 
 Breaking change: the `$key` field is named `Key` on every type. Types that exposed it as `ID` are renamed below.
 
-Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
-
 ### Breaking
 
 - Removed read fields that VergeOS 26 does not return. They were always the zero value.
@@ -21,12 +19,6 @@ Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
   - `string`, renamed from `ID`: `ResourceGroup` (UUID).
 - A separate `id` column is still `ID` (`User.ID`, volume SHA1 `ID`, and the same pattern on other string-key tables). `Node.ID` is that `id` column and is not renamed. Method parameters that take a key as an `int` are unchanged.
 
-### Changed
-
-- `NewClient` records HTTP options and builds the client once, after every option has run. `WithHTTPClient` supplies the base. Timeout, TLS, and rate limit settings are applied to a copy, in either order, and the `*http.Client` you pass in is not modified. Skipping certificate verification requires an `*http.Transport`; any other transport type makes `NewClient` return an error instead of dropping the setting.
-- `WithEnvConfig` treats a `VERGEOS_HOST` with no scheme as `https://`, and rejects any other scheme with an error that names the variable. `VERGEOS_INSECURE=true` skips TLS verification, the same as `VERGEOS_VERIFY_SSL=false`; setting both to conflicting values is an error. When an API key and username/password are both configured, the API key is used. That applies to `WithEnvConfig` and to `WithAPIKey` together with `WithCredentials`.
-- `VMService.PowerOff` sends the `poweroff` action and waits for the VM to stop. It previously sent `kill`, which is a hard power-off. Callers that need the hard stop, including the docker-machine driver's force stop, should call `Kill`.
-
 ### Added
 
 - `TenantRecipes` and `TenantRecipeInstances` mirror VM recipes for catalog tenant templates (`tenant_recipes`, `tenant_recipe_instances`). List and get recipes (including by catalog and by name), read questions from `recipe_questions`, and `Deploy` a tenant from a recipe with the same answer validation as VM recipe deploy.
@@ -39,6 +31,25 @@ Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
 - Hardware inventory services matching pyVergeOS: `VGPUProfiles` (`nvidia_vgpu_profiles`), `NodeGPUs` (`node_gpus`, including mode update), `NodeGPUStats` (current stats plus short and long history), `NodeGPUInstances`, `NodeVGPUDevices`, `NodeHostGPUDevices`, `NodeVGPUProfiles`, `NodeMemory` (`node_memory`, with `IsHealthy`), and `NodeLLDPNeighbors` (`node_lldp_neighbors`).
 - `UpdateSettings.Check`, `Download`, and `Install` post to `update_actions` for the source configured in settings. Check sends action `refresh`. Download and install use those names. None of them reboot nodes. `UpdateAll` posts action `all` with `force` and starts the platform rolling reboot. `Get` also returns `applying_updates`.
 - Task engine services: `TaskSchedules` (`task_schedules`), `TaskScheduleTriggers` (`task_schedule_triggers`), `TaskEvents` (`task_events`), and `TaskScripts` (`task_scripts`). Schedule create sends the same defaults as pyVergeOS (enabled, every day, hourly, iteration 1, start of day through 86400, day of month `start_date`). `GetSchedule`, trigger, and script `Run` call the row action (`PUT /{table}/{key}?action=...`). A script created without settings sends `{"questions": []}`.
+- Dynamic routing services for BGP, OSPF, and EIGRP: `VNetBGP`, `VNetBGPRouters`, `VNetBGPRouterCommands`, `VNetBGPInterfaces`, `VNetBGPInterfaceCommands`, `VNetBGPRouteMaps`, `VNetBGPRouteMapCommands`, `VNetBGPIPCommands`, `VNetOSPFCommands`, `VNetEIGRPRouters`, and `VNetEIGRPRouterCommands`. `VNetBGP.GetOrCreate` returns the per-network `vnet_bgp` row the other tables use. Create, update, and delete return `RoutingRestartStatus`. `Pending` is the network's `need_restart` flag. `WithRestartNetwork` restarts the network in the same call.
+
+### Fixed
+
+- Create and update no longer report a missing related row as `NotFoundError` for the row being written. VergeOS returns HTTP 404 for that lookup (a network `interface_vnet`, a VM `snapshot_profile`, and the same pattern on other writes). The error stays an `APIError` with the platform message, and `IsNotFoundError` is false, so a live object is not treated as deleted. `Get` and `Delete` of an id that is not there are still `NotFoundError`.
+- `CloudInitFiles.GetContents` reads the file body from `GET /cloudinit_files/{id}?download=1`. VergeOS omits `contents` from list and get responses, including `fields=all`, so `Contents` stayed empty on every read, including the file returned by `Create` and `CreateForVM`. Assign the string to `Contents` when the file object should carry the body. This is the request pyVergeOS `get_content()` uses.
+- Documentation and comments described a bare disk image (qcow2, vmdk, vhd, raw, img) as a `VMImports` source, the same call as an OVA. VergeOS 26.1 rejects those types on `vm_imports` with `Unknown Import file type`. The catalog disk-image path is `VMDrives.Create` with `Media` set to `import`.
+
+## v0.3.1 - 2026-09-30
+
+### Changed
+
+- `NewClient` records HTTP options and builds the client once, after every option has run. `WithHTTPClient` supplies the base. Timeout, TLS, and rate limit settings are applied to a copy, in either order, and the `*http.Client` you pass in is not modified. Skipping certificate verification requires an `*http.Transport`; any other transport type makes `NewClient` return an error instead of dropping the setting.
+- `WithEnvConfig` treats a `VERGEOS_HOST` with no scheme as `https://`, and rejects any other scheme with an error that names the variable. `VERGEOS_INSECURE=true` skips TLS verification, the same as `VERGEOS_VERIFY_SSL=false`; setting both to conflicting values is an error. When an API key and username/password are both configured, the API key is used. That applies to `WithEnvConfig` and to `WithAPIKey` together with `WithCredentials`.
+- `VMService.PowerOff` sends the `poweroff` action and waits for the VM to stop. It previously sent `kill`, which is a hard power-off. Callers that need the hard stop, including the docker-machine driver's force stop, should call `Kill`.
+
+### Added
+
+- `Catalogs`, `VMRecipes`, and `VMRecipeInstances` deploy a VM from a recipe. List catalogs and recipes (including by name), read questions from `recipe_questions`, and `Deploy` with answer validation before POST. `Preview` is the dry run and returns a `*VMRecipePreview`; a 2xx from the platform means a VM was created (`RecipePreviewPersistedError`).
 - `VMImports` creates a VM import from a media-catalog file or an http(s) URL (OVA or OVF), and can also import from a NAS volume path or a shared object. A bare disk image (qcow2, vmdk, vhd, raw, img) is rejected by `vm_imports`. Attach it with `VMDrives.Create` and `Media` set to `import`. `Wait` returns as soon as the import reports an error, an abort, or a failed drive, including `status_info` and the error log lines. `Create` does not post another import when a VM with that name already exists. `DeleteByName` removes every finished row with the name. When several rows share the name and one is still importing, it deletes none. `VMImportLogs` reads `vm_import_logs`.
 - `VMExports` exports a VM to a NAS volume. `Run` ensures the volume's export configuration and starts the export. `Wait` returns as soon as the export reports an error, or when the newest statistics row recorded errors.
 - `VMService.GetByName` looks up a VM by name. The `vms` table also stores snapshots, so the lookup filters `is_snapshot eq false`. Snapshot lookup stays on `VMSnapshots.GetByName`.
@@ -46,7 +57,6 @@ Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
 - `TenantNetworkBlocks` manages tenant CIDR blocks on `vnet_cidrs` (`List`, `ListByTenant`, `Get`, `GetByTenantAndCIDR`, `Create`, `Delete`).
 - `TenantExternalIPs` gives a tenant a virtual IP on `vnet_addresses`. The tenant is the owner (`tenants/{id}`), separate from the generic `VNetAddresses` service.
 - `Create` and `Delete` on both services return `ParentFirewallStatus`. `Pending` is the parent network's `need_fw_apply` flag. `WithApplyParentFirewall` applies that network's rules in the same call.
-- Dynamic routing services for BGP, OSPF, and EIGRP: `VNetBGP`, `VNetBGPRouters`, `VNetBGPRouterCommands`, `VNetBGPInterfaces`, `VNetBGPInterfaceCommands`, `VNetBGPRouteMaps`, `VNetBGPRouteMapCommands`, `VNetBGPIPCommands`, `VNetOSPFCommands`, `VNetEIGRPRouters`, and `VNetEIGRPRouterCommands`. `VNetBGP.GetOrCreate` returns the per-network `vnet_bgp` row the other tables use. Create, update, and delete return `RoutingRestartStatus`. `Pending` is the network's `need_restart` flag. `WithRestartNetwork` restarts the network in the same call.
 - `AuthSources` creates, reads, updates, and deletes external authentication sources. `Update` reads the stored settings and merges the caller's keys before sending, because the API replaces the whole settings object. `client_secret` is write-only: it is sent on create and update, removed from returned settings, and redacted when a value is printed.
 - `OIDCApplications` creates, reads, updates, and deletes OIDC applications where VergeOS is the identity provider. `Create` returns the generated client secret as a `WriteOnlySecret`. Printing that value redacts it. The secret is not stored on `OIDCApplication`.
 - `VMService.Kill` sends `kill` and waits for the VM to stop.
@@ -55,7 +65,29 @@ Behavior change: `VMService.PowerOff` is a graceful shutdown. See Changed.
 
 ### Fixed
 
-- Create and update no longer report a missing related row as `NotFoundError` for the row being written. VergeOS returns HTTP 404 for that lookup (a network `interface_vnet`, a VM `snapshot_profile`, and the same pattern on other writes). The error stays an `APIError` with the platform message, and `IsNotFoundError` is false, so a live object is not treated as deleted. `Get` and `Delete` of an id that is not there are still `NotFoundError`.
-- `CloudInitFiles.GetContents` reads the file body from `GET /cloudinit_files/{id}?download=1`. VergeOS omits `contents` from list and get responses, including `fields=all`, so `Contents` stayed empty on every read, including the file returned by `Create` and `CreateForVM`. Assign the string to `Contents` when the file object should carry the body. This is the request pyVergeOS `get_content()` uses.
-- Documentation and comments described a bare disk image (qcow2, vmdk, vhd, raw, img) as a `VMImports` source, the same call as an OVA. VergeOS 26.1 rejects those types on `vm_imports` with `Unknown Import file type`. The catalog disk-image path is `VMDrives.Create` with `Media` set to `import`.
 - `NetworkService.GetLatestStatistics` requests a single row (`sort=-timestamp`, `limit=1`) from `/vnet_monitor_stats_history_short`. It previously called `GetStatistics`, which downloads up to 100 history rows and returns only the first. `GetStatistics` is unchanged.
+
+## v0.3.0 - 2026-07-09
+
+### Added
+
+- `VMService.GetGuestAgentInfo` and `GuestInfo.IPsForMAC` for guest agent IP discovery.
+- Network machine status and router NIC linkage on `Network`, with power and DNS actions on the live vnet machine.
+- `VMDriveService.GetByName` looks up a drive by name.
+
+### Fixed
+
+- Cloud snapshot create sends `expires` / `expires_type` instead of an ignored retention field.
+- Network `PowerOn` / `PowerOff` use `vnet_actions` and wait on machine status. `ApplyDNS` posts refresh with `target=dnsonly`.
+
+## v0.2.0 - 2026-03-30
+
+### Added
+
+- `FlexFK`, ClusterTier online counts, and Node VM aggregates.
+- `TenantStatus` and `TenantStatsHistoryShort` services.
+- Unit tests for all 77 services.
+
+### Fixed
+
+- Confirmed issues from the codebase audit before the v0.2.0 cut.
