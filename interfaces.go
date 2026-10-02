@@ -1164,7 +1164,6 @@ type PermissionServiceInterface interface {
 	Revoke(ctx context.Context, identityID int, table string, rowID int64) error
 }
 
-
 // TenantRecipeServiceInterface defines the interface for tenant recipe reads.
 type TenantRecipeServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]TenantRecipe, error)
@@ -1470,8 +1469,8 @@ var (
 	_ VolumeSyncServiceInterface              = (*VolumeSyncService)(nil)
 	_ VolumeSnapshotServiceInterface          = (*VolumeSnapshotService)(nil)
 	_ PermissionServiceInterface              = (*PermissionService)(nil)
-	_ TenantRecipeServiceInterface             = (*TenantRecipeService)(nil)
-	_ TenantRecipeInstanceServiceInterface     = (*TenantRecipeInstanceService)(nil)
+	_ TenantRecipeServiceInterface            = (*TenantRecipeService)(nil)
+	_ TenantRecipeInstanceServiceInterface    = (*TenantRecipeInstanceService)(nil)
 	_ TenantSnapshotServiceInterface          = (*TenantSnapshotService)(nil)
 	_ LogServiceInterface                     = (*LogService)(nil)
 	_ TenantLayer2NetworkServiceInterface     = (*TenantLayer2NetworkService)(nil)
