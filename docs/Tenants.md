@@ -130,6 +130,14 @@ snapshot, err := client.TenantSnapshots.Get(ctx, snapshotID)
 // Get a snapshot by name within a tenant
 snapshot, err := client.TenantSnapshots.GetByName(ctx, tenantID, "pre-upgrade")
 
+// Create a tenant snapshot (POST /tenant_snapshots)
+snapshot, err = client.TenantSnapshots.Create(ctx, &vergeos.TenantSnapshotCreateRequest{
+    Tenant:      tenantID,
+    Name:        "pre-upgrade",
+    Description: "before upgrade",
+    Type:        vergeos.TenantSnapshotTypeFull,
+})
+
 // Update a snapshot
 newDesc := "Updated description"
 snapshot, err := client.TenantSnapshots.Update(ctx, snapshotID, &vergeos.TenantSnapshotUpdateRequest{
