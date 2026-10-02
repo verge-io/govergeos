@@ -41,7 +41,7 @@ Services are initialized in `NewClient()` (in `client.go`) and exposed as interf
 
 ### Key Design Decisions
 
-Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-027). The critical ones:
+Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-028). The critical ones:
 
 - **`$key` is `Key`**: Every resource names the row key `Key`. A separate `id` column stays `ID`.
 - **FlexInt** (`types.go`): Custom type handling VergeOS API returning IDs as int or string. String-key tables stay `string` (volumes and other SHA1 keys, resource groups as UUIDs). `StorageTier.Key` and the device-settings rows stay `int`.
@@ -71,7 +71,7 @@ Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-027). The critical one
 
 ### Error Types
 
-Defined in `errors.go`: `APIError`, `NotFoundError`, `AmbiguousNameError`, `AuthError`, `ValidationError`, `UnsupportedVersionError`. Check with `IsNotFoundError(err)`, `IsAmbiguousNameError(err)`, `IsAuthError(err)`, etc.
+Defined in `errors.go`: `APIError`, `NotFoundError`, `AmbiguousNameError`, `AuthError`, `PermissionError`, `ConflictError`, `ValidationError`, `TimeoutError`, `VMImportFailedError`, `VMImportInProgressError`, `VMExportFailedError`, `RecipePreviewPersistedError`, `RecipePreviewFailedError`. `UnsupportedVersionError` is defined in `version.go`. The 1.0 freeze checklist in `docs/COMPATIBILITY.md` treats `AuthError`, `PermissionError`, `NotFoundError`, `ConflictError`, `TimeoutError`, and `AmbiguousNameError` as settled. Check with `IsNotFoundError(err)`, `IsAmbiguousNameError(err)`, `IsAuthError(err)`, etc.
 
 ### Query Options
 
