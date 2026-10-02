@@ -21,16 +21,21 @@ tenant, err := client.Tenants.Get(ctx, tenantID)
 // Get a tenant by name
 tenant, err := client.Tenants.GetByName(ctx, "customer-a")
 
-// Create a tenant
+// Create a tenant (UIAddress picks which external IP is the UI; omit to keep the default)
+uiAddress := addressRowID
 tenant, err := client.Tenants.Create(ctx, &vergeos.TenantCreateRequest{
     Name:        "customer-a",
     Password:    "admin-password",
     Description: "Customer A production environment",
+    UIAddress:   &uiAddress,
+    UIFqdn:      "customer-a.example.com",
 })
 
-// Update a tenant
+// Update a tenant, including moving the UI address
 tenant, err := client.Tenants.Update(ctx, tenantID, &vergeos.TenantUpdateRequest{
     Description: ptr("Updated description"),
+    UIAddress:   &uiAddress,
+    UIFqdn:      ptr("customer-a.example.com"),
 })
 
 // Delete a tenant

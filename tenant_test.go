@@ -127,6 +127,7 @@ func TestTenantService_GetByName_NotFound(t *testing.T) {
 }
 
 func TestTenantService_Create(t *testing.T) {
+	uiAddress := 42
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/tenants": func(w http.ResponseWriter, r *http.Request) {
 			var req TenantCreateRequest
@@ -134,21 +135,32 @@ func TestTenantService_Create(t *testing.T) {
 			if req.Name != "new-tenant" {
 				t.Errorf("expected name 'new-tenant', got %q", req.Name)
 			}
+			if req.UIAddress == nil || *req.UIAddress != uiAddress {
+				t.Errorf("expected ui_address %d, got %v", uiAddress, req.UIAddress)
+			}
+			if req.UIFqdn != "tenant.example.com" {
+				t.Errorf("expected ui_fqdn %q, got %q", "tenant.example.com", req.UIFqdn)
+			}
 			jsonResponse(w, 200, apiResponse{Key: 10})
 		},
 		"GET /api/v4/tenants/10": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Tenant{Key: 10, Name: "new-tenant"})
+			jsonResponse(w, 200, Tenant{Key: 10, Name: "new-tenant", UIAddress: FlexInt(uiAddress)})
 		},
 	}))
 
 	tenant, err := client.Tenants.Create(context.Background(), &TenantCreateRequest{
-		Name: "new-tenant",
+		Name:      "new-tenant",
+		UIAddress: &uiAddress,
+		UIFqdn:    "tenant.example.com",
 	})
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
 	if tenant.Name != "new-tenant" {
 		t.Errorf("expected name 'new-tenant', got %q", tenant.Name)
+	}
+	if tenant.UIAddress != FlexInt(uiAddress) {
+		t.Errorf("expected ui_address %d, got %v", uiAddress, tenant.UIAddress)
 	}
 }
 
@@ -161,6 +173,62 @@ func TestTenantService_Create_NilRequest(t *testing.T) {
 	}
 	if !IsValidationError(err) {
 		t.Errorf("expected ValidationError, got %T: %v", err, err)
+	}
+}
+
+func TestTenantCreateUpdateRequest_UIAddressJSON(t *testing.T) {
+	uiAddress := 7
+	createBody, err := json.Marshal(&TenantCreateRequest{
+		Name:      "t1",
+		UIAddress: &uiAddress,
+		UIFqdn:    "ui.example.com",
+	})
+	if err != nil {
+		t.Fatalf("marshal create: %v", err)
+	}
+	var createMap map[string]any
+	if err := json.Unmarshal(createBody, &createMap); err != nil {
+		t.Fatalf("unmarshal create: %v", err)
+	}
+	if createMap["ui_address"] != float64(7) {
+		t.Errorf("create ui_address = %#v, want 7", createMap["ui_address"])
+	}
+	if createMap["ui_fqdn"] != "ui.example.com" {
+		t.Errorf("create ui_fqdn = %#v, want ui.example.com", createMap["ui_fqdn"])
+	}
+
+	omitted, err := json.Marshal(&TenantCreateRequest{Name: "t2"})
+	if err != nil {
+		t.Fatalf("marshal omitted create: %v", err)
+	}
+	var omittedMap map[string]any
+	if err := json.Unmarshal(omitted, &omittedMap); err != nil {
+		t.Fatalf("unmarshal omitted create: %v", err)
+	}
+	if _, ok := omittedMap["ui_address"]; ok {
+		t.Errorf("ui_address should be omitted when unset, got %#v", omittedMap["ui_address"])
+	}
+	if _, ok := omittedMap["ui_fqdn"]; ok {
+		t.Errorf("ui_fqdn should be omitted when unset, got %#v", omittedMap["ui_fqdn"])
+	}
+
+	uiFqdn := "moved.example.com"
+	updateBody, err := json.Marshal(&TenantUpdateRequest{
+		UIAddress: &uiAddress,
+		UIFqdn:    &uiFqdn,
+	})
+	if err != nil {
+		t.Fatalf("marshal update: %v", err)
+	}
+	var updateMap map[string]any
+	if err := json.Unmarshal(updateBody, &updateMap); err != nil {
+		t.Fatalf("unmarshal update: %v", err)
+	}
+	if updateMap["ui_address"] != float64(7) {
+		t.Errorf("update ui_address = %#v, want 7", updateMap["ui_address"])
+	}
+	if updateMap["ui_fqdn"] != uiFqdn {
+		t.Errorf("update ui_fqdn = %#v, want %q", updateMap["ui_fqdn"], uiFqdn)
 	}
 }
 
@@ -178,6 +246,8 @@ func TestTenantService_Create_EmptyName(t *testing.T) {
 
 func TestTenantService_Update(t *testing.T) {
 	newDesc := "updated"
+	uiAddress := 99
+	uiFqdn := "moved.example.com"
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"PUT /api/v4/tenants/1": func(w http.ResponseWriter, r *http.Request) {
 			var req TenantUpdateRequest
@@ -185,21 +255,32 @@ func TestTenantService_Update(t *testing.T) {
 			if req.Description == nil || *req.Description != newDesc {
 				t.Errorf("expected description %q, got %v", newDesc, req.Description)
 			}
+			if req.UIAddress == nil || *req.UIAddress != uiAddress {
+				t.Errorf("expected ui_address %d, got %v", uiAddress, req.UIAddress)
+			}
+			if req.UIFqdn == nil || *req.UIFqdn != uiFqdn {
+				t.Errorf("expected ui_fqdn %q, got %v", uiFqdn, req.UIFqdn)
+			}
 			w.WriteHeader(200)
 		},
 		"GET /api/v4/tenants/1": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, Tenant{Key: 1, Name: "tenant-a", Description: newDesc})
+			jsonResponse(w, 200, Tenant{Key: 1, Name: "tenant-a", Description: newDesc, UIAddress: FlexInt(uiAddress)})
 		},
 	}))
 
 	tenant, err := client.Tenants.Update(context.Background(), 1, &TenantUpdateRequest{
 		Description: &newDesc,
+		UIAddress:   &uiAddress,
+		UIFqdn:      &uiFqdn,
 	})
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)
 	}
 	if tenant.Description != newDesc {
 		t.Errorf("expected description %q, got %q", newDesc, tenant.Description)
+	}
+	if tenant.UIAddress != FlexInt(uiAddress) {
+		t.Errorf("expected ui_address %d, got %v", uiAddress, tenant.UIAddress)
 	}
 }
 

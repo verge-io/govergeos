@@ -17,7 +17,8 @@ type Tenant struct {
 	UUID string `json:"uuid,omitempty"`
 	// VNet is the auto-created network ID for the tenant (readonly).
 	VNet FlexInt `json:"vnet,omitempty"`
-	// UIAddress is the IP address row ID for the tenant UI (readonly).
+	// UIAddress is the IP address row ID for the tenant UI.
+	// Writable on create and update via TenantCreateRequest / TenantUpdateRequest.
 	UIAddress FlexInt `json:"ui_address,omitempty"`
 	// OIDCApplication is the OIDC application ID for SSO configuration.
 	OIDCApplication *FlexInt `json:"oidc_application,omitempty"`
@@ -69,6 +70,11 @@ type TenantCreateRequest struct {
 	HelpURL *string `json:"help_url,omitempty"`
 	// Note is a free-form note.
 	Note *string `json:"note,omitempty"`
+	// UIAddress is the IP address row ID to use for the tenant UI.
+	// When omitted, VergeOS defaults to the first assigned external IP.
+	UIAddress *int `json:"ui_address,omitempty"`
+	// UIFqdn is an optional FQDN for the tenant UI.
+	UIFqdn string `json:"ui_fqdn,omitempty"`
 }
 
 // TenantUpdateRequest is the request body for updating a tenant.
@@ -93,6 +99,10 @@ type TenantUpdateRequest struct {
 	HelpURL *string `json:"help_url,omitempty"`
 	// Note is a free-form note.
 	Note *string `json:"note,omitempty"`
+	// UIAddress is the IP address row ID to use for the tenant UI.
+	UIAddress *int `json:"ui_address,omitempty"`
+	// UIFqdn is an optional FQDN for the tenant UI.
+	UIFqdn *string `json:"ui_fqdn,omitempty"`
 }
 
 // TenantCloneOptions are options for cloning a tenant.
