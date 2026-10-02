@@ -1164,6 +1164,25 @@ type PermissionServiceInterface interface {
 	Revoke(ctx context.Context, identityID int, table string, rowID int64) error
 }
 
+
+// TenantRecipeServiceInterface defines the interface for tenant recipe reads.
+type TenantRecipeServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantRecipe, error)
+	ListByCatalog(ctx context.Context, catalogID string, opts ...ListOption) ([]TenantRecipe, error)
+	Get(ctx context.Context, id string) (*TenantRecipe, error)
+	GetByName(ctx context.Context, name string) (*TenantRecipe, error)
+	Questions(ctx context.Context, recipeID string, opts ...ListOption) ([]RecipeQuestion, error)
+}
+
+// TenantRecipeInstanceServiceInterface defines the interface for tenant recipe deployments.
+type TenantRecipeInstanceServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]TenantRecipeInstance, error)
+	ListByRecipe(ctx context.Context, recipeID string, opts ...ListOption) ([]TenantRecipeInstance, error)
+	Get(ctx context.Context, id int) (*TenantRecipeInstance, error)
+	GetByName(ctx context.Context, name string) (*TenantRecipeInstance, error)
+	Deploy(ctx context.Context, req *TenantRecipeDeployRequest) (*TenantRecipeInstance, error)
+}
+
 // TenantSnapshotServiceInterface defines the interface for tenant snapshot operations.
 type TenantSnapshotServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]TenantSnapshot, error)
@@ -1451,6 +1470,8 @@ var (
 	_ VolumeSyncServiceInterface              = (*VolumeSyncService)(nil)
 	_ VolumeSnapshotServiceInterface          = (*VolumeSnapshotService)(nil)
 	_ PermissionServiceInterface              = (*PermissionService)(nil)
+	_ TenantRecipeServiceInterface             = (*TenantRecipeService)(nil)
+	_ TenantRecipeInstanceServiceInterface     = (*TenantRecipeInstanceService)(nil)
 	_ TenantSnapshotServiceInterface          = (*TenantSnapshotService)(nil)
 	_ LogServiceInterface                     = (*LogService)(nil)
 	_ TenantLayer2NetworkServiceInterface     = (*TenantLayer2NetworkService)(nil)

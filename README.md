@@ -294,6 +294,8 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | `Tenants` | Tenant CRUD, power operations, cloning, isolation, and a client for a running tenant's UI |
 | `TenantNodes` | Tenant virtual node management |
 | `TenantStorage` | Tenant storage allocation |
+| `TenantRecipes` | Tenant recipes and their questions (read) |
+| `TenantRecipeInstances` | Deploy a tenant from a recipe |
 | `TenantSnapshots` | Tenant snapshot management |
 | `TenantLayer2Networks` | Layer 2 network assignments to tenants |
 | `TenantNetworkBlocks` | CIDR blocks assigned to a tenant (`vnet_cidrs`) |
