@@ -291,7 +291,7 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 
 | Service | Description |
 |---------|-------------|
-| `Tenants` | Tenant CRUD, power operations, cloning, isolation, and a client for a running tenant's UI |
+| `Tenants` | Tenant CRUD, power operations, cloning, isolation, and `Connect` / `ConnectByName` for a running tenant's UI |
 | `TenantNodes` | Tenant virtual node management |
 | `TenantStorage` | Tenant storage allocation |
 | `TenantRecipes` | Tenant recipes and their questions (read) |
@@ -384,7 +384,7 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | Service | Description |
 |---------|-------------|
 | `CloudInitFiles` | Cloud-init file management |
-| `Files` | File CRUD, upload, and download (ISOs, images, etc.) |
+| `Files` | File CRUD, upload, and download (ISOs, images, etc.). Chunk uploads retry like other PUT calls |
 | `WebhookURLs` | Webhook endpoint configuration |
 | `Webhooks` | Webhook delivery log (read-only) |
 | `Certificates` | SSL/TLS certificate management |

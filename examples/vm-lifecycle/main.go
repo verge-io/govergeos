@@ -54,7 +54,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create VM: %v", err)
 	}
-	fmt.Printf("Created VM: %s (ID: %d)\n", vm.Name, vm.Key)
+	fmt.Printf("Created VM: %s (Key: %d)\n", vm.Name, vm.Key)
 
 	// Add a virtual disk
 	fmt.Println("Adding virtual disk...")
@@ -67,7 +67,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create drive: %v", err)
 	}
-	fmt.Printf("Created drive: %s (ID: %d, Size: %dGB)\n", drive.Name, drive.Key, drive.SizeGB)
+	fmt.Printf("Created drive: %s (Key: %d, Size: %dGB)\n", drive.Name, drive.Key, drive.SizeGB)
 
 	// List available networks to attach
 	networks, err := client.Networks.List(ctx, vergeos.WithLimit(1))
@@ -85,7 +85,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to create NIC: %v", err)
 		}
-		fmt.Printf("Created NIC: %s (ID: %d, MAC: %s, Network: %s)\n",
+		fmt.Printf("Created NIC: %s (Key: %d, MAC: %s, Network: %s)\n",
 			nic.Name, nic.Key, nic.MAC, networks[0].Name)
 	}
 

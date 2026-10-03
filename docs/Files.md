@@ -65,8 +65,11 @@ err = client.Files.Delete(ctx, fileID)
 
 - Files are uploaded in 256KB chunks by default (matching verge-cli and PSVergeOS)
 - The `AllocatedBytes` in `FileCreateRequest` must match the actual file size
-- Use `UploadFromFile` for the simplest upload experience - it handles entry creation and chunked upload
-- Use `Upload` or `UploadWithChunkSize` when you need fine-grained control over the upload process
+- Use `UploadFromFile` for the simplest upload experience. It creates the catalog entry and uploads the chunks
+- Use `Upload` or `UploadWithChunkSize` when you already have a catalog entry
+- Chunk uploads are PUT requests. A connection reset, a close before any response, a timeout before any response, and HTTP 429, 502, and 503 are retried. The chunk is sent again from the same `filepos`. `WithRetry` with `MaxAttempts` of 1 turns that off.
+
+An OVA or OVF in this catalog can be imported with `VMImports`. A qcow2, vmdk, vhd, raw, or img file is attached with `VMDrives.Create` and `Media` set to `import`. `vm_imports` rejects those disk images.
 
 ## Supported File Types
 

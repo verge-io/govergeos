@@ -86,4 +86,9 @@
 //	if vergeos.IsConflictError(err) {
 //	    // Conflicts with existing state (HTTP 409)
 //	}
+//
+// A 404 from create or update is an APIError carrying the platform message.
+// IsNotFoundError is false for that error, because VergeOS also returns 404
+// when a related row named in the request is missing. Get and Delete of a
+// missing id are NotFoundError.
 package vergeos

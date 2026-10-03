@@ -303,7 +303,7 @@ fwStatus, err = client.TenantExternalIPs.Delete(ctx, int(address.Key), vergeos.W
 
 ## Network proxy
 
-Publish tenant UIs through one address on a parent network. Each tenant gets an FQDN. A network has one proxy.
+Publish tenant UIs through one address on a parent network. Each tenant gets an FQDN. A network has one proxy. `Create` stores `listen_address` as `0.0.0.0` and `default_self` as true when those fields are omitted, and it refuses a second proxy on the same network. `GetOrCreate` returns the existing row.
 
 ```go
 proxy, err := client.VNetProxies.GetOrCreate(ctx, &vergeos.VNetProxyCreateRequest{
@@ -323,7 +323,9 @@ mappings, err := client.VNetProxyTenants.ListByProxy(ctx, int(proxy.Key))
 
 ## Client for a tenant
 
-`Connect` builds a client aimed at the tenant's own UI address. The tenant must be running, and `ui_address` must already point at an address row. The new client keeps the parent's TLS and retry settings and uses the credentials passed in the options.
+`Connect` and `ConnectByName` return a client for a running tenant's own UI. The address comes from the tenant `ui_address` row, read through `VNetAddresses`, using the parent client's URL scheme. The tenant must be running. A snapshot is refused. A tenant with no UI address is refused.
+
+The new client keeps the parent's TLS, timeout, retry, rate limit, recorded server version, user agent, and power wait settings. It does not keep the parent's username, password, or API key. Pass `WithCredentials` or `WithAPIKey`. `WithBaseURL` replaces the address discovered here.
 
 ```go
 tenantClient, err := client.Tenants.Connect(ctx, tenantID,
@@ -334,6 +336,10 @@ if err != nil {
 }
 
 vms, err := tenantClient.VMs.List(ctx)
+
+tenantClient, err = client.Tenants.ConnectByName(ctx, "customer-a",
+    vergeos.WithAPIKey("tenant-api-key"),
+)
 ```
 
 ---

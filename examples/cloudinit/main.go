@@ -64,7 +64,7 @@ func run(ctx context.Context, client *vergeos.Client) error {
 		fmt.Println("No cloud-init files found.")
 	} else {
 		for _, f := range files {
-			fmt.Printf("- %s (ID: %d, Owner: %s, Size: %d bytes)\n", f.Name, f.Key, f.Owner, f.FileSize)
+			fmt.Printf("- %s (Key: %d, Owner: %s, Size: %d bytes)\n", f.Name, f.Key, f.Owner, f.FileSize)
 		}
 	}
 
@@ -80,7 +80,7 @@ func run(ctx context.Context, client *vergeos.Client) error {
 	if err != nil {
 		return fmt.Errorf("create VM: %w", err)
 	}
-	fmt.Printf("Created VM: %s (ID: %d, machine: %d)\n", vm.Name, vm.Key, vm.Machine)
+	fmt.Printf("Created VM: %s (Key: %d, machine: %d)\n", vm.Name, vm.Key, vm.Machine)
 	defer func() {
 		fmt.Println("\n=== Cleanup VM ===")
 		if err := client.VMs.Delete(ctx, vm.Key.Int()); err != nil {
@@ -131,7 +131,7 @@ final_message: "System ready after $UPTIME seconds"
 	if err != nil {
 		return fmt.Errorf("create cloud-init file: %w", err)
 	}
-	fmt.Printf("Created cloud-init file: %s (ID: %d, Owner: %s)\n", cloudInitFile.Name, cloudInitFile.Key, cloudInitFile.Owner)
+	fmt.Printf("Created cloud-init file: %s (Key: %d, Owner: %s)\n", cloudInitFile.Name, cloudInitFile.Key, cloudInitFile.Owner)
 
 	// List files for this VM
 	fmt.Println("\n=== Cloud-Init Files For VM ===")
@@ -140,7 +140,7 @@ final_message: "System ready after $UPTIME seconds"
 		return fmt.Errorf("list cloud-init files for VM: %w", err)
 	}
 	for _, f := range vmFiles {
-		fmt.Printf("- %s (ID: %d, Owner: %s)\n", f.Name, f.Key, f.Owner)
+		fmt.Printf("- %s (Key: %d, Owner: %s)\n", f.Name, f.Key, f.Owner)
 	}
 
 	// Get the cloud-init file details

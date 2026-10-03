@@ -147,7 +147,8 @@ type ClusterStatus struct {
 
 // Node represents a VergeOS node.
 type Node struct {
-	// ID is the unique identifier for the node (same as $key).
+	// ID is the node's id column. Get and List address the row with this value.
+	// It is not the $key field. Types that expose $key name that field Key.
 	ID int `json:"id,omitempty"`
 	// Name is the node hostname.
 	Name string `json:"name"`

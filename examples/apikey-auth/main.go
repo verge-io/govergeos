@@ -52,7 +52,7 @@ func main() {
 			fmt.Printf("  ... and %d more\n", len(vms)-5)
 			break
 		}
-		fmt.Printf("  - %s (ID: %d, Enabled: %v)\n", vm.Name, int(vm.Key), vm.Enabled)
+		fmt.Printf("  - %s (Key: %d, Enabled: %v)\n", vm.Name, int(vm.Key), vm.Enabled)
 	}
 
 	// Also test system info

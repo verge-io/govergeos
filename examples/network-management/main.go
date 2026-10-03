@@ -49,7 +49,7 @@ func main() {
 		log.Fatalf("Failed to list networks: %v", err)
 	}
 	for _, net := range networks {
-		fmt.Printf("- %s (ID: %d, Network: %s, DHCP: %v)\n",
+		fmt.Printf("- %s (Key: %d, Network: %s, DHCP: %v)\n",
 			net.Name, net.Key, net.Network, net.DHCPEnabled)
 	}
 
@@ -67,7 +67,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create network: %v", err)
 	}
-	fmt.Printf("Created network: %s (ID: %d)\n", network.Name, network.Key)
+	fmt.Printf("Created network: %s (Key: %d)\n", network.Name, network.Key)
 	fmt.Printf("  Network: %s\n", network.Network)
 	fmt.Printf("  IP Address: %s\n", network.IPAddress)
 	fmt.Printf("  DHCP Enabled: %v\n", network.DHCPEnabled)
@@ -91,7 +91,7 @@ func main() {
 		log.Fatalf("Failed to get network: %v", err)
 	}
 	fmt.Printf("Network: %s\n", network.Name)
-	fmt.Printf("  ID: %d\n", network.Key)
+	fmt.Printf("  Key: %d\n", network.Key)
 	fmt.Printf("  Enabled: %v\n", network.Enabled)
 	fmt.Printf("  Network: %s\n", network.Network)
 	fmt.Printf("  Type: %s\n", network.Type)

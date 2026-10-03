@@ -787,7 +787,7 @@ A response body that cannot be replayed (`GetBody` is nil) is not retried. `requ
 - `ForceAfterTimeout` lets a caller escalate on purpose, instead of every shutdown being a kill.
 
 **Consequences:**
-- This is a behavior change for the next minor release. Code that used `PowerOff` as a hard kill, including the docker-machine driver's force stop, must call `Kill`.
+- This behavior change shipped in v0.3.1. Code that used `PowerOff` as a hard kill, including the docker-machine driver's force stop, must call `Kill`.
 - `PowerOff` can now return `TimeoutError` when the guest ignores the shutdown. `Kill`, or `PowerOffWithOptions` with `ForceAfterTimeout`, is how to stop that VM anyway.
 
 ---
