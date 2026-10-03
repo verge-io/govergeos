@@ -80,7 +80,7 @@ func main() {
 		if vm.PowerState {
 			status = "running"
 		}
-		fmt.Printf("- %s (ID: %d, CPU: %d, RAM: %dMB, Status: %s)\n",
+		fmt.Printf("- %s (Key: %d, CPU: %d, RAM: %dMB, Status: %s)\n",
 			vm.Name, vm.Key, vm.CPUCores, vm.RAM, status)
 	}
 
@@ -91,7 +91,7 @@ func main() {
 		log.Fatalf("Failed to list networks: %v", err)
 	}
 	for _, net := range networks {
-		fmt.Printf("- %s (ID: %d, Network: %s, DHCP: %v)\n",
+		fmt.Printf("- %s (Key: %d, Network: %s, DHCP: %v)\n",
 			net.Name, net.Key, net.Network, net.DHCPEnabled)
 	}
 

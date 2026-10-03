@@ -1,13 +1,13 @@
 ---
 title: Virtual Machines
-description: Manage VM lifecycle, snapshots, drives, NICs, cloning, and migration
+description: Manage VM lifecycle, recipes, snapshots, drives, NICs, import, and export
 tags: [vm, virtual-machine, snapshot, drive, nic, clone, migration, power-management, console, restore, cloud-init]
 categories: [Virtual Machines]
 ---
 
 # Virtual Machines
 
-Manage virtual machine lifecycle, configuration, and hardware.
+Manage virtual machine lifecycle, recipes, configuration, and hardware.
 
 ## VM Lifecycle
 
@@ -73,6 +73,32 @@ err = client.VMs.Migrate(ctx, vmID, &vergeos.VMMigrateOptions{
 
 // Get console URL
 consoleURL, err := client.VMs.GetConsoleURL(ctx, vmID)
+```
+
+---
+
+## Recipes
+
+`Catalogs`, `VMRecipes`, and `VMRecipeInstances` deploy a VM from a catalog template. `Questions` reads `recipe_questions`. `Deploy` checks answers against those question types before POST. Bool values it does not recognize are refused. Disk sizes are bytes. A value above zero and under 1 MB is refused. `Preview` is the dry run. It cannot return an instance. A successful HTTP status on that POST is `RecipePreviewPersistedError`, because the platform created a VM and this call will not hand it back.
+
+```go
+catalogs, err := client.Catalogs.List(ctx)
+recipe, err := client.VMRecipes.GetByName(ctx, "Debian 12 (Bookworm)")
+questions, err := client.VMRecipes.Questions(ctx, recipe.Key)
+
+answers := vergeos.RecipeAnswers{
+    "HOSTNAME":           "web-01",
+    "YB_DRIVE_OS_SIZE":   int64(20 * 1024 * 1024 * 1024),
+    "SELECT_CREATE_UEFI": true,
+}
+
+preview, err := client.VMRecipeInstances.Preview(ctx, &vergeos.VMRecipeDeployRequest{
+    Recipe: recipe.Key, Name: "web-01", Answers: answers,
+})
+
+instance, err := client.VMRecipeInstances.Deploy(ctx, &vergeos.VMRecipeDeployRequest{
+    Recipe: recipe.Key, Name: "web-01", Answers: answers,
+})
 ```
 
 ---

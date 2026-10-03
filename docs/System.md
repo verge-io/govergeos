@@ -1,13 +1,13 @@
 ---
 title: System
-description: Query nodes, clusters, settings, system version, and machine metrics
+description: Query nodes, clusters, settings, updates, hardware inventory, billing, and machine metrics
 tags: [node, cluster, settings, system, version, status, infrastructure, machine-status, machine-stats, machine-nic, machine-drive-stats]
 categories: [System]
 ---
 
 # System
 
-Query nodes, clusters, settings, and system information.
+Query nodes, clusters, settings, updates, hardware, and system information.
 
 ## Nodes
 
@@ -29,7 +29,7 @@ nodes, err := client.Nodes.List(ctx,
 
 ## Hardware inventory
 
-GPUs, DIMMs, and LLDP neighbors are separate read services. `NodeGPUs.Update` is the call that changes a GPU mode.
+GPUs, DIMMs, and LLDP neighbors are separate services. `NodeGPUs.Update` is the call that changes a GPU mode (`GPUModeNone`, `GPUModePassthrough`, or `GPUModeNVIDIAvGPU`). `VGPUProfiles` is the NVIDIA catalog. `NodeVGPUProfiles` is the profile list on one physical GPU. `NodeGPUStats` reads the current row and the short and long history tables. `NodeGPUInstances`, `NodeVGPUDevices`, and `NodeHostGPUDevices` are read only.
 
 ```go
 // NVIDIA vGPU profiles the driver published
@@ -43,6 +43,22 @@ gpu, err := client.NodeGPUs.Update(ctx, gpuID, &vergeos.NodeGPUUpdateRequest{
     Mode: &mode,
 })
 fmt.Println(gpu.ModeDisplay())
+
+// Current utilization, then the short history for that GPU
+stats, err := client.NodeGPUStats.GetByGPU(ctx, gpuID)
+fmt.Println(stats.GPUs, stats.VGPUs)
+history, err := client.NodeGPUStats.ListHistoryShortByGPU(ctx, gpuID)
+
+// Instances assigned to VMs, detected vGPU devices, and passthrough GPUs
+instances, err := client.NodeGPUInstances.ListByGPU(ctx, gpuID)
+devices, err := client.NodeVGPUDevices.ListByNode(ctx, nodeID)
+hostGPUs, err := client.NodeHostGPUDevices.ListByNode(ctx, nodeID)
+
+// Profiles still free on one physical GPU (the PCI device key)
+nodeProfiles, err := client.NodeVGPUProfiles.ListByPhysicalGPU(ctx, pciDeviceID)
+for _, profile := range nodeProfiles {
+    fmt.Println(profile.Name, profile.AvailableInstances)
+}
 
 // DIMMs that are not online
 dimms, err := client.NodeMemory.ListByNode(ctx, nodeID)
@@ -144,6 +160,27 @@ err = client.Billing.Generate(ctx)
 
 summary, err := client.Billing.GetSummary(ctx, since, 0)
 fmt.Printf("%d records, peak %d cores\n", summary.RecordCount, summary.PeakCPUCores)
+```
+
+---
+
+## Updates
+
+`UpdateSettings` is the singleton (key 1). `Check`, `Download`, and `Install` post to `update_actions` using the source stored in settings. `Check` sends action `refresh`. `Download` and `Install` use those names. None of them reboot nodes. `UpdateAll` sends action `all` with `force` and starts the platform rolling reboot. `force` true allows a node to reboot workloads that cannot be migrated. Each action returns an error when settings have no source. `Get` also returns `ApplyingUpdates`.
+
+`UpdateBranches` and `UpdateSourcePackages` are read only.
+
+```go
+settings, err := client.UpdateSettings.Get(ctx)
+fmt.Println(settings.BranchName, settings.RebootRequired, settings.ApplyingUpdates)
+
+err = client.UpdateSettings.Check(ctx)
+err = client.UpdateSettings.Download(ctx)
+err = client.UpdateSettings.Install(ctx)
+err = client.UpdateSettings.UpdateAll(ctx, false)
+
+branches, err := client.UpdateBranches.List(ctx)
+packages, err := client.UpdateSourcePackages.ListByBranchAndSource(ctx, settings.Branch, settings.Source)
 ```
 
 ---

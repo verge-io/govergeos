@@ -74,7 +74,7 @@ func main() {
 		for _, iso := range isoFiles {
 			sizeMB := iso.Filesize / (1024 * 1024)
 			fmt.Printf("- %s\n", iso.Name)
-			fmt.Printf("    ID: %d, Size: %d MB\n", iso.Key, sizeMB)
+			fmt.Printf("    Key: %d, Size: %d MB\n", iso.Key, sizeMB)
 			if iso.Description != "" {
 				fmt.Printf("    Description: %s\n", iso.Description)
 			}
@@ -108,7 +108,7 @@ func main() {
 			log.Fatalf("Failed to get file: %v", err)
 		}
 		fmt.Printf("Name: %s\n", f.Name)
-		fmt.Printf("ID: %d\n", f.Key)
+		fmt.Printf("Key: %d\n", f.Key)
 		fmt.Printf("Type: %s\n", f.Type)
 		fmt.Printf("Filesize: %d bytes (%.2f GB)\n", f.Filesize, float64(f.Filesize)/(1024*1024*1024))
 		fmt.Printf("Allocated: %d bytes\n", f.AllocatedBytes)
@@ -128,7 +128,7 @@ func main() {
 	fmt.Println("      Name:      \"cdrom\",")
 	fmt.Println("      Interface: \"ide\",")
 	fmt.Println("      Media:     \"cdrom\",")
-	fmt.Println("      File:      fileID,  // ID of the ISO")
+	fmt.Println("      File:      fileKey, // File.Key of the ISO")
 	fmt.Println("  })")
 
 	// Upload example (commented out - uncomment to test)
@@ -144,7 +144,7 @@ func main() {
 	fmt.Println("//     Name:           \"my-file.iso\",")
 	fmt.Println("//     AllocatedBytes: \"1073741824\", // 1GB")
 	fmt.Println("// })")
-	fmt.Println("// file, _ := client.Files.Upload(ctx, entry.ID.Int(), reader, size)")
+	fmt.Println("// file, _ := client.Files.Upload(ctx, entry.Key.Int(), reader, size)")
 
 	// Download example (commented out - uncomment to test)
 	fmt.Println("\n=== Download Example (Code) ===")

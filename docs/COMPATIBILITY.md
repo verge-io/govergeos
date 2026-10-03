@@ -54,7 +54,7 @@ v1.0.0 is tagged when every row is true. The status column is `main` at the time
 
 ## Release cadence
 
-1. **v0.4.0** is the breaking batch. The changes already listed under Unreleased in [CHANGELOG.md](../CHANGELOG.md), including the `Key` rename and the `PowerOff` / `Kill` split, ship in this tag. Any further breaking change before the freeze ships in this same release.
+1. **v0.4.0** is the breaking batch. The breaking changes under Unreleased in [CHANGELOG.md](../CHANGELOG.md) ship in this tag. Those are the `Key` rename and the read fields VergeOS 26 does not return. `PowerOff` and `Kill` already shipped in v0.3.1. Any further breaking change before the freeze ships in this same release.
 2. **v0.5.0** is one cycle for consumers to use that API and report problems. It is fixes and compatible additions.
 3. **v1.0.0** is the freeze, tagged when the checklist above is complete, including the consumer bumps in the next section.
 
@@ -72,4 +72,4 @@ These modules are the Go consumers of govergeos. The pins were recorded on 2026-
 | [docker-machine-driver-vergeos](https://github.com/verge-io/docker-machine-driver-vergeos) | v0.1.3 |
 | [terraform-provider-vergeio](https://github.com/verge-io/terraform-provider-vergeio) | v0.2.0 on its integration branch (PR 45 in that repository), which had not merged when this list was taken |
 
-Bumping each module is part of the freeze release. The v0.4.0 batch (the `Key` rename, `PowerOff` / `Kill`, and the error types) is applied in all five when that tag is published. Those modules are on the frozen API when v1.0.0 is tagged. `csi-vergeos`, `vergeos-cloud-controller-manager`, and `docker-machine-driver-vergeos` were several minors behind v0.3.1 when these pins were recorded, so the bump is part of the release.
+Bumping each module is part of the freeze release. Publishing v0.4.0 applies the `Key` rename and the removed read fields in all five. `PowerOff`, `Kill`, and the error types already shipped in v0.3.1, so a consumer still on an older pin picks those up in the same bump. Those modules are on the frozen API when v1.0.0 is tagged. `csi-vergeos`, `vergeos-cloud-controller-manager`, and `docker-machine-driver-vergeos` were several minors behind v0.3.1 when these pins were recorded, so the bump is part of the release.

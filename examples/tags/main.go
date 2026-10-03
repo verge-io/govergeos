@@ -122,9 +122,9 @@ func main() {
 		if err != nil {
 			log.Printf("Failed to get tags for VM: %v", err)
 		} else if len(vmTags) == 0 {
-			fmt.Printf("VM '%s' (ID: %d) has no tags assigned.\n", vms[0].Name, vmID)
+			fmt.Printf("VM '%s' (Key: %d) has no tags assigned.\n", vms[0].Name, vmID)
 		} else {
-			fmt.Printf("VM '%s' (ID: %d) has %d tag(s):\n", vms[0].Name, vmID, len(vmTags))
+			fmt.Printf("VM '%s' (Key: %d) has %d tag(s):\n", vms[0].Name, vmID, len(vmTags))
 			for _, tm := range vmTags {
 				tagName := fmt.Sprintf("Tag %d", tm.Tag.Int())
 				for _, t := range tags {

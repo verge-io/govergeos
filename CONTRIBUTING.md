@@ -99,4 +99,6 @@ Supported VergeOS versions, how long a deprecated method stays, and the criteria
 4. Run **Release** (`.github/workflows/release.yml`) from the Actions tab. Pass the tag (`vX.Y.Z`) and the ref (`main`). The workflow checks that the commit is on `main`, that the user agent matches the tag, and that formatting, `go vet`, `staticcheck`, race tests, and the example builds pass. It then creates an annotated tag and the GitHub release.
 5. Do not move an existing tag. The workflow refuses a version that is already tagged.
 
+The workflow publishes the GitHub release with notes generated from pull requests. It does not copy `CHANGELOG.md` into that body. The changelog in the repository is still the record of what the tag contains. Edit the GitHub release afterward if the generated notes are not the wording you want. The v0.3.1 release body ("26.1 API sync") was written that way. The workflow leaves an existing GitHub release in place and does not replace its notes.
+
 Pushing a `vX.Y.Z` tag yourself still publishes the GitHub release, after the same checks. Prefer the workflow dispatch so the tag is created only when those checks pass.
