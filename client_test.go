@@ -12,8 +12,8 @@ import (
 )
 
 func TestDefaultUserAgentMatchesRelease(t *testing.T) {
-	if defaultUserAgent != "govergeos/0.3.1" {
-		t.Fatalf("defaultUserAgent = %q, want govergeos/0.3.1", defaultUserAgent)
+	if defaultUserAgent != "govergeos/0.4.0" {
+		t.Fatalf("defaultUserAgent = %q, want govergeos/0.4.0", defaultUserAgent)
 	}
 }
 

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.4.0 - 2026-10-05
+
 Breaking change: the `$key` field is named `Key` on every type. Types that exposed it as `ID` are renamed below.
 
 ### Breaking
