@@ -268,3 +268,19 @@ nic, err := client.VMNICs.Create(ctx, vmID, &vergeos.VMNICCreateRequest{
     VNET: networkID,
 })
 ```
+
+---
+
+## VM Devices
+
+USB, TPM, PCI, and NVIDIA vGPU devices. `List` and `Create` take the VM `$key`. `Create` resolves the machine key and writes it on the device row. Settings for USB, TPM, and vGPU are optional on create.
+
+```go
+devices, err := client.VMDevices.List(ctx, vm.Key.Int())
+
+device, err := client.VMDevices.Create(ctx, vm.Key.Int(), &vergeos.VMDeviceCreateRequest{
+    Type: vergeos.DeviceTypeTPM,
+    Name: "tpm0",
+})
+fmt.Println(devices, device.Type)
+```

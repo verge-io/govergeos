@@ -424,6 +424,7 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | [monitoring](./examples/monitoring/) | Alarms and tasks |
 | [logs](./examples/logs/) | System logs and audit trails |
 | [networking](./examples/networking/) | DNS, IP addresses, host overrides |
+| [routing](./examples/routing/) | Read BGP, OSPF, and EIGRP rows for each network |
 | [dr-sites](./examples/dr-sites/) | Remote sites and sync configuration |
 | [cloud-snapshots](./examples/cloud-snapshots/) | Cloud snapshot management |
 | [webhooks](./examples/webhooks/) | Webhook configuration |
@@ -597,6 +598,18 @@ go test -tags=integration -v ./test/integration/ -run "TestFiles|TestCertificate
 # Tags and permissions
 go test -tags=integration -v ./test/integration/ -run "TestTags|TestPermissions"
 
+# Hardware inventory (GPUs, memory, LLDP)
+go test -tags=integration -v ./test/integration/ -run "TestHardwareInventory"
+
+# Updates
+go test -tags=integration -v ./test/integration/ -run "TestUpdate"
+
+# Billing, NAS antivirus, and shared objects
+go test -tags=integration -v ./test/integration/ -run "TestBilling"
+
+# Tenant UI proxy
+go test -tags=integration -v ./test/integration/ -run "TestVNetProxy"
+
 # CRUD lifecycle tests only
 go test -tags=integration -v ./test/integration/ -run "CRUD"
 ```
@@ -606,23 +619,36 @@ go test -tags=integration -v ./test/integration/ -run "CRUD"
 | File | Services Tested |
 |------|-----------------|
 | `api_keys_test.go` | User API Keys |
+| `auth_sources_test.go` | Auth Sources, OIDC Applications |
+| `billing_nas_shared_test.go` | Billing, NAS antivirus, Shared Objects |
 | `certificates_test.go` | Certificates |
 | `clusters_test.go` | Clusters, Network Diagnostics |
 | `dr_test.go` | Sites, Site Syncs, Cloud Snapshots |
 | `files_test.go` | Files (upload/download) |
+| `groups_test.go` | Groups |
 | `hardware_inventory_test.go` | GPUs, vGPU profiles, node memory, LLDP neighbors |
 | `logs_test.go` | System Logs |
+| `machine_drive_stats_test.go` | Machine Drive Stats |
+| `machine_nics_test.go` | Machine NICs |
+| `machine_stats_test.go` | Machine Stats |
 | `monitoring_test.go` | Alarms, Tasks |
 | `nas_test.go` | NAS Services, Users, Syncs, Snapshots, Shares |
 | `networking_test.go` | VNet Addresses, DNS, Hosts |
+| `nodes_test.go` | Nodes |
 | `permissions_test.go` | Permissions |
 | `rules_test.go` | VNet Rules, Aliases |
 | `snapshot_profiles_test.go` | Snapshot Profiles |
 | `tags_test.go` | Tags, Tag Categories |
-| `tenants_test.go` | Tenants, Nodes, Storage, Snapshots, Layer2 |
+| `tenants_test.go` | Tenants, Nodes, Storage, Snapshots, Layer2, Status, Stats |
+| `update_test.go` | Update Settings, Branches, Source Packages |
+| `users_test.go` | User enable and disable |
+| `version_test.go` | Version check and `WithEnvConfig` host handling |
+| `vm_actions_test.go` | Guest reboot (needs `VERGEOS_TEST_VM_ID`) |
 | `vm_imports_test.go` | VM Imports, Import Logs, VM Exports |
+| `vm_keys_test.go` | VM `$key` versus machine key (needs `VERGEOS_TEST_VM_ID`) |
 | `vm_recipes_test.go` | Catalogs, VM Recipes, Recipe Questions |
 | `vm_snapshots_test.go` | VM Snapshots |
+| `vnet_proxy_test.go` | Network proxy and tenant FQDNs |
 | `volumes_test.go` | Volumes |
 | `vpn_test.go` | WireGuard, IPSec |
 | `vsan_test.go` | Storage Tiers, Cluster Tiers, Drive Metrics |

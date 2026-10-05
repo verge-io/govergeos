@@ -332,6 +332,8 @@ The internal API team clarified that filesystem schema files are pre-translation
 
 3. **Verification Requirement**: Always test new field mappings against live API before committing.
 
+**Amendment:** Two of those mapping rules changed after this decision. SHA1 and hex keys stay `string` (a `Key` plus a separate `id` column). See ADR-014. The Go name for `$key` is `Key` on every type, including the types that used to expose it as `ID`. `Node.ID` is the `id` column. See ADR-026. The schema copy named in the decision above is not in this repository. Check a live server when a field type is in doubt.
+
 **Rationale:**
 - Runtime schema reflects actual API behavior after server-side translation
 - Explicit type mapping rules prevent repeated discovery of the same issues
@@ -339,15 +341,14 @@ The internal API team clarified that filesystem schema files are pre-translation
 - Documented exceptions prevent future developers from "fixing" correct behavior
 
 **Consequences:**
-- Schema in `.claude/reference/API-Schema/` is the single source of truth
+- Confirm field types against a live server. A schema copy is not shipped in this repository.
 - Deprecated schema folders (`api-schema-old-local/`, `dz/`) can be removed
-- Type mapping exceptions documented in `ENDPOINTS.md` for quick reference
 - Must verify against live API when schema `$type` doesn't match expected Go type
 
 **References:**
-- GitHub Issue: https://github.com/verge-io/goVergeOS/issues/2
+- GitHub Issue: https://github.com/verge-io/govergeos/issues/2
 - Related: ADR-002 (FlexInt Type for ID Handling)
-- Documentation: `.claude/reference/API-Schema/ENDPOINTS.md`
+- Related: ADR-014 (Volume String Keys) and ADR-026 (The $key Field Is Named Key)
 
 ---
 
@@ -446,7 +447,7 @@ func (s *VNetRuleService) setEnabled(ctx context.Context, id int, enabled bool, 
 
 **Related:**
 - ADR-013 (API Schema Source) - importance of verifying against live API
-- `.claude/reference/API-Schema/ENDPOINTS.md` - documents this exception
+- The exception note that used to sit beside a local schema copy is not in this repository. Confirm the live API before changing `Enable` or `Disable`.
 
 ---
 
@@ -607,7 +608,7 @@ client, err := vergeos.NewClient(
 
 **Related:**
 - ADR-003 (Functional Options Pattern) - `WithEnvConfig()` follows this pattern
-- Plan: `.claude/plans/clientenvsslconfig.md`
+- The planning note for this option is not in this repository. The behavior is the `WithEnvConfig` section above.
 
 ---
 
