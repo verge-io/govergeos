@@ -13,7 +13,7 @@ Detailed API examples for all goVergeOS services, organized by topic. For a quic
 
 | Document | Services | Description |
 |----------|----------|-------------|
-| [Virtual Machines](VirtualMachines.md) | VMs, VM Snapshots, VM Drives, VM NICs, Catalogs, VM Recipes, VM Imports, VM Exports, Cloud-Init Files | VM lifecycle, recipes, import, export, cloning, migration, snapshots, hardware |
+| [Virtual Machines](VirtualMachines.md) | VMs, VM Snapshots, VM Drives, VM NICs, VM Devices, Catalogs, VM Recipes, VM Imports, VM Exports, Cloud-Init Files | VM lifecycle, recipes, import, export, cloning, migration, snapshots, hardware |
 | [Networking](Networking.md) | Networks, Firewall Rules, Rule Aliases, Addresses, DNS, Host Overrides, Dynamic Routing | Virtual networks, firewall, DNS, and BGP/OSPF/EIGRP |
 | [VPN](VPN.md) | WireGuard, WireGuard Peers, IPSec | VPN tunnels and peer connections |
 | [Certificates](Certificates.md) | Certificates | SSL/TLS certificates (Let's Encrypt, manual, self-signed) |
