@@ -7,7 +7,7 @@ categories: [Reference]
 
 # Compatibility and the 1.0 freeze
 
-goVergeOS is still pre-release. The module path is `github.com/verge-io/govergeos`, and the latest tag is v0.3.1. This document is the compatibility policy for that module: which VergeOS versions a release supports, how a new VergeOS major is handled, how long a deprecated method or field stays, and what has to be true before v1.0.0 freezes the API. v1.0.0 is not tagged yet.
+goVergeOS is still pre-release. The module path is `github.com/verge-io/govergeos`, and the latest tag is v0.4.0. This document is the compatibility policy for that module: which VergeOS versions a release supports, how a new VergeOS major is handled, how long a deprecated method or field stays, and what has to be true before v1.0.0 freezes the API. v1.0.0 is not tagged yet.
 
 The version check is ADR-016 in [DECISIONS.md](../DECISIONS.md).
 
@@ -50,7 +50,7 @@ v1.0.0 is tagged when every row is true. The status column is `main` at the time
 | 3 | Errors settled. Authentication, permission, not found, conflict, timeout, and ambiguous name each have their own type: `AuthError`, `PermissionError`, `NotFoundError`, `ConflictError`, `TimeoutError`, `AmbiguousNameError`. (#46, #45) | Done. |
 | 4 | Client settled. Options compose regardless of order, retries follow the documented policy, and `WithEnvConfig` matches the Ansible collection's environment variables. (#51, #49, #50, #47) | Done. |
 | 5 | Compatibility policy written down. Which VergeOS versions a release supports, how a new major is handled, and how long deprecated methods stay. (#48) | Done. This document is that policy. `NewClient` on `main` already accepts VergeOS 26 and later. |
-| 6 | Process in place. CI on every pull request, tagged releases with a changelog, and an integration run against each supported VergeOS release before tagging. (#44, #41) | Largely done. The `test` workflow runs on every pull request. Tags are cut from `main` with the Release workflow, and the notes live in `CHANGELOG.md`. The current tag is v0.3.1. The integration workflow (`.github/workflows/integration.yml`) runs on demand. Its nightly schedule stays off until the `VERGEOS_INTEGRATION_LAB` repository variable is set, and the Release workflow does not require that run. Tagging v1.0.0 still includes an integration run against each supported VergeOS release before the tag is created. |
+| 6 | Process in place. CI on every pull request, tagged releases with a changelog, and an integration run against each supported VergeOS release before tagging. (#44, #41) | Largely done. The `test` workflow runs on every pull request. Tags are cut from `main` with the Release workflow, and the notes live in `CHANGELOG.md`. The current tag is v0.4.0. The integration workflow (`.github/workflows/integration.yml`) runs on demand. Its nightly schedule stays off until the `VERGEOS_INTEGRATION_LAB` repository variable is set, and the Release workflow does not require that run. Tagging v1.0.0 still includes an integration run against each supported VergeOS release before the tag is created. |
 
 ## Release cadence
 
