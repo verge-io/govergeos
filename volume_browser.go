@@ -24,7 +24,6 @@ func (s *VolumeBrowserService) Browse(ctx context.Context, volumeID, dir string,
 
 // BrowseWithOptions browses a directory with additional options.
 func (s *VolumeBrowserService) BrowseWithOptions(ctx context.Context, volumeID, dir string, limit int, offset *int, extensions string) ([]VolumeBrowserEntry, error) {
-	// Create the browse job
 	job, err := s.CreateJob(ctx, &VolumeBrowserRequest{
 		Volume: volumeID,
 		Query:  VolumeBrowserQueryGetDir,
@@ -73,7 +72,6 @@ func (s *VolumeBrowserService) CreateJob(ctx context.Context, req *VolumeBrowser
 		return nil, err
 	}
 
-	// Extract the job ID
 	id, err := getStringKey(resp)
 	if err != nil {
 		return nil, err
@@ -120,10 +118,8 @@ func (s *VolumeBrowserService) WaitForResult(ctx context.Context, jobID string, 
 
 		switch job.Status {
 		case VolumeBrowserStatusComplete:
-			// Parse the result
 			return s.parseResult(job.Result)
 		case VolumeBrowserStatusError:
-			// Extract error message from result
 			errMsg := "browse operation failed"
 			if len(job.Result) > 0 {
 				var errResult string

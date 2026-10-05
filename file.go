@@ -90,7 +90,6 @@ func (s *FileService) Create(ctx context.Context, req *FileCreateRequest) (*File
 		return nil, err
 	}
 
-	// Get the created file ID
 	id, err := getKey(resp)
 	if err != nil {
 		return nil, err
@@ -144,7 +143,6 @@ func (s *FileService) Download(ctx context.Context, id int) (io.ReadCloser, *Fil
 		return nil, nil, err
 	}
 
-	// Check for errors
 	if resp.StatusCode != http.StatusOK {
 		_ = resp.Body.Close()
 		return nil, nil, &APIError{
@@ -173,7 +171,6 @@ func (s *FileService) DownloadToFile(ctx context.Context, id int, destPath strin
 		outputPath = filepath.Join(destPath, file.Name)
 	}
 
-	// Create output file
 	outFile, err := os.Create(outputPath)
 	if err != nil {
 		return "", fmt.Errorf("vergeos: failed to create output file: %w", err)
@@ -228,7 +225,6 @@ func (s *FileService) UploadWithChunkSize(ctx context.Context, id int, reader io
 		offset += int64(n)
 	}
 
-	// Return updated file info
 	return s.Get(ctx, id)
 }
 
@@ -243,7 +239,6 @@ func (s *FileService) UploadFromFile(ctx context.Context, localPath string, req 
 	}
 	defer func() { _ = file.Close() }()
 
-	// Get file size
 	info, err := file.Stat()
 	if err != nil {
 		return nil, fmt.Errorf("vergeos: failed to stat file: %w", err)
@@ -258,7 +253,6 @@ func (s *FileService) UploadFromFile(ctx context.Context, localPath string, req 
 		req.AllocatedBytes = fmt.Sprintf("%d", fileSize)
 	}
 
-	// Create file entry
 	createdFile, err := s.Create(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("vergeos: failed to create file entry: %w", err)
@@ -302,14 +296,12 @@ func (s *FileService) uploadChunk(ctx context.Context, id int, data []byte, offs
 	// errors when the HTTP client attempts to reuse them.
 	req.Close = true
 
-	// Execute request
 	resp, err := s.client.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("vergeos: request failed: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	// Check for errors
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
 		return &APIError{
