@@ -328,8 +328,23 @@ func TestCloudSnapshotVMsList(t *testing.T) {
 
 	// Log first VM to verify field mapping
 	first := vms[0]
-	t.Logf("First snapshot VM: Key=%d, Name=%q, VM=%d, CloudSnapshot=%d, CPUCores=%d, RAM=%d",
-		int(first.Key), first.Name, int(first.VM), int(first.CloudSnapshot), first.CPUCores, first.RAM)
+	t.Logf("First snapshot VM: Key=%d, Name=%q, OriginalKey=%d, MachineUUID=%q, CloudSnapshot=%d, CPUCores=%d, RAM=%d",
+		int(first.Key), first.Name, int(first.OriginalKey), first.MachineUUID, int(first.CloudSnapshot), first.CPUCores, first.RAM)
+	keyed, withMachine := 0, 0
+	for _, vm := range vms {
+		if vm.OriginalKey != 0 {
+			keyed++
+		}
+		if vm.MachineUUID != "" {
+			withMachine++
+		}
+	}
+	if keyed == 0 {
+		t.Fatalf("all %d cloud snapshot VMs have original_key 0", len(vms))
+	}
+	if withMachine == 0 {
+		t.Fatalf("all %d cloud snapshot VMs have an empty machine_uuid", len(vms))
+	}
 
 	// Test Get by ID
 	t.Run("Get", func(t *testing.T) {
@@ -381,8 +396,17 @@ func TestCloudSnapshotTenantsList(t *testing.T) {
 
 	// Log first tenant to verify field mapping
 	first := tenants[0]
-	t.Logf("First snapshot tenant: Key=%d, Name=%q, Tenant=%d, CloudSnapshot=%d",
-		int(first.Key), first.Name, int(first.Tenant), int(first.CloudSnapshot))
+	t.Logf("First snapshot tenant: Key=%d, Name=%q, OriginalKey=%d, CloudSnapshot=%d",
+		int(first.Key), first.Name, int(first.OriginalKey), int(first.CloudSnapshot))
+	keyed := 0
+	for _, tenant := range tenants {
+		if tenant.OriginalKey != 0 {
+			keyed++
+		}
+	}
+	if keyed == 0 {
+		t.Fatalf("all %d cloud snapshot tenants have original_key 0", len(tenants))
+	}
 
 	// Test Get by ID
 	t.Run("Get", func(t *testing.T) {

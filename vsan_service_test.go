@@ -3,6 +3,7 @@ package vergeos
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -189,6 +190,56 @@ func TestClusterTierService_GetByClusterAndTier(t *testing.T) {
 	}
 	if tier.Tier != 2 {
 		t.Errorf("expected tier 2, got %d", tier.Tier)
+	}
+}
+
+func TestClusterTierService_AllocatedFromStorageTier(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/cluster_tiers": func(w http.ResponseWriter, r *http.Request) {
+			fields := r.URL.Query().Get("fields")
+			statusFields := fieldListInside(t, fields, "status")
+			for _, name := range strings.Split(statusFields, ",") {
+				if name == "allocated" {
+					t.Errorf("status projection requests allocated: %s", fields)
+				}
+			}
+			jsonResponse(w, 200, []ClusterTier{
+				{Key: FlexInt(1), Tier: 0, Status: &ClusterTierStatus{Capacity: 100, Allocated: 1}},
+				{Key: FlexInt(2), Tier: 1, Status: &ClusterTierStatus{Capacity: 200}},
+				{Key: FlexInt(3), Tier: 2, Status: &ClusterTierStatus{Capacity: 50}},
+			})
+		},
+		"GET /api/v4/cluster_tiers/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, ClusterTier{
+				Key: FlexInt(1), Tier: 0, Status: &ClusterTierStatus{Capacity: 100, Allocated: 1},
+			})
+		},
+		"GET /api/v4/storage_tiers": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, []StorageTier{
+				{Key: 0, Tier: 0, Allocated: 111},
+				{Key: 1, Tier: 1, Allocated: 222},
+			})
+		},
+	}))
+
+	tiers, err := client.ClusterTiers.List(context.Background())
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if tiers[0].Status.Allocated != 111 || tiers[1].Status.Allocated != 222 {
+		t.Fatalf("allocated = %d, %d; want storage tier values 111, 222",
+			tiers[0].Status.Allocated, tiers[1].Status.Allocated)
+	}
+	if tiers[2].Status.Allocated != 0 {
+		t.Fatalf("tier 2 allocated = %d, want 0 when storage_tiers has no row", tiers[2].Status.Allocated)
+	}
+
+	got, err := client.ClusterTiers.Get(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("Get failed: %v", err)
+	}
+	if got.Status == nil || got.Status.Allocated != 111 {
+		t.Fatalf("Get allocated = %+v, want 111", got.Status)
 	}
 }
 

@@ -100,6 +100,30 @@ func TestClusterTiers(t *testing.T) {
 			t.Error("CountOnlineDrives returned 0 — expected at least 1 online drive")
 		}
 
+		storageTiers, err := client.StorageTiers.List(ctx)
+		if err != nil {
+			t.Fatalf("StorageTiers.List failed while checking cluster tier allocated: %v", err)
+		}
+		allocatedByTier := make(map[int]uint64, len(storageTiers))
+		for _, storage := range storageTiers {
+			allocatedByTier[storage.Tier] = storage.Allocated
+		}
+		checked := 0
+		for _, tier := range tiers {
+			want := allocatedByTier[tier.Tier]
+			if tier.Status == nil || want == 0 {
+				continue
+			}
+			checked++
+			if tier.Status.Allocated != want {
+				t.Errorf("cluster tier %d (tier %d) Allocated=%d, storage_tiers.allocated=%d",
+					tier.Key.Int(), tier.Tier, tier.Status.Allocated, want)
+			}
+		}
+		if checked == 0 {
+			t.Log("no storage tier reported allocated above 0; skipped the cluster tier allocated check")
+		}
+
 		prettyPrint(t, "Sample ClusterTier", first)
 	})
 

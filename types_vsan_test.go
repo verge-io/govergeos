@@ -108,4 +108,36 @@ func TestClusterTierListFields_ContainsOnlineExpressions(t *testing.T) {
 	if !strings.Contains(clusterTierListFields, "nodes_online") {
 		t.Error("clusterTierListFields missing nodes_online expression")
 	}
+	statusFields := fieldListInside(t, clusterTierListFields, "status")
+	for _, name := range strings.Split(statusFields, ",") {
+		if name == "allocated" {
+			t.Fatalf("cluster_tier_status projection still requests allocated: %s", statusFields)
+		}
+	}
+	if !strings.Contains(storageTierListFields, "allocated") {
+		t.Fatal("storageTierListFields dropped allocated")
+	}
+}
+
+func fieldListInside(t *testing.T, fields, name string) string {
+	t.Helper()
+	open := strings.Index(fields, name+"[")
+	if open < 0 {
+		t.Fatalf("fields %q have no %s[] group", fields, name)
+	}
+	rest := fields[open+len(name)+1:]
+	depth := 1
+	for i, r := range rest {
+		switch r {
+		case '[':
+			depth++
+		case ']':
+			depth--
+			if depth == 0 {
+				return rest[:i]
+			}
+		}
+	}
+	t.Fatalf("fields %q have an unclosed %s[] group", fields, name)
+	return ""
 }
