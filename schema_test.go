@@ -116,6 +116,26 @@ func TestSchemaService_GetVMMachineTypes(t *testing.T) {
 	}
 }
 
+func TestSchemaService_GetVMCPUTypes(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/vms/$table": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, TableSchema{
+				Fields: map[string]TableField{
+					"cpu_type": {Type: "string", List: map[string]string{"host": "Host", "EPYC-Turin": "EPYC-Turin"}},
+				},
+			})
+		},
+	}))
+
+	types, err := client.Schema.GetVMCPUTypes(context.Background())
+	if err != nil {
+		t.Fatalf("GetVMCPUTypes failed: %v", err)
+	}
+	if types["EPYC-Turin"] != "EPYC-Turin" || types["host"] != "Host" {
+		t.Fatalf("cpu types %#v", types)
+	}
+}
+
 func TestSchemaService_GetVMOSFamilies(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/vms/$table": func(w http.ResponseWriter, r *http.Request) {

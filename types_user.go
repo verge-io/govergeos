@@ -44,7 +44,10 @@ type User struct {
 	TwoFactorType string `json:"two_factor_type,omitempty"`
 
 	// Advanced access
-	// PhysicalAccess indicates whether console/SSH access is enabled.
+	// PhysicalAccess reports membership in the Super Users group.
+	// On VergeOS 26.2 this is a computed argument, not a stored boolean.
+	// It defaults to false. Setting it adds or removes that membership,
+	// which is what grants console, BMC, and hardware-level access.
 	PhysicalAccess bool `json:"physical_access,omitempty"`
 	// SSHKeys contains the user's SSH public keys (newline separated).
 	SSHKeys string `json:"ssh_keys,omitempty"`
@@ -85,7 +88,9 @@ type UserCreateRequest struct {
 	TwoFactorSetupNextLogin *bool `json:"two_factor_setup_next_login,omitempty"`
 
 	// Advanced access
-	// PhysicalAccess indicates whether console/SSH access is enabled.
+	// PhysicalAccess adds the user to the Super Users group when true.
+	// On VergeOS 26.2 the argument defaults to false, so omitting it
+	// leaves the user out of that group. It is not a stored boolean.
 	PhysicalAccess *bool `json:"physical_access,omitempty"`
 	// SSHKeys contains the user's SSH public keys.
 	SSHKeys string `json:"ssh_keys,omitempty"`
@@ -124,7 +129,9 @@ type UserUpdateRequest struct {
 	TwoFactorSetupNextLogin *bool `json:"two_factor_setup_next_login,omitempty"`
 
 	// Advanced access
-	// PhysicalAccess indicates whether console/SSH access is enabled.
+	// PhysicalAccess adds or removes Super Users membership.
+	// On VergeOS 26.2 the argument defaults to false. Send false to remove
+	// the user from that group. It is not a stored boolean.
 	PhysicalAccess *bool `json:"physical_access,omitempty"`
 	// SSHKeys contains the user's SSH public keys.
 	SSHKeys *string `json:"ssh_keys,omitempty"`

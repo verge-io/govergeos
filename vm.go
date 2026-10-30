@@ -33,13 +33,21 @@ type VMService struct {
 	client *Client
 }
 
+func (s *VMService) listFields() string {
+	return appendVersionFields(vmListFields, vm262Fields, s.client.atLeast262())
+}
+
+func (s *VMService) getFields() string {
+	return appendVersionFields(vmGetFields, vm262Fields, s.client.atLeast262())
+}
+
 // List returns all VMs, with optional filtering and pagination.
 func (s *VMService) List(ctx context.Context, opts ...ListOption) ([]VM, error) {
 	options := applyListOptions(opts)
 
 	// Use VM-specific fields if not specified
 	if options.Fields == "most" {
-		options.Fields = vmListFields
+		options.Fields = s.listFields()
 	}
 
 	params := options.toQueryParams()
@@ -55,7 +63,7 @@ func (s *VMService) List(ctx context.Context, opts ...ListOption) ([]VM, error) 
 // Get returns a single VM by ID.
 func (s *VMService) Get(ctx context.Context, id int) (*VM, error) {
 	params := url.Values{}
-	params.Set("fields", vmGetFields)
+	params.Set("fields", s.getFields())
 
 	var vm VM
 	endpoint := fmt.Sprintf("/vms/%d", id)
@@ -413,6 +421,9 @@ type VMCloneOptions struct {
 	Name string
 	// PreserveMACs indicates whether to preserve MAC addresses from the source VM.
 	PreserveMACs bool
+	// PreserveBIOSSerial keeps the source SMBIOS serial on the clone.
+	// Clone sends it when the server is VergeOS 26.2 or later.
+	PreserveBIOSSerial bool
 }
 
 // Clone creates a copy of a VM.
@@ -423,6 +434,9 @@ func (s *VMService) Clone(ctx context.Context, id int, opts *VMCloneOptions) err
 			params["name"] = opts.Name
 		}
 		params["preserve_macs"] = opts.PreserveMACs
+		if s.client.atLeast262() {
+			params["preserve_bios_serial"] = opts.PreserveBIOSSerial
+		}
 	}
 
 	action := struct {

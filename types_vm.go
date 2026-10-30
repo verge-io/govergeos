@@ -42,8 +42,16 @@ type VM struct {
 	CPUType string `json:"cpu_type,omitempty"`
 	// RAM is the amount of RAM in MB.
 	RAM int `json:"ram"`
-	// MachineType is the machine type (e.g., "pc-i440fx-10.0", "pc-q35-10.0").
+	// MachineType is the QEMU machine type. VergeOS 26.2 defaults to pc-q35-11.0
+	// and adds the 10.1, 10.2, and 11.0 types, plus more CPU models.
+	// Read the list from Schema.GetVMMachineTypes and Schema.GetVMCPUTypes.
+	// This SDK does not keep a second catalog of those names.
 	MachineType string `json:"machine_type,omitempty"`
+	// BIOSSerial is the SMBIOS serial number. VergeOS 26.2 gives each VM its own
+	// serial when this is empty.
+	BIOSSerial string `json:"bios_serial,omitempty"`
+	// VGAMemMB is the video adapter memory in megabytes. VergeOS 26.2.
+	VGAMemMB int `json:"vgamem_mb,omitempty"`
 	// IOMMU indicates whether IOMMU is enabled.
 	IOMMU bool `json:"iommu,omitempty"`
 	// USBLegacy indicates whether to use a legacy USB controller.
@@ -179,6 +187,11 @@ type VMCreateRequest struct {
 	RAM int `json:"ram"`
 	// MachineType is the machine type.
 	MachineType string `json:"machine_type,omitempty"`
+	// BIOSSerial is the SMBIOS serial number. VergeOS 26.2.
+	BIOSSerial string `json:"bios_serial,omitempty"`
+	// VGAMemMB is the video adapter memory in megabytes. VergeOS 26.2.
+	// Nil leaves the adapter default.
+	VGAMemMB *int `json:"vgamem_mb,omitempty"`
 	// IOMMU indicates whether IOMMU is enabled.
 	IOMMU *bool `json:"iommu,omitempty"`
 	// USBLegacy indicates whether to use a legacy USB controller.
@@ -293,6 +306,10 @@ type VMUpdateRequest struct {
 	RAM *int `json:"ram,omitempty"`
 	// MachineType is the machine type.
 	MachineType *string `json:"machine_type,omitempty"`
+	// BIOSSerial is the SMBIOS serial number. VergeOS 26.2.
+	BIOSSerial *string `json:"bios_serial,omitempty"`
+	// VGAMemMB is the video adapter memory in megabytes. VergeOS 26.2.
+	VGAMemMB *int `json:"vgamem_mb,omitempty"`
 	// IOMMU indicates whether IOMMU is enabled.
 	IOMMU *bool `json:"iommu,omitempty"`
 	// USBLegacy indicates whether to use a legacy USB controller.
@@ -406,3 +423,6 @@ const vmListFields = "$key,uuid,machine,name,description,enabled,created,modifie
 
 // vmGetFields are the fields to request when getting a single VM.
 const vmGetFields = vmListFields + ",console_pass_enabled,console_pass,usb_tablet,disable_powercycle,advanced,note,meta,paste_key_config"
+
+// vm262Fields are vms columns added in VergeOS 26.2.
+const vm262Fields = "bios_serial,vgamem_mb"

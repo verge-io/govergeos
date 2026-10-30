@@ -51,6 +51,11 @@ type MachineStatus struct {
 	// AgentGuestInfo contains guest OS information reported by the agent,
 	// including network configuration, filesystem info, memory, and hostname.
 	AgentGuestInfo *GuestInfo `json:"agent_guest_info,omitempty"`
+	// AgentIPList is the guest-agent IP list. VergeOS 26.2.
+	// The API may return a JSON array or one delimited string.
+	AgentIPList StringList `json:"agent_ip_list,omitempty"`
+	// TimeSyncStatus is the time sync state reported for this machine. VergeOS 26.2.
+	TimeSyncStatus string `json:"time_sync_status,omitempty"`
 }
 
 // GuestInfo contains guest OS information reported by the VergeOS guest agent.
@@ -225,3 +230,6 @@ const machineStatusListFields = "$key,machine,running,migratable,status,status_i
 
 // machineStatusGetFields are the fields to request when getting a single machine status.
 const machineStatusGetFields = machineStatusListFields
+
+// machineStatus262Fields are machine_status columns added in VergeOS 26.2.
+const machineStatus262Fields = "agent_ip_list,time_sync_status"

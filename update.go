@@ -13,14 +13,18 @@ const (
 	updateActionInstall  = "install"
 	// UpdateAll posts all, which downloads, installs, and starts the rolling reboot.
 	updateActionAll = "all"
+	// Uninstall posts uninstall and names the installed package. VergeOS 26.2.
+	updateActionUninstall = UpdateActionUninstall
 )
 
 // updateActionRequest is the body for POST /update_actions.
 // Force is sent only for the all action. A false value is explicit.
+// InstalledPackage is sent for uninstall.
 type updateActionRequest struct {
-	Source int    `json:"source"`
-	Action string `json:"action"`
-	Force  *bool  `json:"force,omitempty"`
+	Source           int    `json:"source"`
+	Action           string `json:"action"`
+	Force            *bool  `json:"force,omitempty"`
+	InstalledPackage string `json:"installed_package,omitempty"`
 }
 
 // UpdateSettingsService handles the update settings singleton (key=1)
@@ -29,11 +33,15 @@ type UpdateSettingsService struct {
 	client *Client
 }
 
+func (s *UpdateSettingsService) getFields() string {
+	return appendVersionFields(updateSettingsGetFields, updateSettings262Fields, s.client.atLeast262())
+}
+
 // Get retrieves the update settings (singleton, key=1).
 // The BranchName field is populated via computed field alias (branch#name).
 func (s *UpdateSettingsService) Get(ctx context.Context) (*UpdateSettings, error) {
 	params := url.Values{}
-	params.Set("fields", updateSettingsGetFields)
+	params.Set("fields", s.getFields())
 
 	var settings UpdateSettings
 	if err := s.client.get(ctx, "/update_settings/1", params, &settings); err != nil {
@@ -67,6 +75,32 @@ func (s *UpdateSettingsService) Install(ctx context.Context) error {
 // The API action is all, and force is always sent.
 func (s *UpdateSettingsService) UpdateAll(ctx context.Context, force bool) error {
 	return s.postUpdateAction(ctx, updateActionAll, "apply updates", &force)
+}
+
+// Uninstall removes one installed optional package.
+// The API action is uninstall. installedPackage is the update_packages key,
+// which is the package name. Nodes are not rebooted by this call.
+// VergeOS 26.2.
+func (s *UpdateSettingsService) Uninstall(ctx context.Context, installedPackage string) error {
+	if installedPackage == "" {
+		return &ValidationError{Field: "installed_package", Message: "installed package is required"}
+	}
+	settings, err := s.Get(ctx)
+	if err != nil {
+		return err
+	}
+	if settings.Source == 0 {
+		return &ValidationError{Field: "source", Message: "no update source configured in settings"}
+	}
+	body := updateActionRequest{
+		Source:           settings.Source,
+		Action:           updateActionUninstall,
+		InstalledPackage: installedPackage,
+	}
+	if err := s.client.post(ctx, "/update_actions", body, nil); err != nil {
+		return fmt.Errorf("vergeos: failed to uninstall package: %w", err)
+	}
+	return nil
 }
 
 // postUpdateAction reads the configured source and posts one update_actions row.
@@ -173,4 +207,92 @@ func (s *UpdateSourcePackageService) Get(ctx context.Context, id int) (*UpdateSo
 	}
 
 	return &pkg, nil
+}
+
+// UpdatePackageService reads installed packages (update_packages).
+// dependencies is requested only on VergeOS 26.2 or later.
+type UpdatePackageService struct {
+	client *Client
+}
+
+func (s *UpdatePackageService) listFields() string {
+	return appendVersionFields(updatePackageListFields, updatePackage262Fields, s.client.atLeast262())
+}
+
+// List returns installed packages.
+func (s *UpdatePackageService) List(ctx context.Context, opts ...ListOption) ([]UpdatePackage, error) {
+	options := applyListOptions(opts)
+	if options.Fields == "most" {
+		options.Fields = s.listFields()
+	}
+	var packages []UpdatePackage
+	if err := s.client.get(ctx, "/update_packages", options.toQueryParams(), &packages); err != nil {
+		return nil, err
+	}
+	return packages, nil
+}
+
+// Get returns one package by name. The name is the row key.
+func (s *UpdatePackageService) Get(ctx context.Context, name string) (*UpdatePackage, error) {
+	if name == "" {
+		return nil, &ValidationError{Field: "name", Message: "name is required"}
+	}
+	params := url.Values{}
+	params.Set("fields", s.listFields())
+
+	var pkg UpdatePackage
+	endpoint := "/update_packages/" + url.PathEscape(name)
+	if err := s.client.get(ctx, endpoint, params, &pkg); err != nil {
+		if statusNotFound(err) {
+			return nil, &NotFoundError{Resource: "UpdatePackage", ID: name}
+		}
+		return nil, err
+	}
+	return &pkg, nil
+}
+
+// UpdateSourceStatusService reads update_source_status.
+type UpdateSourceStatusService struct {
+	client *Client
+}
+
+// List returns the status row for every update source.
+func (s *UpdateSourceStatusService) List(ctx context.Context, opts ...ListOption) ([]UpdateSourceStatus, error) {
+	options := applyListOptions(opts)
+	if options.Fields == "most" {
+		options.Fields = updateSourceStatusFields
+	}
+	var rows []UpdateSourceStatus
+	if err := s.client.get(ctx, "/update_source_status", options.toQueryParams(), &rows); err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// Get returns one status row by key.
+func (s *UpdateSourceStatusService) Get(ctx context.Context, id int) (*UpdateSourceStatus, error) {
+	params := url.Values{}
+	params.Set("fields", updateSourceStatusFields)
+
+	var row UpdateSourceStatus
+	endpoint := fmt.Sprintf("/update_source_status/%d", id)
+	if err := s.client.get(ctx, endpoint, params, &row); err != nil {
+		if statusNotFound(err) {
+			return nil, &NotFoundError{Resource: "UpdateSourceStatus", ID: id}
+		}
+		return nil, err
+	}
+	return &row, nil
+}
+
+// GetBySource returns the status row for an update source.
+func (s *UpdateSourceStatusService) GetBySource(ctx context.Context, sourceID int) (*UpdateSourceStatus, error) {
+	rows, err := s.List(ctx, WithFilter(fmt.Sprintf("source eq %d", sourceID)))
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, &NotFoundError{Resource: "UpdateSourceStatus", ID: sourceID}
+	}
+	return &rows[0], nil
 }

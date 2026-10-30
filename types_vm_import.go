@@ -69,6 +69,12 @@ type VMImport struct {
 	PreserveMACs bool `json:"preserve_macs,omitempty"`
 	// PreserveDriveFormat keeps the source disk format.
 	PreserveDriveFormat bool `json:"preserve_drive_format,omitempty"`
+	// PreserveBIOSSerial keeps the source SMBIOS serial. VergeOS 26.2.
+	PreserveBIOSSerial bool `json:"preserve_bios_serial,omitempty"`
+	// GuestAgentPreinstalled marks the guest agent as already installed. VergeOS 26.2.
+	GuestAgentPreinstalled bool `json:"guest_agent_preinstalled,omitempty"`
+	// ReplicateTags copies VMware tags and categories onto the imported VM. VergeOS 26.2.
+	ReplicateTags bool `json:"replicate_tags,omitempty"`
 	// PreferredTier is the storage tier (1-5).
 	PreferredTier string `json:"preferred_tier,omitempty"`
 	// NoOpticalDrives skips optical drives from an OVA.
@@ -146,6 +152,15 @@ func (v *VMImport) UnmarshalJSON(data []byte) error {
 	if v.PreserveDriveFormat, err = jsonBool(raw["preserve_drive_format"]); err != nil {
 		return fieldErr("preserve_drive_format", err)
 	}
+	if v.PreserveBIOSSerial, err = jsonBool(raw["preserve_bios_serial"]); err != nil {
+		return fieldErr("preserve_bios_serial", err)
+	}
+	if v.GuestAgentPreinstalled, err = jsonBool(raw["guest_agent_preinstalled"]); err != nil {
+		return fieldErr("guest_agent_preinstalled", err)
+	}
+	if v.ReplicateTags, err = jsonBool(raw["replicate_tags"]); err != nil {
+		return fieldErr("replicate_tags", err)
+	}
 	if v.PreferredTier, err = jsonString(raw["preferred_tier"]); err != nil {
 		return fieldErr("preferred_tier", err)
 	}
@@ -205,6 +220,13 @@ type VMImportCreateRequest struct {
 	PreserveMACs *bool
 	// PreserveDriveFormat keeps the source disk format. Nil leaves the platform default.
 	PreserveDriveFormat *bool
+	// PreserveBIOSSerial keeps the source SMBIOS serial. VergeOS 26.2.
+	// Nil leaves the platform default.
+	PreserveBIOSSerial *bool
+	// GuestAgentPreinstalled marks the guest agent as already installed. VergeOS 26.2.
+	GuestAgentPreinstalled *bool
+	// ReplicateTags copies VMware tags and categories onto the imported VM. VergeOS 26.2.
+	ReplicateTags *bool
 	// PreferredTier is the storage tier (1-5).
 	PreferredTier string
 	// NoOpticalDrives skips optical drives from an OVA.
@@ -225,6 +247,9 @@ type VMImportUpdateRequest struct {
 	Name                   *string `json:"name,omitempty"`
 	PreserveMACs           *bool   `json:"preserve_macs,omitempty"`
 	PreserveDriveFormat    *bool   `json:"preserve_drive_format,omitempty"`
+	PreserveBIOSSerial     *bool   `json:"preserve_bios_serial,omitempty"`
+	GuestAgentPreinstalled *bool   `json:"guest_agent_preinstalled,omitempty"`
+	ReplicateTags          *bool   `json:"replicate_tags,omitempty"`
 	PreferredTier          *string `json:"preferred_tier,omitempty"`
 	NoOpticalDrives        *bool   `json:"no_optical_drives,omitempty"`
 	OverrideDriveInterface *string `json:"override_drive_interface,omitempty"`
@@ -289,5 +314,8 @@ const vmImportFields = "$key,id,name,vm,uuid,file,volume,volume_path,shared_obje
 	"status,status_info,importing,aborted,failed_drive_count,preserve_macs,preserve_drive_format," +
 	"preferred_tier,no_optical_drives,override_drive_interface,override_nic_interface," +
 	"cleanup_on_delete,timestamp,modified"
+
+// vmImport262Fields are vm_imports columns added in VergeOS 26.2.
+const vmImport262Fields = "preserve_bios_serial,guest_agent_preinstalled,replicate_tags"
 
 const vmImportLogFields = "$key,vm_import,level,text,timestamp,user"

@@ -1,6 +1,10 @@
 package vergeos
 
-import "strings"
+import (
+	"bytes"
+	"encoding/json"
+	"strings"
+)
 
 // Network represents a VergeOS virtual network (vnet).
 type Network struct {
@@ -56,6 +60,9 @@ type Network struct {
 	DHCPStart string `json:"dhcp_start,omitempty"`
 	// DHCPStop is the end of the DHCP range.
 	DHCPStop string `json:"dhcp_stop,omitempty"`
+	// DHCPBroadcast asks a dynamic external network to request broadcast DHCP replies.
+	// Off unless set. VergeOS 26.2.
+	DHCPBroadcast bool `json:"dhcp_broadcast,omitempty"`
 
 	// Network configuration
 	// Type is the network type (internal, external, bgp, dmz, core, physical, port_mirror, vpn).
@@ -101,6 +108,27 @@ type Network struct {
 	EnableBonding bool `json:"enable_bonding,omitempty"`
 	// BondInterfacesArgs are the bonding interface arguments.
 	BondInterfacesArgs []int `json:"bond_interfaces_args,omitempty"`
+	// VLANBondMode is the external-network bond mode (active-backup, balance-slb, and the other Linux modes).
+	// VergeOS 26.2.
+	VLANBondMode string `json:"vlan_bond_mode,omitempty"`
+	// VLANBondPrimary is the primary bond member. A number is a member id. A name is kept as text.
+	VLANBondPrimary FlexText `json:"vlan_bond_primary,omitempty"`
+	// VLANBondMIIMON is the MII monitor interval in milliseconds.
+	VLANBondMIIMON int `json:"vlan_bond_miimon,omitempty"`
+	// VLANBondUpDelay is the delay in milliseconds before a link is used after it comes up.
+	VLANBondUpDelay int `json:"vlan_bond_updelay,omitempty"`
+	// VLANBondDownDelay is the delay in milliseconds before a link is abandoned after it drops.
+	VLANBondDownDelay int `json:"vlan_bond_downdelay,omitempty"`
+	// VLANBondXmitHashPolicy is the transmit hash policy for balance modes.
+	VLANBondXmitHashPolicy string `json:"vlan_bond_xmit_hash_policy,omitempty"`
+	// BGPAdvanced opens the vtysh console on this network. VergeOS 26.2.
+	BGPAdvanced bool `json:"bgp_advanced,omitempty"`
+	// BGPConsoleRows is the console height.
+	BGPConsoleRows int `json:"bgp_console_rows,omitempty"`
+	// BGPConsoleCols is the console width.
+	BGPConsoleCols int `json:"bgp_console_cols,omitempty"`
+	// BGPConsoleStatus is the console state. Read-only.
+	BGPConsoleStatus string `json:"bgp_console_status,omitempty"`
 
 	// Port mirroring
 	// PortMirroring is the port mirroring mode (off, east_west, north_south).
@@ -211,6 +239,9 @@ type NetworkCreateRequest struct {
 	DHCPStart string `json:"dhcp_start,omitempty"`
 	// DHCPStop is the end of the DHCP range.
 	DHCPStop string `json:"dhcp_stop,omitempty"`
+	// DHCPBroadcast asks a dynamic external network to request broadcast DHCP replies.
+	// Off unless set. VergeOS 26.2.
+	DHCPBroadcast *bool `json:"dhcp_broadcast,omitempty"`
 
 	// Network configuration
 	// Type is the network type (internal, external, bgp, dmz, core, physical, port_mirror, vpn).
@@ -245,6 +276,28 @@ type NetworkCreateRequest struct {
 	EnableBonding *bool `json:"enable_bonding,omitempty"`
 	// BondInterfacesArgs are the bonding interface arguments.
 	BondInterfacesArgs []int `json:"bond_interfaces_args,omitempty"`
+	// VLANBondMode is the external-network bond mode. VergeOS 26.2.
+	VLANBondMode string `json:"vlan_bond_mode,omitempty"`
+	// VLANBondPrimary is the primary bond member id.
+	VLANBondPrimary *int `json:"vlan_bond_primary,omitempty"`
+	// VLANBondMIIMON is the MII monitor interval in milliseconds.
+	VLANBondMIIMON *int `json:"vlan_bond_miimon,omitempty"`
+	// VLANBondUpDelay is the delay in milliseconds before a link is used after it comes up.
+	VLANBondUpDelay *int `json:"vlan_bond_updelay,omitempty"`
+	// VLANBondDownDelay is the delay in milliseconds before a link is abandoned after it drops.
+	VLANBondDownDelay *int `json:"vlan_bond_downdelay,omitempty"`
+	// VLANBondXmitHashPolicy is the transmit hash policy for balance modes.
+	VLANBondXmitHashPolicy string `json:"vlan_bond_xmit_hash_policy,omitempty"`
+	// BGPAdvanced opens the vtysh console on this network.
+	BGPAdvanced *bool `json:"bgp_advanced,omitempty"`
+	// BGPConfig is the vtysh configuration restored when the network starts.
+	BGPConfig *string `json:"bgp_config,omitempty"`
+	// FRRDaemons are the FRR daemon flags for the advanced router.
+	FRRDaemons *FRRDaemons `json:"frr_daemons,omitempty"`
+	// BGPConsoleRows is the console height.
+	BGPConsoleRows *int `json:"bgp_console_rows,omitempty"`
+	// BGPConsoleCols is the console width.
+	BGPConsoleCols *int `json:"bgp_console_cols,omitempty"`
 
 	// Port mirroring
 	// PortMirroring is the port mirroring mode.
@@ -345,6 +398,9 @@ type NetworkUpdateRequest struct {
 	DHCPStart *string `json:"dhcp_start,omitempty"`
 	// DHCPStop is the end of the DHCP range.
 	DHCPStop *string `json:"dhcp_stop,omitempty"`
+	// DHCPBroadcast asks a dynamic external network to request broadcast DHCP replies.
+	// VergeOS 26.2.
+	DHCPBroadcast *bool `json:"dhcp_broadcast,omitempty"`
 
 	// Network configuration
 	// Layer2Type is the layer 2 type.
@@ -377,6 +433,28 @@ type NetworkUpdateRequest struct {
 	EnableBonding *bool `json:"enable_bonding,omitempty"`
 	// BondInterfacesArgs are the bonding interface arguments.
 	BondInterfacesArgs []int `json:"bond_interfaces_args,omitempty"`
+	// VLANBondMode is the external-network bond mode. VergeOS 26.2.
+	VLANBondMode *string `json:"vlan_bond_mode,omitempty"`
+	// VLANBondPrimary is the primary bond member id.
+	VLANBondPrimary *int `json:"vlan_bond_primary,omitempty"`
+	// VLANBondMIIMON is the MII monitor interval in milliseconds.
+	VLANBondMIIMON *int `json:"vlan_bond_miimon,omitempty"`
+	// VLANBondUpDelay is the delay in milliseconds before a link is used after it comes up.
+	VLANBondUpDelay *int `json:"vlan_bond_updelay,omitempty"`
+	// VLANBondDownDelay is the delay in milliseconds before a link is abandoned after it drops.
+	VLANBondDownDelay *int `json:"vlan_bond_downdelay,omitempty"`
+	// VLANBondXmitHashPolicy is the transmit hash policy for balance modes.
+	VLANBondXmitHashPolicy *string `json:"vlan_bond_xmit_hash_policy,omitempty"`
+	// BGPAdvanced opens the vtysh console on this network.
+	BGPAdvanced *bool `json:"bgp_advanced,omitempty"`
+	// BGPConfig is the vtysh configuration restored when the network starts.
+	BGPConfig *string `json:"bgp_config,omitempty"`
+	// FRRDaemons are the FRR daemon flags for the advanced router.
+	FRRDaemons *FRRDaemons `json:"frr_daemons,omitempty"`
+	// BGPConsoleRows is the console height.
+	BGPConsoleRows *int `json:"bgp_console_rows,omitempty"`
+	// BGPConsoleCols is the console width.
+	BGPConsoleCols *int `json:"bgp_console_cols,omitempty"`
 
 	// Port mirroring
 	// PortMirroring is the port mirroring mode.
@@ -439,6 +517,132 @@ const networkListFields = "$key,name,description,enabled,creator,ipaddress,dmz_i
 
 // networkGetFields are the fields to request when getting a single network.
 const networkGetFields = networkListFields + ",vnet_default_gateway,bond_interfaces_args"
+
+// network262Fields are vnets columns added in VergeOS 26.2.
+// bgp_console_status is read-only. bgp_config and frr_daemons are read
+// through Networks.GetAdvancedRouter so a wrong name there cannot break List.
+const network262Fields = "dhcp_broadcast,vlan_bond_mode,vlan_bond_primary,vlan_bond_miimon,vlan_bond_updelay,vlan_bond_downdelay,vlan_bond_xmit_hash_policy,bgp_advanced,bgp_console_rows,bgp_console_cols,bgp_console_status"
+
+// VLAN bond mode values added or kept on VergeOS 26.2.
+const (
+	// VLANBondModeActiveBackup keeps one link active.
+	VLANBondModeActiveBackup = "active-backup"
+	// VLANBondModeBalanceSLB rebalances traffic by source MAC. No switch configuration is required.
+	VLANBondModeBalanceSLB = "balance-slb"
+)
+
+// advancedRouterFields is the projection for Networks.GetAdvancedRouter.
+// These names stay off the default vnet projection.
+const advancedRouterFields = "$key,bgp_advanced,bgp_config,frr_daemons,bgp_console_rows,bgp_console_cols,bgp_console_status"
+
+// AdvancedRouter is the VergeOS 26.2 BGP console configuration for one network.
+// Config is the vtysh text restored when the network starts.
+// Daemons are the FRR daemon flags.
+type AdvancedRouter struct {
+	// Key is the network key.
+	Key FlexInt `json:"$key,omitempty"`
+	// Enabled is bgp_advanced.
+	Enabled bool `json:"bgp_advanced,omitempty"`
+	// Config is the persisted vtysh configuration.
+	Config string `json:"bgp_config,omitempty"`
+	// Daemons are the FRR daemon flags. The API may send an object of flags or a list of daemon names.
+	Daemons FRRDaemons `json:"frr_daemons,omitempty"`
+	// ConsoleRows is the console height.
+	ConsoleRows int `json:"bgp_console_rows,omitempty"`
+	// ConsoleCols is the console width.
+	ConsoleCols int `json:"bgp_console_cols,omitempty"`
+	// ConsoleStatus is the console state. Read-only.
+	ConsoleStatus string `json:"bgp_console_status,omitempty"`
+}
+
+// FRRDaemons is the set of FRR daemons enabled for an advanced router.
+type FRRDaemons struct {
+	BGP    bool `json:"bgpd,omitempty"`
+	OSPF   bool `json:"ospfd,omitempty"`
+	OSPF6  bool `json:"ospf6d,omitempty"`
+	ISIS   bool `json:"isisd,omitempty"`
+	PIM    bool `json:"pimd,omitempty"`
+	LDP    bool `json:"ldpd,omitempty"`
+	BFD    bool `json:"bfdd,omitempty"`
+	EIGRP  bool `json:"eigrpd,omitempty"`
+	Static bool `json:"staticd,omitempty"`
+	VRRP   bool `json:"vrrpd,omitempty"`
+}
+
+// UnmarshalJSON accepts an object of daemon flags or a list of daemon names.
+func (d *FRRDaemons) UnmarshalJSON(data []byte) error {
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 || bytes.Equal(data, []byte("null")) {
+		return nil
+	}
+	if data[0] == '[' {
+		var names []string
+		if err := json.Unmarshal(data, &names); err != nil {
+			return err
+		}
+		for _, name := range names {
+			d.enable(name)
+		}
+		return nil
+	}
+	type plain FRRDaemons
+	var decoded plain
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*d = FRRDaemons(decoded)
+	return nil
+}
+
+func (d *FRRDaemons) enable(name string) {
+	switch strings.TrimSpace(name) {
+	case "bgpd":
+		d.BGP = true
+	case "ospfd":
+		d.OSPF = true
+	case "ospf6d":
+		d.OSPF6 = true
+	case "isisd":
+		d.ISIS = true
+	case "pimd":
+		d.PIM = true
+	case "ldpd":
+		d.LDP = true
+	case "bfdd":
+		d.BFD = true
+	case "eigrpd":
+		d.EIGRP = true
+	case "staticd":
+		d.Static = true
+	case "vrrpd":
+		d.VRRP = true
+	}
+}
+
+// VNetBondInterface is one member of a network bond (vnet_bond_interfaces).
+type VNetBondInterface struct {
+	// Key is the row key.
+	Key FlexInt `json:"$key,omitempty"`
+	// VNet is the network this member belongs to.
+	VNet FlexInt `json:"vnet,omitempty"`
+	// Interface is the member interface.
+	Interface FlexInt `json:"interface,omitempty"`
+	// Primary marks the member that stays active in active-backup and is preferred
+	// by the 26.2 load-balancing modes. The column arrived in VergeOS 26.2.
+	Primary bool `json:"primary,omitempty"`
+}
+
+// VNetBondInterfaceUpdateRequest updates a bond member.
+// Primary is the only 26.2 flag this SDK writes.
+type VNetBondInterfaceUpdateRequest struct {
+	// Primary marks this member as the bond primary.
+	Primary *bool `json:"primary,omitempty"`
+}
+
+const (
+	vnetBondInterfaceListFields = "$key,vnet,interface"
+	vnetBondInterface262Fields  = "primary"
+)
 
 // GetDNSServers returns the DNS list as a slice of server addresses.
 // The DNSList field can be newline, space, or comma separated.
@@ -554,6 +758,8 @@ const (
 	NetworkQueryFirewall         = "firewall"
 	NetworkQueryNmap             = "nmap"
 	NetworkQueryTCPConnect       = "tcp_connect"
+	// NetworkQueryWakeOnLAN sends a Wake-on-LAN packet. VergeOS 26.2.
+	NetworkQueryWakeOnLAN = "wakeonlan"
 )
 
 // Query status constants.

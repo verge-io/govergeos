@@ -89,6 +89,7 @@ type Client struct {
 	VMRecipes                VMRecipeServiceInterface
 	VMRecipeInstances        VMRecipeInstanceServiceInterface
 	Networks                 NetworkServiceInterface
+	VNetBondInterfaces       VNetBondInterfaceServiceInterface
 	Users                    UserServiceInterface
 	Members                  MemberServiceInterface
 	CloudInitFiles           CloudInitServiceInterface
@@ -107,6 +108,8 @@ type Client struct {
 	Files                    FileServiceInterface
 	ResourceGroups           ResourceGroupServiceInterface
 	Settings                 SettingsServiceInterface
+	TimeSettings             TimeSettingsServiceInterface
+	TimeDashboard            TimeDashboardServiceInterface
 	System                   SystemServiceInterface
 	Schema                   SchemaServiceInterface
 	Tags                     TagServiceInterface
@@ -193,6 +196,8 @@ type Client struct {
 	UpdateSettings           UpdateSettingsServiceInterface
 	UpdateBranches           UpdateBranchServiceInterface
 	UpdateSourcePackages     UpdateSourcePackageServiceInterface
+	UpdatePackages           UpdatePackageServiceInterface
+	UpdateSourceStatus       UpdateSourceStatusServiceInterface
 	Billing                  BillingServiceInterface
 	NASServiceAntivirus      NASServiceAntivirusServiceInterface
 	SharedObjects            SharedObjectServiceInterface
@@ -695,6 +700,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.VMRecipes = &VMRecipeService{client: c}
 	c.VMRecipeInstances = &VMRecipeInstanceService{client: c}
 	c.Networks = &NetworkService{client: c}
+	c.VNetBondInterfaces = &VNetBondInterfaceService{client: c}
 	c.Users = &UserService{client: c}
 	c.Members = &MemberService{client: c}
 	c.CloudInitFiles = &CloudInitService{client: c}
@@ -713,6 +719,8 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Files = &FileService{client: c}
 	c.ResourceGroups = &ResourceGroupService{client: c}
 	c.Settings = &SettingsService{client: c}
+	c.TimeSettings = &TimeSettingsService{client: c}
+	c.TimeDashboard = &TimeDashboardService{client: c}
 	c.System = &SystemService{client: c}
 	c.Schema = &SchemaService{client: c}
 	c.Tags = &TagService{client: c}
@@ -799,6 +807,8 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.UpdateSettings = &UpdateSettingsService{client: c}
 	c.UpdateBranches = &UpdateBranchService{client: c}
 	c.UpdateSourcePackages = &UpdateSourcePackageService{client: c}
+	c.UpdatePackages = &UpdatePackageService{client: c}
+	c.UpdateSourceStatus = &UpdateSourceStatusService{client: c}
 	c.Billing = &BillingService{client: c}
 	c.NASServiceAntivirus = &NASServiceAntivirusService{client: c}
 	c.SharedObjects = &SharedObjectService{client: c}

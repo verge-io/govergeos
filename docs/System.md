@@ -168,19 +168,38 @@ fmt.Printf("%d records, peak %d cores\n", summary.RecordCount, summary.PeakCPUCo
 
 `UpdateSettings` is the singleton (key 1). `Check`, `Download`, and `Install` post to `update_actions` using the source stored in settings. `Check` sends action `refresh`. `Download` and `Install` use those names. None of them reboot nodes. `UpdateAll` sends action `all` with `force` and starts the platform rolling reboot. `force` true allows a node to reboot workloads that cannot be migrated. Each action returns an error when settings have no source. `Get` also returns `ApplyingUpdates`.
 
-`UpdateBranches` and `UpdateSourcePackages` are read only.
+`UpdateBranches` and `UpdateSourcePackages` are read only. `UpdatePackages` reads installed packages. On 26.2, list and get include `Dependencies`, and settings include `RestartPendingPackages`. `Uninstall` posts action `uninstall` with `installed_package` set to the package name. `UpdateSourceStatus` reads the per-source row. `uninstalling` is a 26.2 status.
+
+`TimeSettings` is the NTP/PTP singleton (key 1). `TimeDashboard` is the read-only view of those settings, each physical node's sync status, and time alarms. Both calls require VergeOS 26.2. The system time zone stays in system settings.
+
+`MachineStatus` on 26.2 also returns `AgentIPList` and `TimeSyncStatus`.
 
 ```go
 settings, err := client.UpdateSettings.Get(ctx)
 fmt.Println(settings.BranchName, settings.RebootRequired, settings.ApplyingUpdates)
+fmt.Println(settings.RestartPendingPackages)
 
 err = client.UpdateSettings.Check(ctx)
 err = client.UpdateSettings.Download(ctx)
 err = client.UpdateSettings.Install(ctx)
 err = client.UpdateSettings.UpdateAll(ctx, false)
+err = client.UpdateSettings.Uninstall(ctx, "private-ai")
 
 branches, err := client.UpdateBranches.List(ctx)
 packages, err := client.UpdateSourcePackages.ListByBranchAndSource(ctx, settings.Branch, settings.Source)
+installed, err := client.UpdatePackages.List(ctx)
+sourceStatus, err := client.UpdateSourceStatus.GetBySource(ctx, settings.Source)
+fmt.Println(branches, packages, installed, sourceStatus.Status)
+
+timeSettings, err := client.TimeSettings.Get(ctx)
+fmt.Println(timeSettings.Mode, timeSettings.NTPServers, timeSettings.PTPDomain)
+
+servers := "ntp1.example.com ntp2.example.com"
+timeSettings, err = client.TimeSettings.Update(ctx, &vergeos.TimeSettingsUpdateRequest{
+    NTPServers: &servers,
+})
+dash, err := client.TimeDashboard.Get(ctx)
+fmt.Println(timeSettings.NTPServers, len(dash.Nodes))
 ```
 
 ---

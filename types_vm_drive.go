@@ -49,6 +49,17 @@ type VMDrive struct {
 	Advanced string `json:"advanced,omitempty"`
 	// Asset is the asset tag (used for recipe/snapshot identification).
 	Asset string `json:"asset,omitempty"`
+	// UUID is the drive UUID. Read-only. VergeOS 26.2.
+	UUID string `json:"uuid,omitempty"`
+	// IsPrimary reports that this attachment is the primary member of a shared disk.
+	// Read-only. VergeOS 26.2.
+	IsPrimary bool `json:"is_primary,omitempty"`
+	// Share reports that the disk is a multi-writer shared disk.
+	// The flag is set when the drive is created. VergeOS 26.2.
+	Share bool `json:"share,omitempty"`
+	// OVMFCode is the custom OVMF firmware chosen when the drive was created.
+	// VergeOS 26.2. A number is a media-catalog file key. A string is kept as text.
+	OVMFCode FlexText `json:"ovmf_code,omitempty"`
 	// PreserveDriveFormat indicates whether to preserve the drive format.
 	PreserveDriveFormat bool `json:"preserve_drive_format,omitempty"`
 	// MS2023KEKApplied indicates whether the Microsoft 2023 Secure Boot KEK has been applied (read-only).
@@ -99,6 +110,13 @@ type VMDriveCreateRequest struct {
 	Advanced string `json:"advanced,omitempty"`
 	// Asset is the asset tag.
 	Asset string `json:"asset,omitempty"`
+	// Share marks the disk as a multi-writer shared disk.
+	// Set this when the drive is created. A later update cannot change it. VergeOS 26.2.
+	Share *bool `json:"share,omitempty"`
+	// OVMFCode is the media-catalog file key for a custom OVMF firmware image.
+	// Set this when the drive is created. A later update cannot change it.
+	// VergeOS 26.2. Leave it unset to keep the managed EFI disk.
+	OVMFCode *int `json:"ovmf_code,omitempty"`
 	// PreserveDriveFormat indicates whether to preserve the drive format.
 	PreserveDriveFormat *bool `json:"preserve_drive_format,omitempty"`
 }
@@ -149,6 +167,10 @@ const driveMS2023KEKField = "ms_2023_kek_applied"
 
 // driveGetFields are the fields to request when getting a single drive (includes power state and status).
 const driveGetFields = driveListFields + ",status#status as powerState,status#status_info as status"
+
+// drive262Fields are machine_drives columns added in VergeOS 26.2.
+// share and ovmf_code are written at create time and are still readable.
+const drive262Fields = "uuid,is_primary,share,ovmf_code"
 
 // Conversion constants for disk size
 const (

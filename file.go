@@ -20,12 +20,16 @@ type FileService struct {
 	client *Client
 }
 
+func (s *FileService) listFields() string {
+	return appendVersionFields(fileListFields, file262Fields, s.client.atLeast262())
+}
+
 // List returns all files, with optional filtering and pagination.
 func (s *FileService) List(ctx context.Context, opts ...ListOption) ([]File, error) {
 	options := applyListOptions(opts)
 
 	if options.Fields == "most" {
-		options.Fields = fileListFields
+		options.Fields = s.listFields()
 	}
 
 	params := options.toQueryParams()
@@ -41,7 +45,7 @@ func (s *FileService) List(ctx context.Context, opts ...ListOption) ([]File, err
 // Get returns a single file by ID.
 func (s *FileService) Get(ctx context.Context, id int) (*File, error) {
 	params := url.Values{}
-	params.Set("fields", fileListFields)
+	params.Set("fields", s.listFields())
 
 	var file File
 	endpoint := fmt.Sprintf("/files/%d", id)

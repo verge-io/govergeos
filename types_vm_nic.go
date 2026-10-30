@@ -6,7 +6,7 @@ type VMNIC struct {
 	Key FlexInt `json:"$key,omitempty"`
 	// Machine is the machine reference ID.
 	Machine int `json:"machine,omitempty"`
-	// OrderID is the NIC order (0-30).
+	// OrderID is the NIC order. The API column is a uint8, so the value runs from 0 through 255.
 	OrderID int `json:"orderid,omitempty"`
 	// Name is the NIC name.
 	Name string `json:"name"`
@@ -45,7 +45,8 @@ type VMNICCreateRequest struct {
 	// Machine is the machine key (VM.Machine) written to machine_nics.
 	// Create sets this from the VM $key argument; callers do not need to set it.
 	Machine int `json:"machine"`
-	// OrderID is the NIC order (0-30, auto-assigned if not specified).
+	// OrderID is the NIC order (0 through 255, the uint8 column range).
+	// VergeOS assigns one when this is omitted.
 	OrderID *int `json:"orderid,omitempty"`
 	// Name is the NIC name.
 	Name string `json:"name"`
@@ -77,7 +78,7 @@ type VMNICCreateRequest struct {
 
 // VMNICUpdateRequest is the request body for updating a NIC.
 type VMNICUpdateRequest struct {
-	// OrderID is the NIC order (0-30).
+	// OrderID is the NIC order. The API column is a uint8, so the value runs from 0 through 255.
 	OrderID *int `json:"orderid,omitempty"`
 	// Name is the NIC name.
 	Name *string `json:"name,omitempty"`

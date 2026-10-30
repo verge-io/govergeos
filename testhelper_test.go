@@ -42,6 +42,7 @@ func initServices(c *Client) {
 	c.VMRecipes = &VMRecipeService{client: c}
 	c.VMRecipeInstances = &VMRecipeInstanceService{client: c}
 	c.Networks = &NetworkService{client: c}
+	c.VNetBondInterfaces = &VNetBondInterfaceService{client: c}
 	c.Users = &UserService{client: c}
 	c.Members = &MemberService{client: c}
 	c.CloudInitFiles = &CloudInitService{client: c}
@@ -60,6 +61,8 @@ func initServices(c *Client) {
 	c.Files = &FileService{client: c}
 	c.ResourceGroups = &ResourceGroupService{client: c}
 	c.Settings = &SettingsService{client: c}
+	c.TimeSettings = &TimeSettingsService{client: c}
+	c.TimeDashboard = &TimeDashboardService{client: c}
 	c.System = &SystemService{client: c}
 	c.Schema = &SchemaService{client: c}
 	c.Tags = &TagService{client: c}
@@ -146,6 +149,8 @@ func initServices(c *Client) {
 	c.UpdateSettings = &UpdateSettingsService{client: c}
 	c.UpdateBranches = &UpdateBranchService{client: c}
 	c.UpdateSourcePackages = &UpdateSourcePackageService{client: c}
+	c.UpdatePackages = &UpdatePackageService{client: c}
+	c.UpdateSourceStatus = &UpdateSourceStatusService{client: c}
 	c.Billing = &BillingService{client: c}
 	c.NASServiceAntivirus = &NASServiceAntivirusService{client: c}
 	c.SharedObjects = &SharedObjectService{client: c}

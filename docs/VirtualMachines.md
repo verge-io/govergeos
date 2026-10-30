@@ -258,14 +258,49 @@ files, err := client.CloudInitFiles.ListByVM(ctx, vm.Key.Int())
 
 ## VM NICs
 
+`orderid` is a uint8, so a NIC order runs from 0 through 255. VergeOS assigns one when the create request leaves it unset.
+
 ```go
 // List NICs for a VM
 nics, err := client.VMNICs.List(ctx, vmID)
 
 // Create a NIC
+order := 255
 nic, err := client.VMNICs.Create(ctx, vmID, &vergeos.VMNICCreateRequest{
     Name: "eth0",
     VNET: networkID,
+    OrderID: &order,
+})
+fmt.Println(nics, nic.OrderID)
+```
+
+## VergeOS 26.2 VM fields
+
+`BIOSSerial` is the SMBIOS serial. `VGAMemMB` is the video adapter memory in megabytes. List and get ask for both only when the server is 26.2.0 or later. Machine types and CPU models, including `pc-q35-11.0` and the QEMU 11 CPU models, come from `Schema.GetVMMachineTypes` and `Schema.GetVMCPUTypes`.
+
+`Share` and `OVMFCode` are set when a drive is created. A drive update does not send them. `UUID` and `IsPrimary` are read-only. `OVMFCode` selects a custom OVMF firmware file. Leave it unset to keep the managed EFI disk.
+
+Clone sends `preserve_bios_serial` when the server is 26.2 or later. VM import accepts `PreserveBIOSSerial`, `GuestAgentPreinstalled`, and `ReplicateTags`.
+
+```go
+serial := "asset-100"
+mem := 64
+vm, err := client.VMs.Update(ctx, vmID, &vergeos.VMUpdateRequest{
+    BIOSSerial: &serial,
+    VGAMemMB: &mem,
+})
+fmt.Println(vm.BIOSSerial, vm.VGAMemMB)
+
+share := true
+drive, err := client.VMDrives.Create(ctx, vmID, &vergeos.VMDriveCreateRequest{
+    Name: "shared0",
+    Share: &share,
+})
+fmt.Println(drive.UUID, drive.IsPrimary, drive.Share)
+
+err = client.VMs.Clone(ctx, vmID, &vergeos.VMCloneOptions{
+    Name: "copy",
+    PreserveBIOSSerial: true,
 })
 ```
 
