@@ -49,8 +49,6 @@ type VMDrive struct {
 	Advanced string `json:"advanced,omitempty"`
 	// Asset is the asset tag (used for recipe/snapshot identification).
 	Asset string `json:"asset,omitempty"`
-	// UUID is the drive UUID. Read-only. VergeOS 26.2.
-	UUID string `json:"uuid,omitempty"`
 	// IsPrimary reports that this attachment is the primary member of a shared disk.
 	// Read-only. VergeOS 26.2.
 	IsPrimary bool `json:"is_primary,omitempty"`
@@ -170,7 +168,7 @@ const driveGetFields = driveListFields + ",status#status as powerState,status#st
 
 // drive262Fields are machine_drives columns added in VergeOS 26.2.
 // share and ovmf_code are written at create time and are still readable.
-const drive262Fields = "uuid,is_primary,share,ovmf_code"
+const drive262Fields = "is_primary,share,ovmf_code"
 
 // Conversion constants for disk size
 const (

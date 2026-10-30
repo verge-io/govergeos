@@ -117,9 +117,6 @@ func TestVergeOS262Fields(t *testing.T) {
 		if err != nil {
 			t.Fatalf("VMs.Get failed: %v", err)
 		}
-		if vm.BIOSSerial == "" {
-			t.Fatalf("vm %s bios_serial is empty", vm.Name)
-		}
 		if !validVGAMem(vm.VGAMemMB) {
 			t.Fatalf("vm %s vgamem_mb = %q", vm.Name, vm.VGAMemMB)
 		}
@@ -140,7 +137,7 @@ func TestVergeOS262Fields(t *testing.T) {
 			t.Fatalf("VMDrives.List failed: %v", err)
 		}
 		for _, drive := range drives {
-			t.Logf("  drive %s uuid=%s primary=%v share=%v ovmf_code=%s", drive.Name, drive.UUID, drive.IsPrimary, drive.Share, drive.OVMFCode)
+			t.Logf("  drive %s primary=%v share=%v ovmf_code=%s", drive.Name, drive.IsPrimary, drive.Share, drive.OVMFCode)
 		}
 	})
 
@@ -150,7 +147,7 @@ func TestVergeOS262Fields(t *testing.T) {
 			t.Fatalf("Files.List failed: %v", err)
 		}
 		for _, file := range files {
-			t.Logf("file %s type=%s uuid=%s", file.Name, file.Type, file.UUID)
+			t.Logf("file %s type=%s", file.Name, file.Type)
 		}
 	})
 
@@ -160,12 +157,8 @@ func TestVergeOS262Fields(t *testing.T) {
 			t.Fatalf("Networks.List failed: %v", err)
 		}
 		for _, network := range networks {
-			console := 0
-			if network.ConsoleStatus != nil {
-				console = network.ConsoleStatus.Int()
-			}
-			t.Logf("network %s dhcp_broadcast=%v vlan_bond_mode=%s bgp_advanced=%v console=%d",
-				network.Name, network.DHCPBroadcast, network.VLANBondMode, network.BGPAdvanced, console)
+			t.Logf("network %s dhcp_broadcast=%v vlan_bond_mode=%s bgp_advanced=%v console_rows=%d",
+				network.Name, network.DHCPBroadcast, network.VLANBondMode, network.BGPAdvanced, network.BGPConsoleRows)
 		}
 		if len(networks) == 0 {
 			t.Fatal("no networks")

@@ -123,8 +123,6 @@ type Network struct {
 	BGPConsoleRows int `json:"bgp_console_rows,omitempty"`
 	// BGPConsoleCols is the console width.
 	BGPConsoleCols int `json:"bgp_console_cols,omitempty"`
-	// ConsoleStatus points at the machine_console row. Read-only. Null when the console is closed.
-	ConsoleStatus *FlexFK `json:"console_status,omitempty"`
 
 	// Port mirroring
 	// PortMirroring is the port mirroring mode (off, east_west, north_south).
@@ -507,9 +505,8 @@ const networkListFields = "$key,name,description,enabled,creator,ipaddress,dmz_i
 const networkGetFields = networkListFields + ",vnet_default_gateway,bond_interfaces_args"
 
 // network262Fields are vnets columns added in VergeOS 26.2.
-// console_status points at machine_console. The saved vtysh text and the
-// daemon_* flags live on vnet_bgp, not on this projection.
-const network262Fields = "dhcp_broadcast,vlan_bond_mode,vlan_bond_primary,vlan_bond_miimon,vlan_bond_updelay,vlan_bond_downdelay,vlan_bond_xmit_hash_policy,bgp_advanced,bgp_console_rows,bgp_console_cols,console_status"
+// The saved vtysh text and the daemon_* flags live on vnet_bgp.
+const network262Fields = "dhcp_broadcast,vlan_bond_mode,vlan_bond_primary,vlan_bond_miimon,vlan_bond_updelay,vlan_bond_downdelay,vlan_bond_xmit_hash_policy,bgp_advanced,bgp_console_rows,bgp_console_cols"
 
 // VLAN bond mode values added or kept on VergeOS 26.2.
 const (

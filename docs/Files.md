@@ -9,12 +9,12 @@ categories: [Files]
 
 Upload, download, and manage ISO images, disk images, and other media files stored in VergeOS.
 
-`fd` (`FileTypeFD`) is an OVMF firmware image, added in VergeOS 26.2. `File.UUID` is read-only and is requested only when the server is 26.2.0 or later.
+`fd` (`FileTypeFD`) is an OVMF firmware image, added in VergeOS 26.2.
 
 ```go
 fmt.Println(vergeos.FileTypeFD)
 files, err := client.Files.List(ctx)
-fmt.Println(files[0].UUID, files[0].Type)
+fmt.Println(files[0].Type)
 ```
 
 ```go

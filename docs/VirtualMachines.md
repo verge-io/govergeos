@@ -278,7 +278,7 @@ fmt.Println(nics, nic.OrderID)
 
 `BIOSSerial` is the SMBIOS serial. `VGAMemMB` is text. The choices are `default`, `8`, `16`, `32`, `64`, `128`, and `256`. List and get ask for both only when the server is 26.2.0 or later. Machine types and CPU models, including `pc-q35-11.0` and the QEMU 11 CPU models, come from `Schema.GetVMMachineTypes` and `Schema.GetVMCPUTypes`.
 
-`Share` and `OVMFCode` are set when a drive is created. A drive update does not send them. `UUID` and `IsPrimary` are read-only. `OVMFCode` selects a custom OVMF firmware file. Leave it unset to keep the managed EFI disk.
+`Share` and `OVMFCode` are set when a drive is created. A drive update does not send them. `IsPrimary` is read-only. `OVMFCode` selects a custom OVMF firmware file. Leave it unset to keep the managed EFI disk.
 
 Clone sends `preserve_bios_serial` when the server is 26.2 or later. VM import accepts `PreserveBIOSSerial`, `GuestAgentPreinstalled`, and `ReplicateTags`.
 
@@ -296,7 +296,7 @@ drive, err := client.VMDrives.Create(ctx, vmID, &vergeos.VMDriveCreateRequest{
     Name: "shared0",
     Share: &share,
 })
-fmt.Println(drive.UUID, drive.IsPrimary, drive.Share)
+fmt.Println(drive.IsPrimary, drive.Share)
 
 err = client.VMs.Clone(ctx, vmID, &vergeos.VMCloneOptions{
     Name: "copy",

@@ -24,8 +24,8 @@ type UpdateSettings struct {
 	SnapshotCloudOnUpdate bool `json:"snapshot_cloud_on_update,omitempty"`
 	// SnapshotCloudExpireSeconds is the snapshot expiration time in seconds.
 	SnapshotCloudExpireSeconds uint32 `json:"snapshot_cloud_expire_seconds,omitempty"`
-	// RestartPendingPackages lists packages that still need a restart.
-	// Read-only. VergeOS 26.2. The API may return an array or one delimited string.
+	// RestartPendingPackages is the JSON list of packages that still need a restart.
+	// Read-only. VergeOS 26.2. An empty list is [].
 	RestartPendingPackages StringList `json:"restart_pending_packages,omitempty"`
 }
 

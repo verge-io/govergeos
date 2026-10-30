@@ -124,6 +124,7 @@ const (
 		"daemon_bgpd,daemon_ospfd,daemon_ospf6d,daemon_ripd,daemon_ripngd,daemon_isisd," +
 		"daemon_pimd,daemon_pim6d,daemon_ldpd,daemon_nhrpd,daemon_eigrpd,daemon_babeld," +
 		"daemon_sharpd,daemon_pbrd,daemon_bfdd,daemon_fabricd,daemon_vrrpd,daemon_pathd"
+	// daemon_staticd is not a column. The live name is daemon_sharpd.
 	vnetBGPRouterListFields           = "$key,bgp,asn"
 	vnetBGPRouterCommandListFields    = "$key,bgp_router,orderid,enabled,no,command,params"
 	vnetBGPInterfaceListFields        = "$key,bgp,name,description,ipaddress,network,mtu,layer2_type,layer2_id,interface_vnet,bgp_vnet,nic"

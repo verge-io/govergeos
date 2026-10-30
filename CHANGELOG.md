@@ -7,10 +7,10 @@
 - VergeOS 26.2 fields are included in the default List and Get projections only when the server version recorded at `NewClient` is 26.2.0 or later. 26.0 and 26.1 keep the previous field set. The minimum version stays 26.0.
 - `VM.BIOSSerial` and `VM.VGAMemMB` (`vgamem_mb` is text: `default`, `8`, `16`, `32`, `64`, `128`, `256`). `VMCloneOptions.PreserveBIOSSerial` is sent on clone when the server is 26.2 or later.
 - VM import options `PreserveBIOSSerial`, `GuestAgentPreinstalled`, and `ReplicateTags`.
-- Drive fields `UUID` and `IsPrimary` (read-only), plus `Share` and `OVMFCode` on create. A later drive update does not send those two.
-- `File.UUID` and file type `fd` (`FileTypeFD`) for an OVMF firmware image.
+- Drive field `IsPrimary` (read-only), plus `Share` and `OVMFCode` on create. A later drive update does not send those two.
+- File type `fd` (`FileTypeFD`) for an OVMF firmware image.
 - `MachineStatus.AgentIPList` and `MachineStatus.TimeSyncStatus`.
-- Network fields `DHCPBroadcast`, the `VLANBond*` settings, `BGPAdvanced`, `BGPConsoleRows`, `BGPConsoleCols`, and `ConsoleStatus` (a `machine_console` row). `Networks.GetAdvancedRouter` reads `vnet_bgp`: `advanced_config` and the `daemon_*` flags.
+- Network fields `DHCPBroadcast`, the `VLANBond*` settings, `BGPAdvanced`, `BGPConsoleRows`, and `BGPConsoleCols`. `Networks.GetAdvancedRouter` reads `vnet_bgp`: `advanced_config` and the `daemon_*` flags (`daemon_sharpd`, not a static daemon column).
 - `VNetBondInterfaces` reads `vnet_bond_interfaces`. `Primary` is requested on 26.2 and later.
 - `UpdatePackages.Dependencies` and `UpdateSettings.RestartPendingPackages` are requested on 26.2 and later. `UpdateSettings.Uninstall` posts action `uninstall` with `installed_package`. `UpdateSourceStatusUninstalling` is the new source status. `UpdateSourceStatus` reads `update_source_status`.
 - `NetworkQueryWakeOnLAN` (`wakeonlan`) and alarm sub-owner `vnet_wires` (`AlarmSubOwnerTypeWire`).

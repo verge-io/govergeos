@@ -66,19 +66,14 @@ func TestVersion262Projections(t *testing.T) {
 		{
 			name:   "drive list",
 			fields: func(c *Client) string { return (&VMDriveService{client: c}).listFields() },
-			added:  []string{"uuid", "is_primary", "share", "ovmf_code"},
+			added:  []string{"is_primary", "share", "ovmf_code"},
 			kept:   []string{driveMS2023KEKField},
 		},
 		{
 			name:   "drive get",
 			fields: func(c *Client) string { return (&VMDriveService{client: c}).getFields() },
-			added:  []string{"uuid", "is_primary", "share", "ovmf_code"},
+			added:  []string{"is_primary", "share", "ovmf_code"},
 			kept:   []string{driveMS2023KEKField},
-		},
-		{
-			name:   "file",
-			fields: func(c *Client) string { return (&FileService{client: c}).listFields() },
-			added:  []string{"uuid"},
 		},
 		{
 			name:   "machine status list",
@@ -123,7 +118,7 @@ func TestVersion262Projections(t *testing.T) {
 		{
 			name:   "vnet bgp",
 			fields: func(c *Client) string { return (&VNetBGPService{client: c}).listFields() },
-			added:  []string{"advanced", "advanced_config", "console_rows", "console_cols", "daemon_bgpd", "daemon_ospfd", "daemon_eigrpd"},
+			added:  []string{"advanced", "advanced_config", "console_rows", "console_cols", "daemon_bgpd", "daemon_ospfd", "daemon_eigrpd", "daemon_sharpd"},
 		},
 	}
 
@@ -160,11 +155,11 @@ func TestVersion262Projections(t *testing.T) {
 		t.Fatalf("26.1.8 drive fields missing %s: %s", driveMS2023KEKField, oldDrive)
 	}
 	preKEK := drive.fields(&Client{serverVersion: "26.1.4"})
-	if fieldSet(preKEK)[driveMS2023KEKField] || fieldSet(preKEK)["uuid"] {
+	if fieldSet(preKEK)[driveMS2023KEKField] || fieldSet(preKEK)["is_primary"] {
 		t.Fatalf("26.1.4 drive fields = %s", preKEK)
 	}
 	newDrive := drive.fields(&Client{serverVersion: "26.2.0"})
-	if !fieldSet(newDrive)[driveMS2023KEKField] || !fieldSet(newDrive)["uuid"] {
+	if !fieldSet(newDrive)[driveMS2023KEKField] || !fieldSet(newDrive)["is_primary"] || fieldSet(newDrive)["uuid"] {
 		t.Fatalf("26.2.0 drive fields = %s", newDrive)
 	}
 
@@ -174,8 +169,15 @@ func TestVersion262Projections(t *testing.T) {
 	if got["bgp_config"] || got["frr_daemons"] || got["advanced_config"] || got["daemon_bgpd"] {
 		t.Fatalf("default network projection includes vnet_bgp columns: %s", network)
 	}
-	if !got["console_status"] || !got["bgp_console_rows"] || !got["bgp_advanced"] {
+	if got["console_status"] || got["uuid"] {
+		t.Fatalf("network projection includes a column the server does not return: %s", network)
+	}
+	if !got["bgp_console_rows"] || !got["bgp_advanced"] {
 		t.Fatalf("network projection = %s", network)
+	}
+	bgp := (&VNetBGPService{client: &Client{serverVersion: "26.2.2.1"}}).listFields()
+	if fieldSet(bgp)["daemon_staticd"] || fieldSet(bgp)["console_status"] {
+		t.Fatalf("vnet_bgp projection = %s", bgp)
 	}
 }
 
@@ -234,7 +236,7 @@ func TestVersion262JSONNames(t *testing.T) {
 	if err := json.Unmarshal([]byte(`{"uuid":"abc","is_primary":true,"share":true,"ovmf_code":"fd-1"}`), &drive); err != nil {
 		t.Fatal(err)
 	}
-	if drive.UUID != "abc" || !drive.IsPrimary || !drive.Share || drive.OVMFCode.String() != "fd-1" {
+	if !drive.IsPrimary || !drive.Share || drive.OVMFCode.String() != "fd-1" {
 		t.Fatalf("drive = %+v", drive)
 	}
 	if err := json.Unmarshal([]byte(`{"ovmf_code":4}`), &drive); err != nil {
@@ -248,7 +250,7 @@ func TestVersion262JSONNames(t *testing.T) {
 	if err := json.Unmarshal([]byte(`{"type":"fd","uuid":"file-uuid"}`), &file); err != nil {
 		t.Fatal(err)
 	}
-	if file.Type != FileTypeFD || file.UUID != "file-uuid" {
+	if file.Type != FileTypeFD {
 		t.Fatalf("file = %+v", file)
 	}
 
@@ -286,17 +288,11 @@ func TestVersion262JSONNames(t *testing.T) {
 	})
 
 	var network Network
-	if err := json.Unmarshal([]byte(`{"dhcp_broadcast":true,"vlan_bond_primary":"nic0","console_status":{"$key":4},"vlan_bond_miimon":100}`), &network); err != nil {
+	if err := json.Unmarshal([]byte(`{"dhcp_broadcast":true,"vlan_bond_primary":"nic0","vlan_bond_miimon":100}`), &network); err != nil {
 		t.Fatal(err)
 	}
-	if !network.DHCPBroadcast || network.VLANBondPrimary.String() != "nic0" || network.ConsoleStatus == nil || network.ConsoleStatus.Int() != 4 || network.VLANBondMIIMON != 100 {
+	if !network.DHCPBroadcast || network.VLANBondPrimary.String() != "nic0" || network.VLANBondMIIMON != 100 {
 		t.Fatalf("network = %+v", network)
-	}
-	if err := json.Unmarshal([]byte(`{"console_status":null}`), &network); err != nil {
-		t.Fatal(err)
-	}
-	if network.ConsoleStatus != nil {
-		t.Fatalf("null console_status = %#v", network.ConsoleStatus)
 	}
 
 	var settings UpdateSettings
@@ -305,6 +301,15 @@ func TestVersion262JSONNames(t *testing.T) {
 	}
 	if len(settings.RestartPendingPackages) != 2 || settings.RestartPendingPackages[0] != "vergeos" {
 		t.Fatalf("packages = %#v", settings.RestartPendingPackages)
+	}
+	if err := json.Unmarshal([]byte(`{"restart_pending_packages":[]}`), &settings); err != nil {
+		t.Fatal(err)
+	}
+	if len(settings.RestartPendingPackages) != 0 {
+		t.Fatalf("empty package list = %#v", settings.RestartPendingPackages)
+	}
+	if err := json.Unmarshal([]byte(`{"restart_pending_packages":true}`), &settings); err == nil {
+		t.Fatal("restart_pending_packages accepted a bool")
 	}
 
 	var pkg UpdatePackage

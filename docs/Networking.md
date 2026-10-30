@@ -73,7 +73,7 @@ if latest != nil {
 }
 ```
 
-VergeOS 26.2 adds `DHCPBroadcast` for dynamic external networks, VLAN bond settings (`VLANBondModeBalanceSLB` is source load balancing), and `bgp_advanced` with the BGP console size. `ConsoleStatus` points at `machine_console`. Those columns are requested only when the server is 26.2.0 or later. The saved vtysh text (`advanced_config`) and the `daemon_*` flags are columns on `vnet_bgp`. `GetAdvancedRouter` reads that row.
+VergeOS 26.2 adds `DHCPBroadcast` for dynamic external networks, VLAN bond settings (`VLANBondModeBalanceSLB` is source load balancing), and `bgp_advanced` with the BGP console size. Those columns are requested only when the server is 26.2.0 or later. The saved vtysh text (`advanced_config`) and the `daemon_*` flags, including `daemon_sharpd`, are columns on `vnet_bgp`. `GetAdvancedRouter` reads that row.
 
 `VNetBondInterfaces` is the bond member table. `Primary` is included on 26.2 and later. `NetworkQueryWakeOnLAN` runs a Wake-on-LAN query.
 
@@ -84,7 +84,7 @@ network, err := client.Networks.Update(ctx, networkID, &vergeos.NetworkUpdateReq
     DHCPBroadcast: &broadcast,
     VLANBondMode: &mode,
 })
-fmt.Println(network.DHCPBroadcast, network.ConsoleStatus)
+fmt.Println(network.DHCPBroadcast, network.BGPConsoleRows)
 
 router, err := client.Networks.GetAdvancedRouter(ctx, networkID)
 fmt.Println(router.Config, router.Daemons.BGP, router.Enabled)
