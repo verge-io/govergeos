@@ -276,7 +276,7 @@ fmt.Println(nics, nic.OrderID)
 
 ## VergeOS 26.2 VM fields
 
-`BIOSSerial` is the SMBIOS serial. `VGAMemMB` is the video adapter memory in megabytes. List and get ask for both only when the server is 26.2.0 or later. Machine types and CPU models, including `pc-q35-11.0` and the QEMU 11 CPU models, come from `Schema.GetVMMachineTypes` and `Schema.GetVMCPUTypes`.
+`BIOSSerial` is the SMBIOS serial. `VGAMemMB` is text. The choices are `default`, `8`, `16`, `32`, `64`, `128`, and `256`. List and get ask for both only when the server is 26.2.0 or later. Machine types and CPU models, including `pc-q35-11.0` and the QEMU 11 CPU models, come from `Schema.GetVMMachineTypes` and `Schema.GetVMCPUTypes`.
 
 `Share` and `OVMFCode` are set when a drive is created. A drive update does not send them. `UUID` and `IsPrimary` are read-only. `OVMFCode` selects a custom OVMF firmware file. Leave it unset to keep the managed EFI disk.
 
@@ -284,7 +284,7 @@ Clone sends `preserve_bios_serial` when the server is 26.2 or later. VM import a
 
 ```go
 serial := "asset-100"
-mem := 64
+mem := vergeos.VGAMem64
 vm, err := client.VMs.Update(ctx, vmID, &vergeos.VMUpdateRequest{
     BIOSSerial: &serial,
     VGAMemMB: &mem,

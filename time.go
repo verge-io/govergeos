@@ -13,7 +13,7 @@ type TimeSettingsService struct {
 	client *Client
 }
 
-// Get returns the time settings row (key 1).
+// Get returns the time settings row. The key is "self".
 func (s *TimeSettingsService) Get(ctx context.Context) (*TimeSettings, error) {
 	if err := s.client.require262("time settings"); err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func (s *TimeSettingsService) Get(ctx context.Context) (*TimeSettings, error) {
 	params.Set("fields", timeSettingsFields)
 
 	var settings TimeSettings
-	if err := s.client.get(ctx, "/time_settings/1", params, &settings); err != nil {
+	if err := s.client.get(ctx, timeSettingsPath, params, &settings); err != nil {
 		return nil, err
 	}
 	return &settings, nil
@@ -38,7 +38,7 @@ func (s *TimeSettingsService) Update(ctx context.Context, req *TimeSettingsUpdat
 		return nil, &ValidationError{Message: "update request is required"}
 	}
 	if !req.empty() {
-		if err := s.client.put(ctx, "/time_settings/1", req, nil); err != nil {
+		if err := s.client.put(ctx, timeSettingsPath, req, nil); err != nil {
 			return nil, err
 		}
 	}
@@ -77,9 +77,6 @@ func (s *TimeDashboardService) Get(ctx context.Context) (*TimeDashboard, error) 
 	var dash TimeDashboard
 	if err := json.Unmarshal(raw, &dash); err != nil {
 		return nil, err
-	}
-	if dash.Mode == "" && dash.Settings != nil {
-		dash.TimeSettings = *dash.Settings
 	}
 	return &dash, nil
 }

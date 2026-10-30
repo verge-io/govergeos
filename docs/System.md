@@ -170,9 +170,9 @@ fmt.Printf("%d records, peak %d cores\n", summary.RecordCount, summary.PeakCPUCo
 
 `UpdateBranches` and `UpdateSourcePackages` are read only. `UpdatePackages` reads installed packages. On 26.2, list and get include `Dependencies`, and settings include `RestartPendingPackages`. `Uninstall` posts action `uninstall` with `installed_package` set to the package name. `UpdateSourceStatus` reads the per-source row. `uninstalling` is a 26.2 status.
 
-`TimeSettings` is the NTP/PTP singleton (key 1). `TimeDashboard` is the read-only view of those settings, each physical node's sync status, and time alarms. Both calls require VergeOS 26.2. The system time zone stays in system settings.
+`TimeSettings` is the NTP/PTP singleton. The row key is `self`. `TimeDashboard` returns `{settings, nodes, alarms}`. Each node's sync state is `machine.status.time_sync_status`, an object, or `[]` when the node has not reported. Both calls require VergeOS 26.2. The system time zone stays in system settings.
 
-`MachineStatus` on 26.2 also returns `AgentIPList` and `TimeSyncStatus`.
+`MachineStatus` on 26.2 also returns `AgentIPList` (one string) and `TimeSyncStatus` (the same object, or `[]`).
 
 ```go
 settings, err := client.UpdateSettings.Get(ctx)
@@ -192,14 +192,14 @@ sourceStatus, err := client.UpdateSourceStatus.GetBySource(ctx, settings.Source)
 fmt.Println(branches, packages, installed, sourceStatus.Status)
 
 timeSettings, err := client.TimeSettings.Get(ctx)
-fmt.Println(timeSettings.Mode, timeSettings.NTPServers, timeSettings.PTPDomain)
+fmt.Println(timeSettings.Key, timeSettings.Mode, timeSettings.NTPServers, timeSettings.NTPMaxClocks)
 
 servers := "ntp1.example.com ntp2.example.com"
 timeSettings, err = client.TimeSettings.Update(ctx, &vergeos.TimeSettingsUpdateRequest{
     NTPServers: &servers,
 })
 dash, err := client.TimeDashboard.Get(ctx)
-fmt.Println(timeSettings.NTPServers, len(dash.Nodes))
+fmt.Println(dash.Settings.Mode, dash.Nodes[0].Machine.Status.TimeSyncStatus.Status)
 ```
 
 ---

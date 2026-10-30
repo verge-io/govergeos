@@ -23,32 +23,33 @@ const (
 	PTPDelayAuto = "auto"
 )
 
-// TimeSettings is the NTP/PTP configuration singleton (time_settings, key 1).
+// TimeSettings is the NTP/PTP configuration singleton.
+// The row key is the text "self", so the path is /time_settings/self.
 // VergeOS 26.2. The system time zone stays in System settings.
 type TimeSettings struct {
-	// Key is the row key. The settings row is 1.
-	Key FlexInt `json:"$key,omitempty"`
+	// Key is the row key. The settings row is "self".
+	Key FlexText `json:"$key,omitempty"`
 	// Mode is ntp or ptp.
 	Mode string `json:"mode,omitempty"`
 	// NTPServers is the space-separated server list node 1 follows.
 	NTPServers string `json:"ntp_servers,omitempty"`
-	// NTPMaxClocks is the maximum number of NTP sources.
-	NTPMaxClocks int `json:"ntp_max_clocks,omitempty"`
-	// NTPMinClocks is the minimum number of NTP sources NTP tries to use.
-	NTPMinClocks int `json:"ntp_min_clocks,omitempty"`
-	// NTPMinSane is the minimum number of sources that must agree.
-	NTPMinSane int `json:"ntp_min_sane,omitempty"`
-	// PTPInterface is the physical network that carries PTP traffic.
+	// NTPMaxClocks is the maximum number of NTP sources (ntp_maxclock).
+	NTPMaxClocks int `json:"ntp_maxclock,omitempty"`
+	// NTPMinClocks is the minimum number of NTP sources NTP tries to use (ntp_minclock).
+	NTPMinClocks int `json:"ntp_minclock,omitempty"`
+	// NTPMinSane is the minimum number of sources that must agree (ntp_minsane).
+	NTPMinSane int `json:"ntp_minsane,omitempty"`
+	// PTPInterface is the physical network that carries PTP traffic (interface_vnet).
 	// Null means no network is selected.
-	PTPInterface *FlexInt `json:"ptp_interface,omitempty"`
+	PTPInterface *FlexInt `json:"interface_vnet,omitempty"`
 	// PTPTransport is udpv4, udpv6, or l2.
 	PTPTransport string `json:"ptp_transport,omitempty"`
 	// PTPDomain is the PTP domain, 0 through 127.
 	PTPDomain int `json:"ptp_domain,omitempty"`
 	// PTPDelayMechanism is e2e, p2p, or auto.
 	PTPDelayMechanism string `json:"ptp_delay_mechanism,omitempty"`
-	// PTPHardwareTimestamp uses the NIC hardware clock when true.
-	PTPHardwareTimestamp bool `json:"ptp_hardware_timestamp,omitempty"`
+	// PTPHardwareTimestamp uses the NIC hardware clock when true (ptp_use_hw_timestamps).
+	PTPHardwareTimestamp bool `json:"ptp_use_hw_timestamps,omitempty"`
 	// PTPPriority1 is BMCA priority 1. A lower value is a higher priority.
 	PTPPriority1 int `json:"ptp_priority1,omitempty"`
 	// PTPPriority2 is BMCA priority 2.
@@ -83,8 +84,9 @@ type TimeSettings struct {
 	PTPFollowUpInfo bool `json:"ptp_follow_up_info,omitempty"`
 	// PTPTransportSpecific is the PTP transportSpecific field.
 	PTPTransportSpecific int `json:"ptp_transport_specific,omitempty"`
-	// PTPNeighborPropDelay is the maximum neighbor propagation delay in nanoseconds.
-	PTPNeighborPropDelay int `json:"ptp_neighbor_prop_delay,omitempty"`
+	// PTPNeighborPropDelay is the maximum neighbor propagation delay in nanoseconds
+	// (ptp_neighbor_prop_delay_thresh).
+	PTPNeighborPropDelay int `json:"ptp_neighbor_prop_delay_thresh,omitempty"`
 }
 
 // TimeSettingsUpdateRequest updates the time settings singleton.
@@ -92,14 +94,14 @@ type TimeSettings struct {
 type TimeSettingsUpdateRequest struct {
 	Mode                       *string `json:"mode,omitempty"`
 	NTPServers                 *string `json:"ntp_servers,omitempty"`
-	NTPMaxClocks               *int    `json:"ntp_max_clocks,omitempty"`
-	NTPMinClocks               *int    `json:"ntp_min_clocks,omitempty"`
-	NTPMinSane                 *int    `json:"ntp_min_sane,omitempty"`
-	PTPInterface               *int    `json:"ptp_interface,omitempty"`
+	NTPMaxClocks               *int    `json:"ntp_maxclock,omitempty"`
+	NTPMinClocks               *int    `json:"ntp_minclock,omitempty"`
+	NTPMinSane                 *int    `json:"ntp_minsane,omitempty"`
+	PTPInterface               *int    `json:"interface_vnet,omitempty"`
 	PTPTransport               *string `json:"ptp_transport,omitempty"`
 	PTPDomain                  *int    `json:"ptp_domain,omitempty"`
 	PTPDelayMechanism          *string `json:"ptp_delay_mechanism,omitempty"`
-	PTPHardwareTimestamp       *bool   `json:"ptp_hardware_timestamp,omitempty"`
+	PTPHardwareTimestamp       *bool   `json:"ptp_use_hw_timestamps,omitempty"`
 	PTPPriority1               *int    `json:"ptp_priority1,omitempty"`
 	PTPPriority2               *int    `json:"ptp_priority2,omitempty"`
 	PTPLogSyncInterval         *int    `json:"ptp_log_sync_interval,omitempty"`
@@ -117,7 +119,7 @@ type TimeSettingsUpdateRequest struct {
 	PTPInhibitDelayReq         *bool   `json:"ptp_inhibit_delay_req,omitempty"`
 	PTPFollowUpInfo            *bool   `json:"ptp_follow_up_info,omitempty"`
 	PTPTransportSpecific       *int    `json:"ptp_transport_specific,omitempty"`
-	PTPNeighborPropDelay       *int    `json:"ptp_neighbor_prop_delay,omitempty"`
+	PTPNeighborPropDelay       *int    `json:"ptp_neighbor_prop_delay_thresh,omitempty"`
 }
 
 func (r *TimeSettingsUpdateRequest) empty() bool {
@@ -140,36 +142,46 @@ func (r *TimeSettingsUpdateRequest) empty() bool {
 // timeSettingsFields is the projection for the singleton.
 // The two-step, master, inhibit, follow-up, transport-specific, and
 // neighbor-delay columns stay off this list. Update can still write them.
-const timeSettingsFields = "$key,mode,ntp_servers,ntp_max_clocks,ntp_min_clocks,ntp_min_sane," +
-	"ptp_interface,ptp_transport,ptp_domain,ptp_delay_mechanism,ptp_hardware_timestamp," +
+const timeSettingsFields = "$key,mode,ntp_servers,ntp_maxclock,ntp_minclock,ntp_minsane," +
+	"interface_vnet,ptp_transport,ptp_domain,ptp_delay_mechanism,ptp_use_hw_timestamps," +
 	"ptp_priority1,ptp_priority2,ptp_log_sync_interval,ptp_log_announce_interval," +
 	"ptp_log_min_delay_req_interval,ptp_log_min_pdelay_req_interval,ptp_unicast," +
-	"ptp_dscp_event,ptp_dscp_general,ptp_sync_receipt_timeout,ptp_announce_receipt_timeout"
+	"ptp_dscp_event,ptp_dscp_general,ptp_sync_receipt_timeout,ptp_announce_receipt_timeout," +
+	"ptp_neighbor_prop_delay_thresh"
 
-// TimeNodeSync is one physical node's time sync state on the time dashboard.
+// timeSettingsPath is the singleton. The key is the text "self".
+const timeSettingsPath = "/time_settings/self"
+
+// TimeNodeSync is one physical node on the time dashboard.
+// The sync state is machine.status.time_sync_status.
 type TimeNodeSync struct {
-	// Node is the node key.
-	Node FlexInt `json:"node,omitempty"`
+	// Key is the node key.
+	Key FlexInt `json:"$key,omitempty"`
 	// Name is the node name.
 	Name string `json:"name,omitempty"`
-	// Status is the sync state the dashboard reports.
-	Status string `json:"status,omitempty"`
-	// Source is the time source, a public server for node 1 and node 1 for the rest.
-	Source string `json:"source,omitempty"`
-	// LastCheck is when the status was last checked, as VergeOS reported it.
-	LastCheck int64 `json:"last_check,omitempty"`
+	// Machine carries the node's machine status, including time sync.
+	Machine *TimeNodeMachine `json:"machine,omitempty"`
 }
 
-// TimeDashboard is the read-only time view. It combines the settings,
-// per-node sync status, and time alarms. VergeOS 26.2.
+// TimeNodeMachine is the machine object nested under a dashboard node.
+type TimeNodeMachine struct {
+	Status TimeNodeMachineStatus `json:"status,omitempty"`
+}
+
+// TimeNodeMachineStatus is the status object nested under a dashboard node.
+type TimeNodeMachineStatus struct {
+	TimeSyncStatus TimeSyncStatus `json:"time_sync_status,omitempty"`
+}
+
+// TimeDashboard is the read-only time view.
+// The body is {settings, nodes, alarms}. Mode lives under settings.
 type TimeDashboard struct {
-	TimeSettings
-	// Settings is set when the view nests the configuration.
-	Settings *TimeSettings `json:"time_settings,omitempty"`
-	// Nodes is the sync status of each physical node.
+	// Settings is the time configuration.
+	Settings *TimeSettings `json:"settings,omitempty"`
+	// Nodes is each physical node and its sync state.
 	Nodes []TimeNodeSync `json:"nodes,omitempty"`
 	// Alarms are the time-related alarms included in the view.
 	Alarms []Alarm `json:"alarms,omitempty"`
 }
 
-const timeDashboardFields = timeSettingsFields + ",nodes,alarms"
+const timeDashboardFields = "settings,nodes,alarms"

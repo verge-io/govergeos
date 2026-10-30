@@ -120,6 +120,11 @@ func TestVersion262Projections(t *testing.T) {
 			fields: func(c *Client) string { return (&VNetBondInterfaceService{client: c}).listFields() },
 			added:  []string{"primary"},
 		},
+		{
+			name:   "vnet bgp",
+			fields: func(c *Client) string { return (&VNetBGPService{client: c}).listFields() },
+			added:  []string{"advanced", "advanced_config", "console_rows", "console_cols", "daemon_bgpd", "daemon_ospfd", "daemon_eigrpd"},
+		},
 	}
 
 	// 26.1.8 is the boundary below 26.2.0. A 26.2 prerelease stays on the old set.
@@ -163,10 +168,14 @@ func TestVersion262Projections(t *testing.T) {
 		t.Fatalf("26.2.0 drive fields = %s", newDrive)
 	}
 
-	// Advanced-router columns stay off the default network projection.
+	// Saved config and daemon flags stay on vnet_bgp, off the vnet projection.
 	network := (&NetworkService{client: &Client{serverVersion: "26.2.2.1"}}).listFields()
-	if fieldSet(network)["bgp_config"] || fieldSet(network)["frr_daemons"] {
-		t.Fatalf("default network projection includes advanced-router columns: %s", network)
+	got := fieldSet(network)
+	if got["bgp_config"] || got["frr_daemons"] || got["advanced_config"] || got["daemon_bgpd"] {
+		t.Fatalf("default network projection includes vnet_bgp columns: %s", network)
+	}
+	if !got["console_status"] || !got["bgp_console_rows"] || !got["bgp_advanced"] {
+		t.Fatalf("network projection = %s", network)
 	}
 }
 
@@ -180,19 +189,22 @@ func fieldSet(fields string) map[string]bool {
 
 func TestVersion262JSONNames(t *testing.T) {
 	serial := "VM-SERIAL"
-	mem := 32
+	mem := VGAMem32
 	body, err := json.Marshal(VMCreateRequest{Name: "vm", CPUCores: 1, RAM: 512, BIOSSerial: serial, VGAMemMB: &mem})
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertJSONKeys(t, body, map[string]any{"bios_serial": "VM-SERIAL", "vgamem_mb": float64(32)})
+	assertJSONKeys(t, body, map[string]any{"bios_serial": "VM-SERIAL", "vgamem_mb": "32"})
 
 	var vm VM
-	if err := json.Unmarshal([]byte(`{"bios_serial":"abc","vgamem_mb":16}`), &vm); err != nil {
+	if err := json.Unmarshal([]byte(`{"bios_serial":"abc","vgamem_mb":"default"}`), &vm); err != nil {
 		t.Fatal(err)
 	}
-	if vm.BIOSSerial != "abc" || vm.VGAMemMB != 16 {
+	if vm.BIOSSerial != "abc" || vm.VGAMemMB != VGAMemDefault {
 		t.Fatalf("vm = %+v", vm)
+	}
+	if err := json.Unmarshal([]byte(`{"vgamem_mb":16}`), &vm); err == nil {
+		t.Fatal("vgamem_mb number was accepted")
 	}
 
 	share := true
@@ -241,17 +253,17 @@ func TestVersion262JSONNames(t *testing.T) {
 	}
 
 	var status MachineStatus
-	if err := json.Unmarshal([]byte(`{"agent_ip_list":["10.0.0.5","10.0.0.6"],"time_sync_status":"synced"}`), &status); err != nil {
+	if err := json.Unmarshal([]byte(`{"agent_ip_list":"10.0.0.5","time_sync_status":{"mode":"ntp","synced":true,"service_active":true,"status":"synced","detail":"ok","port_state":"","last_check":9}}`), &status); err != nil {
 		t.Fatal(err)
 	}
-	if status.TimeSyncStatus != "synced" || len(status.AgentIPList) != 2 || status.AgentIPList[0] != "10.0.0.5" {
+	if status.AgentIPList != "10.0.0.5" || !status.TimeSyncStatus.Present || status.TimeSyncStatus.Mode != TimeModeNTP || !status.TimeSyncStatus.Synced || status.TimeSyncStatus.Status != "synced" || status.TimeSyncStatus.LastCheck != 9 {
 		t.Fatalf("status = %+v", status)
 	}
-	if err := json.Unmarshal([]byte(`{"agent_ip_list":"10.1.0.8, 10.1.0.9"}`), &status); err != nil {
+	if err := json.Unmarshal([]byte(`{"agent_ip_list":"","time_sync_status":[]}`), &status); err != nil {
 		t.Fatal(err)
 	}
-	if len(status.AgentIPList) != 2 || status.AgentIPList[1] != "10.1.0.9" {
-		t.Fatalf("agent_ip_list = %#v", status.AgentIPList)
+	if status.AgentIPList != "" || status.TimeSyncStatus.Present || status.TimeSyncStatus.Mode != "" {
+		t.Fatalf("empty sync = %+v", status.TimeSyncStatus)
 	}
 
 	broadcast := true
@@ -274,11 +286,17 @@ func TestVersion262JSONNames(t *testing.T) {
 	})
 
 	var network Network
-	if err := json.Unmarshal([]byte(`{"dhcp_broadcast":true,"vlan_bond_primary":"nic0","bgp_console_status":"connected","vlan_bond_miimon":100}`), &network); err != nil {
+	if err := json.Unmarshal([]byte(`{"dhcp_broadcast":true,"vlan_bond_primary":"nic0","console_status":{"$key":4},"vlan_bond_miimon":100}`), &network); err != nil {
 		t.Fatal(err)
 	}
-	if !network.DHCPBroadcast || network.VLANBondPrimary.String() != "nic0" || network.BGPConsoleStatus != "connected" || network.VLANBondMIIMON != 100 {
+	if !network.DHCPBroadcast || network.VLANBondPrimary.String() != "nic0" || network.ConsoleStatus == nil || network.ConsoleStatus.Int() != 4 || network.VLANBondMIIMON != 100 {
 		t.Fatalf("network = %+v", network)
+	}
+	if err := json.Unmarshal([]byte(`{"console_status":null}`), &network); err != nil {
+		t.Fatal(err)
+	}
+	if network.ConsoleStatus != nil {
+		t.Fatalf("null console_status = %#v", network.ConsoleStatus)
 	}
 
 	var settings UpdateSettings
@@ -493,8 +511,12 @@ func TestUpdatePackageAndSourceStatus(t *testing.T) {
 
 func TestTimeSettingsAndDashboard(t *testing.T) {
 	old := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"GET /api/v4/time_settings/1": func(w http.ResponseWriter, r *http.Request) {
+		"GET /api/v4/time_settings/self": func(w http.ResponseWriter, r *http.Request) {
 			t.Error("time settings requested on 26.1")
+			w.WriteHeader(http.StatusOK)
+		},
+		"GET /api/v4/time_settings/1": func(w http.ResponseWriter, r *http.Request) {
+			t.Error("time settings used the numeric key")
 			w.WriteHeader(http.StatusOK)
 		},
 	}))
@@ -505,13 +527,17 @@ func TestTimeSettingsAndDashboard(t *testing.T) {
 
 	var put map[string]any
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"GET /api/v4/time_settings/1": func(w http.ResponseWriter, r *http.Request) {
-			if !strings.Contains(r.URL.Query().Get("fields"), "ntp_servers") || !strings.Contains(r.URL.Query().Get("fields"), "ptp_domain") {
-				t.Errorf("fields %s", r.URL.Query().Get("fields"))
+		"GET /api/v4/time_settings/self": func(w http.ResponseWriter, r *http.Request) {
+			fields := r.URL.Query().Get("fields")
+			if !strings.Contains(fields, "ntp_maxclock") || !strings.Contains(fields, "interface_vnet") || !strings.Contains(fields, "ptp_use_hw_timestamps") || !strings.Contains(fields, "ptp_neighbor_prop_delay_thresh") {
+				t.Errorf("fields %s", fields)
 			}
-			jsonResponse(w, 200, TimeSettings{Key: 1, Mode: TimeModeNTP, NTPServers: "ntp1.example.com"})
+			if strings.Contains(fields, "ntp_max_clocks") || strings.Contains(fields, "ptp_interface") {
+				t.Errorf("fields still use the old names: %s", fields)
+			}
+			jsonResponse(w, 200, TimeSettings{Key: "self", Mode: TimeModeNTP, NTPServers: "ntp1.example.com", NTPMaxClocks: 11})
 		},
-		"PUT /api/v4/time_settings/1": func(w http.ResponseWriter, r *http.Request) {
+		"PUT /api/v4/time_settings/self": func(w http.ResponseWriter, r *http.Request) {
 			if err := json.NewDecoder(r.Body).Decode(&put); err != nil {
 				t.Fatal(err)
 			}
@@ -519,10 +545,15 @@ func TestTimeSettingsAndDashboard(t *testing.T) {
 		},
 		"GET /api/v4/time_dashboard": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, map[string]any{
-				"mode": TimeModePTP,
-				"nodes": []map[string]any{
-					{"node": 1, "name": "node1", "status": "synced", "source": "grandmaster"},
-				},
+				"settings": map[string]any{"$key": "self", "mode": TimeModePTP, "ntp_servers": "ntp1.example.com"},
+				"nodes": []map[string]any{{
+					"$key": 1, "name": "node1",
+					"machine": map[string]any{
+						"status": map[string]any{
+							"time_sync_status": map[string]any{"mode": TimeModePTP, "synced": true, "status": "synced"},
+						},
+					},
+				}},
 				"alarms": []map[string]any{{"$key": 8, "sub_owner_type": AlarmSubOwnerTypeWire}},
 			})
 		},
@@ -530,7 +561,7 @@ func TestTimeSettingsAndDashboard(t *testing.T) {
 	client.serverVersion = "26.2.2.1"
 
 	settings, err := client.TimeSettings.Get(context.Background())
-	if err != nil || settings.NTPServers != "ntp1.example.com" || settings.Mode != TimeModeNTP {
+	if err != nil || settings.Key.String() != "self" || settings.NTPServers != "ntp1.example.com" || settings.Mode != TimeModeNTP || settings.NTPMaxClocks != 11 {
 		t.Fatalf("settings %#v err %v", settings, err)
 	}
 	mode := TimeModePTP
@@ -552,13 +583,13 @@ func TestTimeSettingsAndDashboard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if dash.Mode != TimeModePTP || len(dash.Nodes) != 1 || dash.Nodes[0].Name != "node1" || len(dash.Alarms) != 1 {
+	if dash.Settings == nil || dash.Settings.Mode != TimeModePTP || len(dash.Nodes) != 1 || dash.Nodes[0].Name != "node1" || dash.Nodes[0].Machine == nil || !dash.Nodes[0].Machine.Status.TimeSyncStatus.Present || len(dash.Alarms) != 1 {
 		t.Fatalf("dashboard %+v", dash)
 	}
 
 	arrayClient := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"GET /api/v4/time_dashboard": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 200, []TimeNodeSync{{Node: 2, Name: "node2", Status: "synced"}})
+			jsonResponse(w, 200, []TimeNodeSync{{Key: 2, Name: "node2"}})
 		},
 	}))
 	arrayClient.serverVersion = "26.2.0"
@@ -568,7 +599,7 @@ func TestTimeSettingsAndDashboard(t *testing.T) {
 	}
 
 	failing := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"PUT /api/v4/time_settings/1": func(w http.ResponseWriter, r *http.Request) {
+		"PUT /api/v4/time_settings/self": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 400, map[string]string{"err": "ptp interface is required"})
 		},
 	}))
@@ -592,13 +623,21 @@ func TestAdvancedRouterAndBondPrimary(t *testing.T) {
 	}
 
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"GET /api/v4/vnets/3": func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Query().Get("fields") != advancedRouterFields {
+		"GET /api/v4/vnet_bgp": func(w http.ResponseWriter, r *http.Request) {
+			fields := fieldSet(r.URL.Query().Get("fields"))
+			if !fields["advanced_config"] || !fields["daemon_bgpd"] || !fields["daemon_ospfd"] {
 				t.Errorf("fields %s", r.URL.Query().Get("fields"))
 			}
-			jsonResponse(w, 200, map[string]any{
-				"$key": 3, "bgp_advanced": true, "bgp_config": "router bgp 65000",
-				"frr_daemons": []string{"bgpd", "ospfd"}, "bgp_console_status": "connected",
+			if r.URL.Query().Get("filter") != "vnet eq 3" {
+				t.Errorf("filter %s", r.URL.Query().Get("filter"))
+			}
+			jsonResponse(w, 200, []VNetBGP{{Key: 7, VNet: 3}})
+		},
+		"GET /api/v4/vnet_bgp/7": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, VNetBGP{
+				Key: 7, VNet: 3, Advanced: true, AdvancedConfig: "router bgp 65000",
+				ConsoleRows: 40, ConsoleCols: 120,
+				FRRDaemons: FRRDaemons{BGP: true, OSPF: true},
 			})
 		},
 		"GET /api/v4/vnet_bond_interfaces": func(w http.ResponseWriter, r *http.Request) {
@@ -627,7 +666,7 @@ func TestAdvancedRouterAndBondPrimary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !router.Enabled || router.Config != "router bgp 65000" || !router.Daemons.BGP || !router.Daemons.OSPF || router.ConsoleStatus != "connected" {
+	if !router.Enabled || router.Config != "router bgp 65000" || !router.Daemons.BGP || !router.Daemons.OSPF || router.ConsoleRows != 40 || int(router.VNet) != 3 {
 		t.Fatalf("router %+v", router)
 	}
 
@@ -641,8 +680,8 @@ func TestAdvancedRouterAndBondPrimary(t *testing.T) {
 	}
 
 	missing := newTestClient(t, apiMux(map[string]http.HandlerFunc{
-		"GET /api/v4/vnets/9": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 404, map[string]string{"err": "not found"})
+		"GET /api/v4/vnet_bgp": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, []VNetBGP{})
 		},
 	}))
 	missing.serverVersion = "26.2.0"
@@ -653,17 +692,17 @@ func TestAdvancedRouterAndBondPrimary(t *testing.T) {
 
 func TestTimeSettingsNullPTPInterface(t *testing.T) {
 	var settings TimeSettings
-	if err := json.Unmarshal([]byte(`{"mode":"ntp","ptp_interface":null,"ntp_servers":"0.pool.ntp.org"}`), &settings); err != nil {
+	if err := json.Unmarshal([]byte(`{"$key":"self","mode":"ntp","interface_vnet":null,"ntp_maxclock":11,"ntp_servers":"0.pool.ntp.org"}`), &settings); err != nil {
 		t.Fatal(err)
 	}
-	if settings.Mode != TimeModeNTP || settings.PTPInterface != nil || settings.NTPServers != "0.pool.ntp.org" {
+	if settings.Key.String() != "self" || settings.Mode != TimeModeNTP || settings.PTPInterface != nil || settings.NTPMaxClocks != 11 || settings.NTPServers != "0.pool.ntp.org" {
 		t.Fatalf("settings = %+v", settings)
 	}
 }
 
 func TestFRRDaemonsObject(t *testing.T) {
 	var daemons FRRDaemons
-	if err := json.Unmarshal([]byte(`{"bgpd":true,"eigrpd":true}`), &daemons); err != nil {
+	if err := json.Unmarshal([]byte(`{"daemon_bgpd":true,"daemon_eigrpd":true}`), &daemons); err != nil {
 		t.Fatal(err)
 	}
 	if !daemons.BGP || !daemons.EIGRP || daemons.OSPF {

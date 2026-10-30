@@ -5,16 +5,16 @@
 ### Added
 
 - VergeOS 26.2 fields are included in the default List and Get projections only when the server version recorded at `NewClient` is 26.2.0 or later. 26.0 and 26.1 keep the previous field set. The minimum version stays 26.0.
-- `VM.BIOSSerial` and `VM.VGAMemMB`. `VMCloneOptions.PreserveBIOSSerial` is sent on clone when the server is 26.2 or later.
+- `VM.BIOSSerial` and `VM.VGAMemMB` (`vgamem_mb` is text: `default`, `8`, `16`, `32`, `64`, `128`, `256`). `VMCloneOptions.PreserveBIOSSerial` is sent on clone when the server is 26.2 or later.
 - VM import options `PreserveBIOSSerial`, `GuestAgentPreinstalled`, and `ReplicateTags`.
 - Drive fields `UUID` and `IsPrimary` (read-only), plus `Share` and `OVMFCode` on create. A later drive update does not send those two.
 - `File.UUID` and file type `fd` (`FileTypeFD`) for an OVMF firmware image.
 - `MachineStatus.AgentIPList` and `MachineStatus.TimeSyncStatus`.
-- Network fields `DHCPBroadcast`, the `VLANBond*` settings, `BGPAdvanced`, and the BGP console size. `BGPConsoleStatus` is read-only. `Networks.GetAdvancedRouter` reads the persisted vtysh configuration and the FRR daemon flags.
+- Network fields `DHCPBroadcast`, the `VLANBond*` settings, `BGPAdvanced`, `BGPConsoleRows`, `BGPConsoleCols`, and `ConsoleStatus` (a `machine_console` row). `Networks.GetAdvancedRouter` reads `vnet_bgp`: `advanced_config` and the `daemon_*` flags.
 - `VNetBondInterfaces` reads `vnet_bond_interfaces`. `Primary` is requested on 26.2 and later.
 - `UpdatePackages.Dependencies` and `UpdateSettings.RestartPendingPackages` are requested on 26.2 and later. `UpdateSettings.Uninstall` posts action `uninstall` with `installed_package`. `UpdateSourceStatusUninstalling` is the new source status. `UpdateSourceStatus` reads `update_source_status`.
 - `NetworkQueryWakeOnLAN` (`wakeonlan`) and alarm sub-owner `vnet_wires` (`AlarmSubOwnerTypeWire`).
-- `TimeSettings` and `TimeDashboard` for the NTP/PTP configuration and the per-node sync view. Both require VergeOS 26.2.
+- `TimeSettings` (`/time_settings/self`) and `TimeDashboard` (`{settings, nodes, alarms}`). A node's sync state is `machine.status.time_sync_status`. Both require VergeOS 26.2.
 - `Schema.GetVMCPUTypes`. Machine types and CPU models, including the QEMU 11 additions, still come from schema discovery.
 - NIC `orderid` is a uint8. Values run from 0 through 255.
 - Site sync status `idle` (`SiteSyncIncomingStatusIdle`, `SiteSyncOutgoingStatusIdle`). Idle is the default. `offline` is still a valid status.

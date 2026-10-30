@@ -1,10 +1,6 @@
 package vergeos
 
-import (
-	"bytes"
-	"encoding/json"
-	"strings"
-)
+import "strings"
 
 // Network represents a VergeOS virtual network (vnet).
 type Network struct {
@@ -127,8 +123,8 @@ type Network struct {
 	BGPConsoleRows int `json:"bgp_console_rows,omitempty"`
 	// BGPConsoleCols is the console width.
 	BGPConsoleCols int `json:"bgp_console_cols,omitempty"`
-	// BGPConsoleStatus is the console state. Read-only.
-	BGPConsoleStatus string `json:"bgp_console_status,omitempty"`
+	// ConsoleStatus points at the machine_console row. Read-only. Null when the console is closed.
+	ConsoleStatus *FlexFK `json:"console_status,omitempty"`
 
 	// Port mirroring
 	// PortMirroring is the port mirroring mode (off, east_west, north_south).
@@ -290,10 +286,6 @@ type NetworkCreateRequest struct {
 	VLANBondXmitHashPolicy string `json:"vlan_bond_xmit_hash_policy,omitempty"`
 	// BGPAdvanced opens the vtysh console on this network.
 	BGPAdvanced *bool `json:"bgp_advanced,omitempty"`
-	// BGPConfig is the vtysh configuration restored when the network starts.
-	BGPConfig *string `json:"bgp_config,omitempty"`
-	// FRRDaemons are the FRR daemon flags for the advanced router.
-	FRRDaemons *FRRDaemons `json:"frr_daemons,omitempty"`
 	// BGPConsoleRows is the console height.
 	BGPConsoleRows *int `json:"bgp_console_rows,omitempty"`
 	// BGPConsoleCols is the console width.
@@ -447,10 +439,6 @@ type NetworkUpdateRequest struct {
 	VLANBondXmitHashPolicy *string `json:"vlan_bond_xmit_hash_policy,omitempty"`
 	// BGPAdvanced opens the vtysh console on this network.
 	BGPAdvanced *bool `json:"bgp_advanced,omitempty"`
-	// BGPConfig is the vtysh configuration restored when the network starts.
-	BGPConfig *string `json:"bgp_config,omitempty"`
-	// FRRDaemons are the FRR daemon flags for the advanced router.
-	FRRDaemons *FRRDaemons `json:"frr_daemons,omitempty"`
 	// BGPConsoleRows is the console height.
 	BGPConsoleRows *int `json:"bgp_console_rows,omitempty"`
 	// BGPConsoleCols is the console width.
@@ -519,9 +507,9 @@ const networkListFields = "$key,name,description,enabled,creator,ipaddress,dmz_i
 const networkGetFields = networkListFields + ",vnet_default_gateway,bond_interfaces_args"
 
 // network262Fields are vnets columns added in VergeOS 26.2.
-// bgp_console_status is read-only. bgp_config and frr_daemons are read
-// through Networks.GetAdvancedRouter so a wrong name there cannot break List.
-const network262Fields = "dhcp_broadcast,vlan_bond_mode,vlan_bond_primary,vlan_bond_miimon,vlan_bond_updelay,vlan_bond_downdelay,vlan_bond_xmit_hash_policy,bgp_advanced,bgp_console_rows,bgp_console_cols,bgp_console_status"
+// console_status points at machine_console. The saved vtysh text and the
+// daemon_* flags live on vnet_bgp, not on this projection.
+const network262Fields = "dhcp_broadcast,vlan_bond_mode,vlan_bond_primary,vlan_bond_miimon,vlan_bond_updelay,vlan_bond_downdelay,vlan_bond_xmit_hash_policy,bgp_advanced,bgp_console_rows,bgp_console_cols,console_status"
 
 // VLAN bond mode values added or kept on VergeOS 26.2.
 const (
@@ -531,92 +519,47 @@ const (
 	VLANBondModeBalanceSLB = "balance-slb"
 )
 
-// advancedRouterFields is the projection for Networks.GetAdvancedRouter.
-// These names stay off the default vnet projection.
-const advancedRouterFields = "$key,bgp_advanced,bgp_config,frr_daemons,bgp_console_rows,bgp_console_cols,bgp_console_status"
-
 // AdvancedRouter is the VergeOS 26.2 BGP console configuration for one network.
-// Config is the vtysh text restored when the network starts.
-// Daemons are the FRR daemon flags.
+// It is read from vnet_bgp. advanced_config is the vtysh text restored on start.
+// The daemon flags are separate columns on that table.
 type AdvancedRouter struct {
-	// Key is the network key.
+	// Key is the vnet_bgp row key.
 	Key FlexInt `json:"$key,omitempty"`
-	// Enabled is bgp_advanced.
-	Enabled bool `json:"bgp_advanced,omitempty"`
-	// Config is the persisted vtysh configuration.
-	Config string `json:"bgp_config,omitempty"`
-	// Daemons are the FRR daemon flags. The API may send an object of flags or a list of daemon names.
-	Daemons FRRDaemons `json:"frr_daemons,omitempty"`
-	// ConsoleRows is the console height.
-	ConsoleRows int `json:"bgp_console_rows,omitempty"`
-	// ConsoleCols is the console width.
-	ConsoleCols int `json:"bgp_console_cols,omitempty"`
-	// ConsoleStatus is the console state. Read-only.
-	ConsoleStatus string `json:"bgp_console_status,omitempty"`
+	// VNet is the network this row belongs to.
+	VNet FlexInt `json:"vnet,omitempty"`
+	// Enabled is the vnet_bgp advanced flag.
+	Enabled bool `json:"advanced,omitempty"`
+	// Config is advanced_config, the saved vtysh text.
+	Config string `json:"advanced_config,omitempty"`
+	// Daemons are the daemon_* columns.
+	Daemons FRRDaemons `json:"-"`
+	// ConsoleRows is the console height stored on vnet_bgp.
+	ConsoleRows int `json:"console_rows,omitempty"`
+	// ConsoleCols is the console width stored on vnet_bgp.
+	ConsoleCols int `json:"console_cols,omitempty"`
 }
 
-// FRRDaemons is the set of FRR daemons enabled for an advanced router.
+// FRRDaemons is the set of FRR daemons enabled on a vnet_bgp row.
+// Each flag is its own column.
 type FRRDaemons struct {
-	BGP    bool `json:"bgpd,omitempty"`
-	OSPF   bool `json:"ospfd,omitempty"`
-	OSPF6  bool `json:"ospf6d,omitempty"`
-	ISIS   bool `json:"isisd,omitempty"`
-	PIM    bool `json:"pimd,omitempty"`
-	LDP    bool `json:"ldpd,omitempty"`
-	BFD    bool `json:"bfdd,omitempty"`
-	EIGRP  bool `json:"eigrpd,omitempty"`
-	Static bool `json:"staticd,omitempty"`
-	VRRP   bool `json:"vrrpd,omitempty"`
-}
-
-// UnmarshalJSON accepts an object of daemon flags or a list of daemon names.
-func (d *FRRDaemons) UnmarshalJSON(data []byte) error {
-	data = bytes.TrimSpace(data)
-	if len(data) == 0 || bytes.Equal(data, []byte("null")) {
-		return nil
-	}
-	if data[0] == '[' {
-		var names []string
-		if err := json.Unmarshal(data, &names); err != nil {
-			return err
-		}
-		for _, name := range names {
-			d.enable(name)
-		}
-		return nil
-	}
-	type plain FRRDaemons
-	var decoded plain
-	if err := json.Unmarshal(data, &decoded); err != nil {
-		return err
-	}
-	*d = FRRDaemons(decoded)
-	return nil
-}
-
-func (d *FRRDaemons) enable(name string) {
-	switch strings.TrimSpace(name) {
-	case "bgpd":
-		d.BGP = true
-	case "ospfd":
-		d.OSPF = true
-	case "ospf6d":
-		d.OSPF6 = true
-	case "isisd":
-		d.ISIS = true
-	case "pimd":
-		d.PIM = true
-	case "ldpd":
-		d.LDP = true
-	case "bfdd":
-		d.BFD = true
-	case "eigrpd":
-		d.EIGRP = true
-	case "staticd":
-		d.Static = true
-	case "vrrpd":
-		d.VRRP = true
-	}
+	BGP    bool `json:"daemon_bgpd,omitempty"`
+	OSPF   bool `json:"daemon_ospfd,omitempty"`
+	OSPF6  bool `json:"daemon_ospf6d,omitempty"`
+	RIP    bool `json:"daemon_ripd,omitempty"`
+	RIPng  bool `json:"daemon_ripngd,omitempty"`
+	ISIS   bool `json:"daemon_isisd,omitempty"`
+	PIM    bool `json:"daemon_pimd,omitempty"`
+	PIM6   bool `json:"daemon_pim6d,omitempty"`
+	LDP    bool `json:"daemon_ldpd,omitempty"`
+	NHRP   bool `json:"daemon_nhrpd,omitempty"`
+	EIGRP  bool `json:"daemon_eigrpd,omitempty"`
+	Babel  bool `json:"daemon_babeld,omitempty"`
+	Sharp  bool `json:"daemon_sharpd,omitempty"`
+	PBR    bool `json:"daemon_pbrd,omitempty"`
+	BFD    bool `json:"daemon_bfdd,omitempty"`
+	Fabric bool `json:"daemon_fabricd,omitempty"`
+	VRRP   bool `json:"daemon_vrrpd,omitempty"`
+	Path   bool `json:"daemon_pathd,omitempty"`
 }
 
 // VNetBondInterface is one member of a network bond (vnet_bond_interfaces).

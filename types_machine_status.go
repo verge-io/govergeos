@@ -51,11 +51,55 @@ type MachineStatus struct {
 	// AgentGuestInfo contains guest OS information reported by the agent,
 	// including network configuration, filesystem info, memory, and hostname.
 	AgentGuestInfo *GuestInfo `json:"agent_guest_info,omitempty"`
-	// AgentIPList is the guest-agent IP list. VergeOS 26.2.
-	// The API may return a JSON array or one delimited string.
-	AgentIPList StringList `json:"agent_ip_list,omitempty"`
-	// TimeSyncStatus is the time sync state reported for this machine. VergeOS 26.2.
-	TimeSyncStatus string `json:"time_sync_status,omitempty"`
+	// AgentIPList is the guest-agent IP list as one string. VergeOS 26.2.
+	// An empty string means the agent has not reported addresses.
+	AgentIPList string `json:"agent_ip_list,omitempty"`
+	// TimeSyncStatus is the time sync state for this machine. VergeOS 26.2.
+	// The column is a JSON object, or [] when the machine has not reported.
+	TimeSyncStatus TimeSyncStatus `json:"time_sync_status,omitempty"`
+}
+
+// TimeSyncStatus is the time sync object stored on machine status.
+// Present is false when the API sends [] or null.
+type TimeSyncStatus struct {
+	// Mode is ntp or ptp.
+	Mode string `json:"mode,omitempty"`
+	// Synced reports that the clock is synchronized.
+	Synced bool `json:"synced,omitempty"`
+	// ServiceActive reports that the time service is running.
+	ServiceActive bool `json:"service_active,omitempty"`
+	// Status is the sync state, such as synced.
+	Status string `json:"status,omitempty"`
+	// Detail is the platform's extra text.
+	Detail string `json:"detail,omitempty"`
+	// PortState is the PTP port state when PTP is in use.
+	PortState string `json:"port_state,omitempty"`
+	// LastCheck is when the status was last checked, as VergeOS reported it.
+	LastCheck int64 `json:"last_check,omitempty"`
+	// Present is false when the API sent [] or null.
+	Present bool `json:"-"`
+}
+
+// UnmarshalJSON accepts the object form and the empty array the API sends
+// when a machine has not reported time sync.
+func (s *TimeSyncStatus) UnmarshalJSON(data []byte) error {
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 || bytes.Equal(data, []byte("null")) || bytes.Equal(data, []byte("[]")) {
+		*s = TimeSyncStatus{}
+		return nil
+	}
+	if data[0] == '[' {
+		*s = TimeSyncStatus{}
+		return nil
+	}
+	type plain TimeSyncStatus
+	var decoded plain
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*s = TimeSyncStatus(decoded)
+	s.Present = true
+	return nil
 }
 
 // GuestInfo contains guest OS information reported by the VergeOS guest agent.

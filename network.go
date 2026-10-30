@@ -466,23 +466,24 @@ func (s *NetworkService) listMonitorStats(ctx context.Context, id int, limit int
 }
 
 // GetAdvancedRouter reads the VergeOS 26.2 BGP console configuration for a network.
-// Config is the vtysh text restored on start. Daemons are the FRR flags.
-// ConsoleStatus is read-only. The call is refused when the recorded server
-// version is older than 26.2.
+// The saved vtysh text and the daemon flags are columns on vnet_bgp.
+// The call is refused when the recorded server version is older than 26.2.
+// A network with no vnet_bgp row is NotFoundError.
 func (s *NetworkService) GetAdvancedRouter(ctx context.Context, id int) (*AdvancedRouter, error) {
 	if err := s.client.require262("advanced BGP configuration"); err != nil {
 		return nil, err
 	}
-	params := url.Values{}
-	params.Set("fields", advancedRouterFields)
-
-	var router AdvancedRouter
-	endpoint := fmt.Sprintf("/vnets/%d", id)
-	if err := s.client.get(ctx, endpoint, params, &router); err != nil {
-		if statusNotFound(err) {
-			return nil, &NotFoundError{Resource: "Network", ID: id}
-		}
+	row, err := s.client.VNetBGP.GetByNetwork(ctx, id)
+	if err != nil {
 		return nil, err
 	}
-	return &router, nil
+	return &AdvancedRouter{
+		Key:         row.Key,
+		VNet:        row.VNet,
+		Enabled:     row.Advanced,
+		Config:      row.AdvancedConfig,
+		Daemons:     row.FRRDaemons,
+		ConsoleRows: row.ConsoleRows,
+		ConsoleCols: row.ConsoleCols,
+	}, nil
 }

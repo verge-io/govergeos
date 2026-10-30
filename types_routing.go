@@ -117,7 +117,13 @@ const (
 )
 
 const (
-	vnetBGPListFields                 = "$key,vnet"
+	vnetBGPListFields = "$key,vnet"
+	// vnetBGP262Fields are vnet_bgp columns added in VergeOS 26.2.
+	// advanced_config is the saved vtysh text. The daemon_* columns are FRR flags.
+	vnetBGP262Fields = "advanced,advanced_config,console_rows,console_cols," +
+		"daemon_bgpd,daemon_ospfd,daemon_ospf6d,daemon_ripd,daemon_ripngd,daemon_isisd," +
+		"daemon_pimd,daemon_pim6d,daemon_ldpd,daemon_nhrpd,daemon_eigrpd,daemon_babeld," +
+		"daemon_sharpd,daemon_pbrd,daemon_bfdd,daemon_fabricd,daemon_vrrpd,daemon_pathd"
 	vnetBGPRouterListFields           = "$key,bgp,asn"
 	vnetBGPRouterCommandListFields    = "$key,bgp_router,orderid,enabled,no,command,params"
 	vnetBGPInterfaceListFields        = "$key,bgp,name,description,ipaddress,network,mtu,layer2_type,layer2_id,interface_vnet,bgp_vnet,nic"
@@ -155,11 +161,23 @@ const (
 
 // VNetBGP is the per-network dynamic routing record (vnet_bgp).
 // BGP, OSPF, and EIGRP rows all reference this key.
+// VergeOS 26.2 stores the advanced console here: advanced, advanced_config,
+// console size, and one bool column per FRR daemon.
 type VNetBGP struct {
 	// Key is the vnet_bgp row key.
 	Key FlexInt `json:"$key,omitempty"`
 	// VNet is the network this routing configuration belongs to.
 	VNet FlexInt `json:"vnet,omitempty"`
+	// Advanced turns on the vtysh console. VergeOS 26.2.
+	Advanced bool `json:"advanced,omitempty"`
+	// AdvancedConfig is the vtysh text restored when the network starts.
+	AdvancedConfig string `json:"advanced_config,omitempty"`
+	// ConsoleRows is the console height.
+	ConsoleRows int `json:"console_rows,omitempty"`
+	// ConsoleCols is the console width.
+	ConsoleCols int `json:"console_cols,omitempty"`
+	// FRRDaemons are the daemon_* columns.
+	FRRDaemons
 }
 
 // VNetBGPCreateRequest creates a vnet_bgp row for a network.

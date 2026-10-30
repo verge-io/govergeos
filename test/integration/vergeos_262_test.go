@@ -21,8 +21,21 @@ func TestVergeOS262Fields(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TimeSettings.Get failed: %v", err)
 		}
-		t.Logf("mode=%s ntp_servers=%q ptp_transport=%s ptp_domain=%d hardware_timestamp=%v",
-			settings.Mode, settings.NTPServers, settings.PTPTransport, settings.PTPDomain, settings.PTPHardwareTimestamp)
+		if settings.Key.String() != "self" {
+			t.Fatalf("time settings key = %q, want self", settings.Key)
+		}
+		if settings.Mode == "" {
+			t.Fatal("time settings mode is empty")
+		}
+		if settings.Mode == vergeos.TimeModeNTP && settings.NTPServers == "" {
+			t.Fatal("ntp mode has no ntp_servers")
+		}
+		if settings.NTPMaxClocks == 0 || settings.NTPMinClocks == 0 || settings.NTPMinSane == 0 {
+			t.Fatalf("ntp clock limits read back empty: max=%d min=%d sane=%d",
+				settings.NTPMaxClocks, settings.NTPMinClocks, settings.NTPMinSane)
+		}
+		t.Logf("mode=%s ntp_servers=%q maxclock=%d minclock=%d minsane=%d hw_timestamps=%v",
+			settings.Mode, settings.NTPServers, settings.NTPMaxClocks, settings.NTPMinClocks, settings.NTPMinSane, settings.PTPHardwareTimestamp)
 		prettyPrint(t, "TimeSettings", settings)
 	})
 
@@ -31,9 +44,25 @@ func TestVergeOS262Fields(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TimeDashboard.Get failed: %v", err)
 		}
-		t.Logf("dashboard mode=%s nodes=%d alarms=%d", dash.Mode, len(dash.Nodes), len(dash.Alarms))
+		if dash.Settings == nil || dash.Settings.Mode == "" {
+			t.Fatalf("dashboard settings mode is empty: %+v", dash.Settings)
+		}
+		if len(dash.Nodes) == 0 {
+			t.Fatal("time dashboard returned no nodes")
+		}
+		synced := 0
 		for _, node := range dash.Nodes {
-			t.Logf("  node %s status=%s source=%s", node.Name, node.Status, node.Source)
+			status := vergeos.TimeSyncStatus{}
+			if node.Machine != nil {
+				status = node.Machine.Status.TimeSyncStatus
+			}
+			t.Logf("  node %s present=%v mode=%s status=%s synced=%v", node.Name, status.Present, status.Mode, status.Status, status.Synced)
+			if status.Present && (status.Mode != "" || status.Status != "") {
+				synced++
+			}
+		}
+		if synced == 0 {
+			t.Fatal("no dashboard node reported time_sync_status")
 		}
 	})
 
@@ -77,25 +106,34 @@ func TestVergeOS262Fields(t *testing.T) {
 	})
 
 	t.Run("VMFields", func(t *testing.T) {
-		vms, err := client.VMs.List(ctx, vergeos.WithLimit(1))
+		vms, err := client.VMs.List(ctx, vergeos.WithFilter("is_snapshot eq false"), vergeos.WithLimit(5))
 		if err != nil {
 			t.Fatalf("VMs.List failed: %v", err)
 		}
 		if len(vms) == 0 {
-			t.Log("no VMs")
-			return
+			t.Fatal("no VMs to check 26.2 fields")
 		}
 		vm, err := client.VMs.Get(ctx, int(vms[0].Key))
 		if err != nil {
 			t.Fatalf("VMs.Get failed: %v", err)
 		}
-		t.Logf("vm %s bios_serial=%q vgamem_mb=%d machine_type=%s", vm.Name, vm.BIOSSerial, vm.VGAMemMB, vm.MachineType)
+		if vm.BIOSSerial == "" {
+			t.Fatalf("vm %s bios_serial is empty", vm.Name)
+		}
+		if !validVGAMem(vm.VGAMemMB) {
+			t.Fatalf("vm %s vgamem_mb = %q", vm.Name, vm.VGAMemMB)
+		}
+		t.Logf("vm %s bios_serial=%q vgamem_mb=%s machine_type=%s", vm.Name, vm.BIOSSerial, vm.VGAMemMB, vm.MachineType)
 		if vm.Machine != 0 {
 			status, err := client.MachineStatus.Get(ctx, vm.Machine)
 			if err != nil {
 				t.Fatalf("MachineStatus.Get failed: %v", err)
 			}
-			t.Logf("agent_ip_list=%v time_sync_status=%s", []string(status.AgentIPList), status.TimeSyncStatus)
+			if status.TimeSyncStatus.Present && status.TimeSyncStatus.Mode == "" && status.TimeSyncStatus.Status == "" {
+				t.Fatalf("time_sync_status object has no mode or status: %+v", status.TimeSyncStatus)
+			}
+			t.Logf("agent_ip_list=%q time_sync present=%v mode=%s status=%s",
+				status.AgentIPList, status.TimeSyncStatus.Present, status.TimeSyncStatus.Mode, status.TimeSyncStatus.Status)
 		}
 		drives, err := client.VMDrives.List(ctx, int(vm.Key))
 		if err != nil {
@@ -122,11 +160,15 @@ func TestVergeOS262Fields(t *testing.T) {
 			t.Fatalf("Networks.List failed: %v", err)
 		}
 		for _, network := range networks {
-			t.Logf("network %s dhcp_broadcast=%v vlan_bond_mode=%s bgp_advanced=%v console=%s",
-				network.Name, network.DHCPBroadcast, network.VLANBondMode, network.BGPAdvanced, network.BGPConsoleStatus)
+			console := 0
+			if network.ConsoleStatus != nil {
+				console = network.ConsoleStatus.Int()
+			}
+			t.Logf("network %s dhcp_broadcast=%v vlan_bond_mode=%s bgp_advanced=%v console=%d",
+				network.Name, network.DHCPBroadcast, network.VLANBondMode, network.BGPAdvanced, console)
 		}
 		if len(networks) == 0 {
-			return
+			t.Fatal("no networks")
 		}
 		id := int(networks[0].Key)
 		members, err := client.VNetBondInterfaces.ListByNetwork(ctx, id)
@@ -134,12 +176,23 @@ func TestVergeOS262Fields(t *testing.T) {
 			t.Fatalf("VNetBondInterfaces.ListByNetwork failed: %v", err)
 		}
 		t.Logf("bond members on %s: %d", networks[0].Name, len(members))
-		router, err := client.Networks.GetAdvancedRouter(ctx, id)
+		rows, err := client.VNetBGP.List(ctx, vergeos.WithLimit(5))
 		if err != nil {
-			t.Fatalf("Networks.GetAdvancedRouter failed: %v", err)
+			t.Fatalf("VNetBGP.List failed: %v", err)
 		}
-		t.Logf("advanced router enabled=%v config_len=%d bgpd=%v status=%s",
-			router.Enabled, len(router.Config), router.Daemons.BGP, router.ConsoleStatus)
+		if len(rows) == 0 {
+			t.Log("no vnet_bgp rows")
+			return
+		}
+		row, err := client.VNetBGP.Get(ctx, int(rows[0].Key))
+		if err != nil {
+			t.Fatalf("VNetBGP.Get failed: %v", err)
+		}
+		if row.Key == 0 {
+			t.Fatal("vnet_bgp key read back empty")
+		}
+		t.Logf("vnet_bgp %d advanced=%v config_len=%d bgpd=%v rows=%d cols=%d",
+			int(row.Key), row.Advanced, len(row.AdvancedConfig), row.BGP, row.ConsoleRows, row.ConsoleCols)
 	})
 
 	t.Run("Schema", func(t *testing.T) {
@@ -156,4 +209,13 @@ func TestVergeOS262Fields(t *testing.T) {
 			t.Logf("pc-q35-11.0 is not in the machine type list (%d entries)", len(machines))
 		}
 	})
+}
+
+func validVGAMem(value string) bool {
+	switch value {
+	case vergeos.VGAMemDefault, vergeos.VGAMem8, vergeos.VGAMem16, vergeos.VGAMem32, vergeos.VGAMem64, vergeos.VGAMem128, vergeos.VGAMem256:
+		return true
+	default:
+		return false
+	}
 }

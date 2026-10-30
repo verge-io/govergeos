@@ -12,9 +12,13 @@ type VNetBGPService struct {
 	client *Client
 }
 
+func (s *VNetBGPService) listFields() string {
+	return appendVersionFields(vnetBGPGetFields, vnetBGP262Fields, s.client.atLeast262())
+}
+
 // List returns vnet_bgp rows, with optional filtering and pagination.
 func (s *VNetBGPService) List(ctx context.Context, opts ...ListOption) ([]VNetBGP, error) {
-	return listRows[VNetBGP](ctx, s.client, vnetBGPEndpoint, vnetBGPListFields, "", opts)
+	return listRows[VNetBGP](ctx, s.client, vnetBGPEndpoint, s.listFields(), "", opts)
 }
 
 // ListByNetwork returns the vnet_bgp rows for a network.
@@ -27,7 +31,7 @@ func (s *VNetBGPService) ListByNetwork(ctx context.Context, networkID int, opts 
 
 // Get returns one vnet_bgp row by key.
 func (s *VNetBGPService) Get(ctx context.Context, id int) (*VNetBGP, error) {
-	return getRow[VNetBGP](ctx, s.client, vnetBGPEndpoint, id, vnetBGPGetFields, "VNetBGP")
+	return getRow[VNetBGP](ctx, s.client, vnetBGPEndpoint, id, s.listFields(), "VNetBGP")
 }
 
 // GetByNetwork returns the vnet_bgp row for a network.
