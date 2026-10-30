@@ -9,6 +9,18 @@ categories: [Users]
 
 Manage users, groups, API keys, authentication sources, OIDC applications, and resource-level permissions.
 
+`PhysicalAccess` is the Super Users membership argument. On VergeOS 26.2 it defaults to false. Setting it adds or removes that membership, which is what grants console, BMC, and hardware-level access. It is not a stored boolean of its own. Omitting it on create leaves the user out of the group.
+
+```go
+access := true
+user, err := client.Users.Create(ctx, &vergeos.UserCreateRequest{
+    Name: "console-admin",
+    Password: "secret",
+    PhysicalAccess: &access,
+})
+fmt.Println(user.PhysicalAccess)
+```
+
 ## User Management
 
 ```go

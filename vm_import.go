@@ -14,11 +14,15 @@ type VMImportService struct {
 	client *Client
 }
 
+func (s *VMImportService) fields() string {
+	return appendVersionFields(vmImportFields, vmImport262Fields, s.client.atLeast262())
+}
+
 // List returns VM imports.
 func (s *VMImportService) List(ctx context.Context, opts ...ListOption) ([]VMImport, error) {
 	options := applyListOptions(opts)
 	if options.Fields == "most" {
-		options.Fields = vmImportFields
+		options.Fields = s.fields()
 	}
 	var rows []VMImport
 	if err := s.client.get(ctx, "/vm_imports", options.toQueryParams(), &rows); err != nil {
@@ -32,7 +36,7 @@ func (s *VMImportService) Get(ctx context.Context, id string) (*VMImport, error)
 	if id == "" {
 		return nil, &ValidationError{Field: "id", Message: "id is required"}
 	}
-	return getHexResource[VMImport](ctx, s.client, "/vm_imports", "VMImport", id, vmImportFields, func(row VMImport) (string, string) {
+	return getHexResource[VMImport](ctx, s.client, "/vm_imports", "VMImport", id, s.fields(), func(row VMImport) (string, string) {
 		return row.Key, row.ID
 	})
 }
@@ -353,6 +357,15 @@ func (s *VMImportService) importBody(ctx context.Context, req *VMImportCreateReq
 	}
 	if req.PreserveDriveFormat != nil {
 		body["preserve_drive_format"] = *req.PreserveDriveFormat
+	}
+	if req.PreserveBIOSSerial != nil {
+		body["preserve_bios_serial"] = *req.PreserveBIOSSerial
+	}
+	if req.GuestAgentPreinstalled != nil {
+		body["guest_agent_preinstalled"] = *req.GuestAgentPreinstalled
+	}
+	if req.ReplicateTags != nil {
+		body["replicate_tags"] = *req.ReplicateTags
 	}
 	if req.PreferredTier != "" {
 		body["preferred_tier"] = req.PreferredTier

@@ -179,6 +179,8 @@ type NetworkServiceInterface interface {
 	// Statistics
 	GetStatistics(ctx context.Context, id int) ([]NetworkMonitorStats, error)
 	GetLatestStatistics(ctx context.Context, id int) (*NetworkMonitorStats, error)
+	// GetAdvancedRouter reads the 26.2 BGP console configuration.
+	GetAdvancedRouter(ctx context.Context, id int) (*AdvancedRouter, error)
 }
 
 // UserServiceInterface defines the interface for User operations.
@@ -386,6 +388,7 @@ type SchemaServiceInterface interface {
 	GetTableSchema(ctx context.Context, resource string) (*TableSchema, error)
 	GetValidValues(ctx context.Context, resource, field string) (map[string]string, error)
 	GetVMMachineTypes(ctx context.Context) (map[string]string, error)
+	GetVMCPUTypes(ctx context.Context) (map[string]string, error)
 	GetVMOSFamilies(ctx context.Context) (map[string]string, error)
 }
 
@@ -1369,6 +1372,7 @@ type UpdateSettingsServiceInterface interface {
 	Download(ctx context.Context) error
 	Install(ctx context.Context) error
 	UpdateAll(ctx context.Context, force bool) error
+	Uninstall(ctx context.Context, installedPackage string) error
 }
 
 // UpdateBranchServiceInterface defines the interface for update branch operations (read-only).
@@ -1382,6 +1386,38 @@ type UpdateSourcePackageServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]UpdateSourcePackage, error)
 	ListByBranchAndSource(ctx context.Context, branch, source int) ([]UpdateSourcePackage, error)
 	Get(ctx context.Context, id int) (*UpdateSourcePackage, error)
+}
+
+// UpdatePackageServiceInterface reads installed packages (update_packages).
+type UpdatePackageServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]UpdatePackage, error)
+	Get(ctx context.Context, name string) (*UpdatePackage, error)
+}
+
+// UpdateSourceStatusServiceInterface reads update source status rows.
+type UpdateSourceStatusServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]UpdateSourceStatus, error)
+	Get(ctx context.Context, id int) (*UpdateSourceStatus, error)
+	GetBySource(ctx context.Context, sourceID int) (*UpdateSourceStatus, error)
+}
+
+// TimeSettingsServiceInterface reads and updates the time settings singleton.
+type TimeSettingsServiceInterface interface {
+	Get(ctx context.Context) (*TimeSettings, error)
+	Update(ctx context.Context, req *TimeSettingsUpdateRequest) (*TimeSettings, error)
+}
+
+// TimeDashboardServiceInterface reads the time dashboard.
+type TimeDashboardServiceInterface interface {
+	Get(ctx context.Context) (*TimeDashboard, error)
+}
+
+// VNetBondInterfaceServiceInterface reads and updates bond members.
+type VNetBondInterfaceServiceInterface interface {
+	List(ctx context.Context, opts ...ListOption) ([]VNetBondInterface, error)
+	ListByNetwork(ctx context.Context, networkID int, opts ...ListOption) ([]VNetBondInterface, error)
+	Get(ctx context.Context, id int) (*VNetBondInterface, error)
+	Update(ctx context.Context, id int, req *VNetBondInterfaceUpdateRequest) (*VNetBondInterface, error)
 }
 
 // Compile-time verification that concrete types satisfy their interfaces.
@@ -1487,6 +1523,11 @@ var (
 	_ UpdateSettingsServiceInterface          = (*UpdateSettingsService)(nil)
 	_ UpdateBranchServiceInterface            = (*UpdateBranchService)(nil)
 	_ UpdateSourcePackageServiceInterface     = (*UpdateSourcePackageService)(nil)
+	_ UpdatePackageServiceInterface           = (*UpdatePackageService)(nil)
+	_ UpdateSourceStatusServiceInterface      = (*UpdateSourceStatusService)(nil)
+	_ TimeSettingsServiceInterface            = (*TimeSettingsService)(nil)
+	_ TimeDashboardServiceInterface           = (*TimeDashboardService)(nil)
+	_ VNetBondInterfaceServiceInterface       = (*VNetBondInterfaceService)(nil)
 	_ BillingServiceInterface                 = (*BillingService)(nil)
 	_ NASServiceAntivirusServiceInterface     = (*NASServiceAntivirusService)(nil)
 	_ SharedObjectServiceInterface            = (*SharedObjectService)(nil)

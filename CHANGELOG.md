@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### Added
+
+- VergeOS 26.2 fields are included in the default List and Get projections only when the server version recorded at `NewClient` is 26.2.0 or later. 26.0 and 26.1 keep the previous field set. The minimum version stays 26.0.
+- `VM.BIOSSerial` and `VM.VGAMemMB` (`vgamem_mb` is text: `default`, `8`, `16`, `32`, `64`, `128`, `256`). `VMCloneOptions.PreserveBIOSSerial` is sent on clone when the server is 26.2 or later.
+- VM import options `PreserveBIOSSerial`, `GuestAgentPreinstalled`, and `ReplicateTags`.
+- Drive field `IsPrimary` (read-only), plus `Share` and `OVMFCode` on create. A later drive update does not send those two.
+- File type `fd` (`FileTypeFD`) for an OVMF firmware image.
+- `MachineStatus.AgentIPList` and `MachineStatus.TimeSyncStatus`.
+- Network fields `DHCPBroadcast`, the `VLANBond*` settings, `BGPAdvanced`, `BGPConsoleRows`, and `BGPConsoleCols`. `Networks.GetAdvancedRouter` reads `vnet_bgp`: `advanced_config` and the `daemon_*` flags (`daemon_sharpd`, not a static daemon column).
+- `VNetBondInterfaces` reads `vnet_bond_interfaces`. `Primary` is requested on 26.2 and later.
+- `UpdatePackages.Dependencies` and `UpdateSettings.RestartPendingPackages` are requested on 26.2 and later. `UpdateSettings.Uninstall` posts action `uninstall` with `installed_package`. `UpdateSourceStatusUninstalling` is the new source status. `UpdateSourceStatus` reads `update_source_status`.
+- `NetworkQueryWakeOnLAN` (`wakeonlan`) and alarm sub-owner `vnet_wires` (`AlarmSubOwnerTypeWire`).
+- `TimeSettings` (`/time_settings/self`) and `TimeDashboard` (`{settings, nodes, alarms}`). A node's sync state is `machine.status.time_sync_status`. Both require VergeOS 26.2.
+- `Schema.GetVMCPUTypes`. Machine types and CPU models, including the QEMU 11 additions, still come from schema discovery.
+- NIC `orderid` is a uint8. Values run from 0 through 255.
+- Site sync status `idle` (`SiteSyncIncomingStatusIdle`, `SiteSyncOutgoingStatusIdle`). Idle is the default. `offline` is still a valid status.
+- `User.PhysicalAccess` is documented as the Super Users membership argument. On 26.2 it defaults to false.
+
+### Notes
+
+- vSAN diagnostic queries are still named by the caller. There is no `findinode` query constant.
+- `install_vixdisklib` on a VMware container is not covered. This SDK has no VMware container service to attach it to.
+
 ## v0.4.0 - 2026-10-05
 
 Breaking change: the `$key` field is named `Key` on every type. Types that exposed it as `ID` are renamed below.

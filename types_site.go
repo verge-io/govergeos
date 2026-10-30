@@ -149,7 +149,7 @@ type SiteSyncIncoming struct {
 	SyncID           string  `json:"sync_id,omitempty"` // 40-char SHA1 unique ID
 	Description      string  `json:"description,omitempty"`
 	Enabled          bool    `json:"enabled,omitempty"`
-	Status           string  `json:"status,omitempty"` // generating_reg, syncing, offline, error, regeneration_needed
+	Status           string  `json:"status,omitempty"` // idle, generating_reg, syncing, offline, error, regeneration_needed
 	StatusInfo       string  `json:"status_info,omitempty"`
 	State            string  `json:"state,omitempty"`             // online, offline, warning, error
 	PublicIP         string  `json:"public_ip,omitempty"`         // IP/Domain of connecting system
@@ -197,8 +197,10 @@ type siteSyncIncomingAction struct {
 	Params           map[string]any `json:"params,omitempty"`
 }
 
-// Incoming sync status values
+// Incoming sync status values.
+// Idle is the default on VergeOS 26.2. Offline is still a valid status.
 const (
+	SiteSyncIncomingStatusIdle               string = "idle"
 	SiteSyncIncomingStatusGeneratingReg      string = "generating_reg"
 	SiteSyncIncomingStatusSyncing            string = "syncing"
 	SiteSyncIncomingStatusOffline            string = "offline"
@@ -219,7 +221,7 @@ type SiteSyncOutgoing struct {
 	Name                   string  `json:"name,omitempty"`
 	Description            string  `json:"description,omitempty"`
 	Enabled                bool    `json:"enabled,omitempty"`
-	Status                 string  `json:"status,omitempty"` // initializing, syncing, offline, error
+	Status                 string  `json:"status,omitempty"` // idle, initializing, syncing, offline, error
 	StatusInfo             string  `json:"status_info,omitempty"`
 	State                  string  `json:"state,omitempty"` // online, offline, warning, error
 	URL                    string  `json:"url,omitempty"`   // Remote URL
@@ -294,8 +296,10 @@ type siteSyncOutgoingAction struct {
 	Params           map[string]any `json:"params,omitempty"`
 }
 
-// Outgoing sync status values
+// Outgoing sync status values.
+// Idle is the default on VergeOS 26.2. Offline is still a valid status.
 const (
+	SiteSyncOutgoingStatusIdle         string = "idle"
 	SiteSyncOutgoingStatusInitializing string = "initializing"
 	SiteSyncOutgoingStatusSyncing      string = "syncing"
 	SiteSyncOutgoingStatusOffline      string = "offline"

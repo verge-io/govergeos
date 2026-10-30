@@ -11,11 +11,19 @@ type MachineStatusService struct {
 	client *Client
 }
 
+func (s *MachineStatusService) listFields() string {
+	return appendVersionFields(machineStatusListFields, machineStatus262Fields, s.client.atLeast262())
+}
+
+func (s *MachineStatusService) getFields() string {
+	return appendVersionFields(machineStatusGetFields, machineStatus262Fields, s.client.atLeast262())
+}
+
 // List returns all machine statuses.
 func (s *MachineStatusService) List(ctx context.Context, opts ...ListOption) ([]MachineStatus, error) {
 	options := applyListOptions(opts)
 	if options.Fields == "most" {
-		options.Fields = machineStatusListFields
+		options.Fields = s.listFields()
 	}
 	params := options.toQueryParams()
 
@@ -31,7 +39,7 @@ func (s *MachineStatusService) List(ctx context.Context, opts ...ListOption) ([]
 func (s *MachineStatusService) Get(ctx context.Context, machineKey int) (*MachineStatus, error) {
 	// machine_status is keyed by machine, so we filter by machine eq <key>.
 	params := url.Values{}
-	params.Set("fields", machineStatusGetFields)
+	params.Set("fields", s.getFields())
 	params.Set("filter", fmt.Sprintf("machine eq %d", machineKey))
 
 	var statuses []MachineStatus
@@ -49,7 +57,7 @@ func (s *MachineStatusService) Get(ctx context.Context, machineKey int) (*Machin
 // GetByKey returns the status by its direct row key.
 func (s *MachineStatusService) GetByKey(ctx context.Context, key int) (*MachineStatus, error) {
 	params := url.Values{}
-	params.Set("fields", machineStatusGetFields)
+	params.Set("fields", s.getFields())
 
 	var status MachineStatus
 	endpoint := fmt.Sprintf("/machine_status/%d", key)

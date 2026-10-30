@@ -13,7 +13,7 @@ type Alarm struct {
 	// SubOwner is an optional sub-resource path (e.g., "machine_drives/456").
 	SubOwner string `json:"sub_owner,omitempty"`
 	// SubOwnerType is the type of sub-owner resource.
-	// Valid values: machine_drives, machine_nics, machine_devices, smtp_settings
+	// Valid values: machine_drives, machine_nics, machine_devices, smtp_settings, vnet_wires
 	SubOwnerType string `json:"sub_owner_type,omitempty"`
 	// AlarmType is the alarm type key (foreign key to alarm_types).
 	// Note: This is a string key like "vm_cpu_high", not an integer.
@@ -95,6 +95,9 @@ const (
 	AlarmSubOwnerTypeNIC          = "machine_nics"
 	AlarmSubOwnerTypeDevice       = "machine_devices"
 	AlarmSubOwnerTypeSMTPSettings = "smtp_settings"
+	// AlarmSubOwnerTypeWire is a virtual wire (vnet_wires). VergeOS 26.2
+	// raises an alarm when the two halves of a wire land in different clusters.
+	AlarmSubOwnerTypeWire = "vnet_wires"
 )
 
 // AlarmType represents an alarm type definition in VergeOS.

@@ -82,6 +82,12 @@ err = client.SnapshotProfilePeriods.Delete(ctx, periodID)
 
 Manage remote site connections for disaster recovery and data replication.
 
+Incoming and outgoing site syncs use `idle` as the default status on VergeOS 26.2 (`SiteSyncIncomingStatusIdle`, `SiteSyncOutgoingStatusIdle`). `offline` is still a valid status.
+
+```go
+fmt.Println(vergeos.SiteSyncIncomingStatusIdle, vergeos.SiteSyncOutgoingStatusOffline)
+```
+
 ```go
 // List all sites
 sites, err := client.Sites.List(ctx)

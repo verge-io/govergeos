@@ -9,6 +9,14 @@ categories: [Files]
 
 Upload, download, and manage ISO images, disk images, and other media files stored in VergeOS.
 
+`fd` (`FileTypeFD`) is an OVMF firmware image, added in VergeOS 26.2.
+
+```go
+fmt.Println(vergeos.FileTypeFD)
+files, err := client.Files.List(ctx)
+fmt.Println(files[0].Type)
+```
+
 ```go
 // List all files
 files, err := client.Files.List(ctx)

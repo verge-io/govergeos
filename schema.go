@@ -58,8 +58,16 @@ func (s *SchemaService) GetValidValues(ctx context.Context, resource, field stri
 }
 
 // GetVMMachineTypes returns valid machine types for VMs.
+// VergeOS 26.2 defaults to pc-q35-11.0 and adds the 10.1, 10.2, and 11.0 types.
+// Those names come from this call. The SDK does not keep its own list.
 func (s *SchemaService) GetVMMachineTypes(ctx context.Context) (map[string]string, error) {
 	return s.GetValidValues(ctx, "vms", "machine_type")
+}
+
+// GetVMCPUTypes returns valid CPU models for VMs.
+// VergeOS 26.2 adds the QEMU 11 models. Those names come from this call.
+func (s *SchemaService) GetVMCPUTypes(ctx context.Context) (map[string]string, error) {
+	return s.GetValidValues(ctx, "vms", "cpu_type")
 }
 
 // GetVMOSFamilies returns valid OS families for VMs.

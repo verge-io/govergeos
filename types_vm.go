@@ -42,8 +42,17 @@ type VM struct {
 	CPUType string `json:"cpu_type,omitempty"`
 	// RAM is the amount of RAM in MB.
 	RAM int `json:"ram"`
-	// MachineType is the machine type (e.g., "pc-i440fx-10.0", "pc-q35-10.0").
+	// MachineType is the QEMU machine type. VergeOS 26.2 defaults to pc-q35-11.0
+	// and adds the 10.1, 10.2, and 11.0 types, plus more CPU models.
+	// Read the list from Schema.GetVMMachineTypes and Schema.GetVMCPUTypes.
+	// This SDK does not keep a second catalog of those names.
 	MachineType string `json:"machine_type,omitempty"`
+	// BIOSSerial is the SMBIOS serial number. VergeOS 26.2 gives each VM its own
+	// serial when this is empty.
+	BIOSSerial string `json:"bios_serial,omitempty"`
+	// VGAMemMB is the video memory setting. VergeOS 26.2 stores it as text:
+	// default, 8, 16, 32, 64, 128, or 256.
+	VGAMemMB string `json:"vgamem_mb,omitempty"`
 	// IOMMU indicates whether IOMMU is enabled.
 	IOMMU bool `json:"iommu,omitempty"`
 	// USBLegacy indicates whether to use a legacy USB controller.
@@ -179,6 +188,11 @@ type VMCreateRequest struct {
 	RAM int `json:"ram"`
 	// MachineType is the machine type.
 	MachineType string `json:"machine_type,omitempty"`
+	// BIOSSerial is the SMBIOS serial number. VergeOS 26.2.
+	BIOSSerial string `json:"bios_serial,omitempty"`
+	// VGAMemMB is the video memory setting. VergeOS 26.2.
+	// Values are default, 8, 16, 32, 64, 128, and 256. Nil leaves the adapter default.
+	VGAMemMB *string `json:"vgamem_mb,omitempty"`
 	// IOMMU indicates whether IOMMU is enabled.
 	IOMMU *bool `json:"iommu,omitempty"`
 	// USBLegacy indicates whether to use a legacy USB controller.
@@ -293,6 +307,11 @@ type VMUpdateRequest struct {
 	RAM *int `json:"ram,omitempty"`
 	// MachineType is the machine type.
 	MachineType *string `json:"machine_type,omitempty"`
+	// BIOSSerial is the SMBIOS serial number. VergeOS 26.2.
+	BIOSSerial *string `json:"bios_serial,omitempty"`
+	// VGAMemMB is the video memory setting. VergeOS 26.2.
+	// Values are default, 8, 16, 32, 64, 128, and 256.
+	VGAMemMB *string `json:"vgamem_mb,omitempty"`
 	// IOMMU indicates whether IOMMU is enabled.
 	IOMMU *bool `json:"iommu,omitempty"`
 	// USBLegacy indicates whether to use a legacy USB controller.
@@ -406,3 +425,17 @@ const vmListFields = "$key,uuid,machine,name,description,enabled,created,modifie
 
 // vmGetFields are the fields to request when getting a single VM.
 const vmGetFields = vmListFields + ",console_pass_enabled,console_pass,usb_tablet,disable_powercycle,advanced,note,meta,paste_key_config"
+
+// vm262Fields are vms columns added in VergeOS 26.2.
+const vm262Fields = "bios_serial,vgamem_mb"
+
+// Video memory values for vgamem_mb. The column is text.
+const (
+	VGAMemDefault = "default"
+	VGAMem8       = "8"
+	VGAMem16      = "16"
+	VGAMem32      = "32"
+	VGAMem64      = "64"
+	VGAMem128     = "128"
+	VGAMem256     = "256"
+)

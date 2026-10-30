@@ -25,13 +25,21 @@ type NetworkService struct {
 	client *Client
 }
 
+func (s *NetworkService) listFields() string {
+	return appendVersionFields(networkListFields, network262Fields, s.client.atLeast262())
+}
+
+func (s *NetworkService) getFields() string {
+	return appendVersionFields(networkGetFields, network262Fields, s.client.atLeast262())
+}
+
 // List returns all networks, with optional filtering and pagination.
 func (s *NetworkService) List(ctx context.Context, opts ...ListOption) ([]Network, error) {
 	options := applyListOptions(opts)
 
 	// Use network-specific fields if not specified
 	if options.Fields == "most" {
-		options.Fields = networkListFields
+		options.Fields = s.listFields()
 	}
 
 	params := options.toQueryParams()
@@ -47,7 +55,7 @@ func (s *NetworkService) List(ctx context.Context, opts ...ListOption) ([]Networ
 // Get returns a single network by ID.
 func (s *NetworkService) Get(ctx context.Context, id int) (*Network, error) {
 	params := url.Values{}
-	params.Set("fields", networkGetFields)
+	params.Set("fields", s.getFields())
 
 	var network Network
 	endpoint := fmt.Sprintf("/vnets/%d", id)
@@ -455,4 +463,27 @@ func (s *NetworkService) listMonitorStats(ctx context.Context, id int, limit int
 	}
 
 	return stats, nil
+}
+
+// GetAdvancedRouter reads the VergeOS 26.2 BGP console configuration for a network.
+// The saved vtysh text and the daemon flags are columns on vnet_bgp.
+// The call is refused when the recorded server version is older than 26.2.
+// A network with no vnet_bgp row is NotFoundError.
+func (s *NetworkService) GetAdvancedRouter(ctx context.Context, id int) (*AdvancedRouter, error) {
+	if err := s.client.require262("advanced BGP configuration"); err != nil {
+		return nil, err
+	}
+	row, err := s.client.VNetBGP.GetByNetwork(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &AdvancedRouter{
+		Key:         row.Key,
+		VNet:        row.VNet,
+		Enabled:     row.Advanced,
+		Config:      row.AdvancedConfig,
+		Daemons:     row.FRRDaemons,
+		ConsoleRows: row.ConsoleRows,
+		ConsoleCols: row.ConsoleCols,
+	}, nil
 }

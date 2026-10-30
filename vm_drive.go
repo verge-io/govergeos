@@ -35,7 +35,7 @@ func (s *VMDriveService) listFields() string {
 	if isVersionAtLeast(s.client.serverVersion, ms2023KEKMinimumMajor, ms2023KEKMinimumMinor, ms2023KEKMinimumPatch) {
 		fields += "," + driveMS2023KEKField
 	}
-	return fields
+	return appendVersionFields(fields, drive262Fields, s.client.atLeast262())
 }
 
 func (s *VMDriveService) getFields() string {
@@ -43,7 +43,7 @@ func (s *VMDriveService) getFields() string {
 	if isVersionAtLeast(s.client.serverVersion, ms2023KEKMinimumMajor, ms2023KEKMinimumMinor, ms2023KEKMinimumPatch) {
 		fields += "," + driveMS2023KEKField
 	}
-	return fields
+	return appendVersionFields(fields, drive262Fields, s.client.atLeast262())
 }
 
 // List returns all drives for a VM.

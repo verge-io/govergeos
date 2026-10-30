@@ -22,7 +22,7 @@ Built for infrastructure administrators and Go developers who want to automate V
 ## Requirements
 
 - Go 1.21 or later
-- VergeOS 26.0 or later (for full feature support)
+- VergeOS 26.0 or later. Fields added in 26.2 are requested only when the server is 26.2.0 or newer.
 - Standard library only - no external dependencies
 
 ## Installation
@@ -219,7 +219,7 @@ devClient, _ := vergeos.NewClient(
 | `VMs` | VM CRUD, power control, clone, snapshot, migrate, console |
 | `VMSnapshots` | VM snapshot CRUD, restore, expiration management |
 | `VMDrives` | VM disk management (attach, resize, detach), including a catalog disk image with media `import` |
-| `VMNICs` | VM network interface management |
+| `VMNICs` | VM network interface management. `orderid` is a uint8 (0 through 255) |
 | `VMDevices` | VM device management (USB, TPM, vGPU) |
 | `Catalogs` | Recipe catalogs (read) |
 | `VMRecipes` | VM recipes and their questions (read) |
@@ -232,7 +232,8 @@ devClient, _ := vergeos.NewClient(
 
 | Service | Description |
 |---------|-------------|
-| `Networks` | Virtual network CRUD, power control, diagnostics, and statistics |
+| `Networks` | Virtual network CRUD, power control, diagnostics, and statistics. 26.2 adds DHCP broadcast, VLAN bond settings, and the advanced BGP console |
+| `VNetBondInterfaces` | Bond members (`vnet_bond_interfaces`), including the 26.2 primary flag |
 | `VNetRules` | Firewall rule management |
 | `VNetRuleAliases` | IP/port alias groups for rules |
 | `VNetAddresses` | IP address management (static, DHCP, aliases) |
@@ -334,7 +335,11 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | `UpdateSettings` | Update settings, and check, download, install, and rolling apply |
 | `UpdateBranches` | Update branches (read-only) |
 | `UpdateSourcePackages` | Packages offered by an update source (read-only) |
+| `UpdatePackages` | Installed packages (`update_packages`), including 26.2 dependencies |
+| `UpdateSourceStatus` | Per-source update status, including `uninstalling` |
 | `Settings` | System settings (read-only) |
+| `TimeSettings` | NTP/PTP configuration (`time_settings`, VergeOS 26.2) |
+| `TimeDashboard` | Time sync status for each node (`time_dashboard`, VergeOS 26.2, read-only) |
 | `Schema` | API schema introspection |
 | `System` | System version and info |
 | `Logs` | System logs (audit, errors, warnings) |
@@ -475,6 +480,8 @@ nodes, err := client.Nodes.List(ctx,
     vergeos.WithFields("all"),       // All available fields
 )
 ```
+
+The default field list for a resource grows when the server is VergeOS 26.2.0 or later. A 26.0 or 26.1 server is not asked for those columns. `WithFields` still replaces the default when you pass one.
 
 ### Filtering
 

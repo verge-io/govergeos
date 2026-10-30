@@ -1,9 +1,11 @@
 package vergeos
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // FlexInt is an int that can be unmarshaled from either a JSON number or string.
@@ -45,6 +47,109 @@ func (f FlexInt) MarshalJSON() ([]byte, error) {
 // Int returns the FlexInt as an int.
 func (f FlexInt) Int() int {
 	return int(f)
+}
+
+// FlexText is a string that also accepts a JSON number or null.
+// VergeOS uses it for values that are an id on one release and a name on another.
+type FlexText string
+
+// UnmarshalJSON implements json.Unmarshaler for FlexText.
+func (f *FlexText) UnmarshalJSON(data []byte) error {
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 || bytes.Equal(data, []byte("null")) {
+		*f = ""
+		return nil
+	}
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		*f = FlexText(s)
+		return nil
+	}
+	var n json.Number
+	if err := json.Unmarshal(data, &n); err == nil {
+		*f = FlexText(n.String())
+		return nil
+	}
+	return fmt.Errorf("vergeos: cannot unmarshal %s into FlexText", data)
+}
+
+// MarshalJSON implements json.Marshaler for FlexText.
+func (f FlexText) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(f))
+}
+
+// String returns the text.
+func (f FlexText) String() string {
+	return string(f)
+}
+
+// StringList is a list of strings. VergeOS returns some list columns as a
+// JSON array, some as one delimited string, and some as null.
+type StringList []string
+
+// UnmarshalJSON implements json.Unmarshaler for StringList.
+func (s *StringList) UnmarshalJSON(data []byte) error {
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 || bytes.Equal(data, []byte("null")) {
+		*s = nil
+		return nil
+	}
+	switch data[0] {
+	case '[':
+		var list []string
+		if err := json.Unmarshal(data, &list); err != nil {
+			return err
+		}
+		*s = list
+		return nil
+	case '"':
+		var text string
+		if err := json.Unmarshal(data, &text); err != nil {
+			return err
+		}
+		*s = splitAPIList(text)
+		return nil
+	default:
+		var n json.Number
+		if err := json.Unmarshal(data, &n); err != nil {
+			return fmt.Errorf("vergeos: cannot unmarshal %s into StringList", data)
+		}
+		if n.String() == "" {
+			*s = nil
+			return nil
+		}
+		*s = StringList{n.String()}
+		return nil
+	}
+}
+
+// MarshalJSON implements json.Marshaler for StringList.
+func (s StringList) MarshalJSON() ([]byte, error) {
+	if s == nil {
+		return []byte("null"), nil
+	}
+	return json.Marshal([]string(s))
+}
+
+// splitAPIList splits a delimited list. Spaces stay inside an entry.
+func splitAPIList(s string) []string {
+	if strings.TrimSpace(s) == "" {
+		return nil
+	}
+	parts := strings.FieldsFunc(s, func(r rune) bool {
+		return r == ',' || r == ';' || r == '\n' || r == '\r'
+	})
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // FlexFK is an int that can be unmarshaled from a JSON number, string, or

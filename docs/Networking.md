@@ -57,7 +57,7 @@ fmt.Printf("Query status: %s\nResult:\n%s\n", query.Status, query.Result)
 // NetworkQueryPing, NetworkQueryTraceroute, NetworkQueryDNS
 // NetworkQueryTCPDump, NetworkQueryFirewall, NetworkQueryARP
 // NetworkQueryWhatsMyIP, NetworkQueryNmap, NetworkQueryTCPConnect
-// NetworkQueryWireGuard, NetworkQueryIPSec, and more
+// NetworkQueryWireGuard, NetworkQueryIPSec, NetworkQueryWakeOnLAN, and more
 
 // Network Statistics - get monitoring stats (requires monitor_gateway=true)
 stats, err := client.Networks.GetStatistics(ctx, networkID)
@@ -71,6 +71,36 @@ latest, err := client.Networks.GetLatestStatistics(ctx, networkID)
 if latest != nil {
     fmt.Printf("Current quality: %d%%\n", latest.Quality)
 }
+```
+
+VergeOS 26.2 adds `DHCPBroadcast` for dynamic external networks, VLAN bond settings (`VLANBondModeBalanceSLB` is source load balancing), and `bgp_advanced` with the BGP console size. Those columns are requested only when the server is 26.2.0 or later. The saved vtysh text (`advanced_config`) and the `daemon_*` flags, including `daemon_sharpd`, are columns on `vnet_bgp`. `GetAdvancedRouter` reads that row.
+
+`VNetBondInterfaces` is the bond member table. `Primary` is included on 26.2 and later. `NetworkQueryWakeOnLAN` runs a Wake-on-LAN query.
+
+```go
+broadcast := true
+mode := vergeos.VLANBondModeBalanceSLB
+network, err := client.Networks.Update(ctx, networkID, &vergeos.NetworkUpdateRequest{
+    DHCPBroadcast: &broadcast,
+    VLANBondMode: &mode,
+})
+fmt.Println(network.DHCPBroadcast, network.BGPConsoleRows)
+
+router, err := client.Networks.GetAdvancedRouter(ctx, networkID)
+fmt.Println(router.Config, router.Daemons.BGP, router.Enabled)
+
+members, err := client.VNetBondInterfaces.ListByNetwork(ctx, networkID)
+primary := true
+member, err := client.VNetBondInterfaces.Update(ctx, memberID, &vergeos.VNetBondInterfaceUpdateRequest{
+    Primary: &primary,
+})
+fmt.Println(members, member.Primary)
+
+wol, err := client.Networks.RunQuery(ctx, &vergeos.NetworkQueryRequest{
+    VNet: networkID,
+    Query: vergeos.NetworkQueryWakeOnLAN,
+})
+fmt.Println(wol.Status)
 ```
 
 ---

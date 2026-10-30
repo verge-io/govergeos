@@ -25,7 +25,7 @@ The floor for a release is the `RequiredMajorVersion` constant in `version.go`. 
 
 VergeOS majors are year-based. `NewClient` accepts the next major (27, and majors after it) with the same default floor. Existing govergeos releases keep connecting when that major ships, and consumers stay on their current release until they need behavior the new major introduces.
 
-The version string from `/version.json` is stored on the client during `NewClient`. A feature that needs a specific minor or patch checks that string with `isVersionAtLeast` before it requests behavior an older system does not have. The Microsoft 2023 Secure Boot KEK drive field is the current example: list and get include it only when the server is at least 26.1.5. Older systems are left on the previous field set.
+The version string from `/version.json` is stored on the client during `NewClient`. A feature that needs a specific minor or patch checks that string with `isVersionAtLeast` before it requests behavior an older system does not have. The Microsoft 2023 Secure Boot KEK drive field is one example: list and get include it only when the server is at least 26.1.5. Fields added in VergeOS 26.2 (VM BIOS serial and video memory, shared-disk drive columns, guest-agent IP list, the new network and update columns) are requested only when the server is 26.2.0 or later. A 26.0 or 26.1 system stays on the field set it understands. The minimum major remains 26.
 
 After v1.0.0, a 1.x release keeps accepting every major that v1.0.0 accepted, and it keeps accepting later majors under the same rule. Narrowing the accepted range is a breaking change and waits for the v2 module path, described below.
 

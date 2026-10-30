@@ -130,3 +130,40 @@ func (c *Client) minimumMajor() int {
 	}
 	return RequiredMajorVersion
 }
+
+// VergeOS 26.2.0 is the first release that has the 26.2 field set.
+// The minimum supported major stays RequiredMajorVersion (26.0).
+const (
+	vergeOS262Major = 26
+	vergeOS262Minor = 2
+	vergeOS262Patch = 0
+)
+
+// atLeast262 reports whether the version recorded at NewClient is 26.2.0 or later.
+// An empty version is not. A 26.2 prerelease is not.
+func (c *Client) atLeast262() bool {
+	if c == nil {
+		return false
+	}
+	return isVersionAtLeast(c.serverVersion, vergeOS262Major, vergeOS262Minor, vergeOS262Patch)
+}
+
+// require262 returns an error when the recorded version is older than 26.2.
+// An empty version is allowed so a test double can call the method.
+func (c *Client) require262(feature string) error {
+	if c == nil || c.serverVersion == "" || c.atLeast262() {
+		return nil
+	}
+	return fmt.Errorf("vergeos: %s requires VergeOS 26.2 or later (server is %s)", feature, c.serverVersion)
+}
+
+// appendVersionFields adds extra when include is set.
+func appendVersionFields(base, extra string, include bool) string {
+	if !include || extra == "" {
+		return base
+	}
+	if base == "" {
+		return extra
+	}
+	return base + "," + extra
+}

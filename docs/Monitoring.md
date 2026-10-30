@@ -13,6 +13,12 @@ Monitor system health with alarms, tasks, logs, and webhooks.
 
 Monitor system health with alarms for VMs, nodes, networks, and other resources.
 
+`AlarmSubOwnerTypeWire` (`vnet_wires`) is the sub-owner for a virtual wire. VergeOS 26.2 raises an alarm when the two halves of a wire land in different clusters.
+
+```go
+fmt.Println(vergeos.AlarmSubOwnerTypeWire)
+```
+
 ```go
 // List all alarms
 alarms, err := client.Alarms.List(ctx)

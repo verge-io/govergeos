@@ -329,7 +329,8 @@ type File struct {
 	Name string `json:"name"`
 	// Description is the description.
 	Description string `json:"description,omitempty"`
-	// Type is the file type (iso, img, qcow, qcow2, raw, vdi, vhd, vhdx, vmdk, ova, etc.).
+	// Type is the file type (iso, img, qcow, qcow2, raw, vdi, vhd, vhdx, vmdk, ova, fd, etc.).
+	// fd is an OVMF firmware image. VergeOS 26.2.
 	Type string `json:"type,omitempty"`
 	// Owner is the owning machine drive ID.
 	Owner FlexInt `json:"owner,omitempty"`
@@ -365,6 +366,12 @@ type FileCreateRequest struct {
 	// If provided, VergeOS will download the file from this URL.
 	URL string `json:"url,omitempty"`
 }
+
+// File type values.
+const (
+	// FileTypeFD is an OVMF firmware image. VergeOS 26.2.
+	FileTypeFD = "fd"
+)
 
 // FileUpdateRequest is the request body for updating a file.
 type FileUpdateRequest struct {

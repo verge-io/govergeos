@@ -364,7 +364,10 @@ type ClusterStatsHistory struct {
 	VGPUsIdle uint16 `json:"vgpus_idle,omitempty"`
 }
 
-// Field list constants for VSAN resources
+// Field list constants for VSAN resources.
+//
+// vSAN diagnostic queries are named by the caller (journal status, tier
+// status, and repair status). An inode lookup is not a public query name.
 const (
 	// storageTierListFields lists all fields for storage tier queries.
 	storageTierListFields = "$key,tier,description,capacity,used,allocated,used_inflated,dedupe_ratio,used_pct,modified,stats[reads,writes,read_bytes,write_bytes,rops,wops,rbps,wbps]"
