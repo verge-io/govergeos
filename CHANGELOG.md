@@ -25,6 +25,15 @@
 - vSAN diagnostic queries are still named by the caller. There is no `findinode` query constant.
 - `install_vixdisklib` on a VMware container is not covered. This SDK has no VMware container service to attach it to.
 
+### Breaking
+
+- `CloudSnapshotVM.VM` and `CloudSnapshotVM.Machine` are replaced by `OriginalKey` (`original_key`) and `MachineUUID` (`machine_uuid`). `CloudSnapshotTenant.Tenant` is replaced by `OriginalKey` (`original_key`). The old JSON names are not columns, so those fields were always zero.
+
+### Fixed
+
+- Cloud snapshot VM and tenant reads request `original_key` and, for VMs, `machine_uuid`. `cloud_snapshot_vms` has no `vm` or `machine` column, and `cloud_snapshot_tenants` has no `tenant` column.
+- `ClusterTierStatus.Allocated` is copied from `storage_tiers.allocated` for the same tier number. The cluster tier projection no longer asks `status` for `allocated`, because `cluster_tier_status` has no such column.
+
 ## v0.4.0 - 2026-10-05
 
 Breaking change: the `$key` field is named `Key` on every type. Types that exposed it as `ID` are renamed below.

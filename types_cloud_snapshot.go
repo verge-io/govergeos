@@ -80,29 +80,32 @@ const cloudSnapshotListFields = "$key,name,description,snapshot_profile,expires,
 const cloudSnapshotGetFields = "$key,name,description,snapshot_profile,snapshot_period,schedule_task,task,expires,provider,private,remote_sync,incoming_sync,immutable,immutable_status,immutable_lock_expires,status,status_info,created"
 
 // CloudSnapshotVM represents a VM within a cloud snapshot.
+// The source VM is original_key and the source machine is machine_uuid.
+// cloud_snapshot_vms has no vm or machine column, so those names come back empty.
 type CloudSnapshotVM struct {
 	Key           FlexInt `json:"$key,omitempty"`
 	CloudSnapshot FlexInt `json:"cloud_snapshot,omitempty"`
-	VM            FlexInt `json:"vm,omitempty"`
+	OriginalKey   FlexInt `json:"original_key,omitempty"` // Source VM $key at snapshot time
 	Name          string  `json:"name,omitempty"`
 	Description   string  `json:"description,omitempty"`
-	Machine       FlexInt `json:"machine,omitempty"`
+	MachineUUID   string  `json:"machine_uuid,omitempty"` // Source machine UUID at snapshot time
 	CPUCores      int     `json:"cpu_cores,omitempty"`
 	RAM           int     `json:"ram,omitempty"`
 	OSFamily      string  `json:"os_family,omitempty"`
 }
 
 // cloudSnapshotVMListFields defines the default fields for listing cloud snapshot VMs.
-const cloudSnapshotVMListFields = "$key,cloud_snapshot,vm,name,description,machine,cpu_cores,ram,os_family"
+const cloudSnapshotVMListFields = "$key,cloud_snapshot,original_key,name,description,machine_uuid,cpu_cores,ram,os_family"
 
 // CloudSnapshotTenant represents a tenant within a cloud snapshot.
+// The source tenant is original_key. cloud_snapshot_tenants has no tenant column.
 type CloudSnapshotTenant struct {
 	Key           FlexInt `json:"$key,omitempty"`
 	CloudSnapshot FlexInt `json:"cloud_snapshot,omitempty"`
-	Tenant        FlexInt `json:"tenant,omitempty"`
+	OriginalKey   FlexInt `json:"original_key,omitempty"` // Source tenant $key at snapshot time
 	Name          string  `json:"name,omitempty"`
 	Description   string  `json:"description,omitempty"`
 }
 
 // cloudSnapshotTenantListFields defines the default fields for listing cloud snapshot tenants.
-const cloudSnapshotTenantListFields = "$key,cloud_snapshot,tenant,name,description"
+const cloudSnapshotTenantListFields = "$key,cloud_snapshot,original_key,name,description"

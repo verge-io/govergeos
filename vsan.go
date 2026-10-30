@@ -67,6 +67,9 @@ func (s *ClusterTierService) List(ctx context.Context, opts ...ListOption) ([]Cl
 	if err := s.client.get(ctx, "/cluster_tiers", params, &tiers); err != nil {
 		return nil, err
 	}
+	if err := s.fillAllocated(ctx, tiers); err != nil {
+		return nil, err
+	}
 
 	return tiers, nil
 }
@@ -90,8 +93,46 @@ func (s *ClusterTierService) Get(ctx context.Context, id int) (*ClusterTier, err
 		}
 		return nil, err
 	}
+	rows := []ClusterTier{tier}
+	if err := s.fillAllocated(ctx, rows); err != nil {
+		return nil, err
+	}
 
-	return &tier, nil
+	return &rows[0], nil
+}
+
+// fillAllocated copies storage_tiers.allocated onto each tier status.
+// cluster_tier_status has no allocated column. storage_tiers.allocated is
+// the allocated value for that tier number.
+func (s *ClusterTierService) fillAllocated(ctx context.Context, tiers []ClusterTier) error {
+	need := false
+	for i := range tiers {
+		if tiers[i].Status != nil {
+			need = true
+			break
+		}
+	}
+	if !need {
+		return nil
+	}
+
+	storage, err := s.client.StorageTiers.List(ctx)
+	if err != nil {
+		return err
+	}
+	byTier := make(map[int]uint64, len(storage))
+	for _, row := range storage {
+		byTier[row.Tier] = row.Allocated
+	}
+	for i := range tiers {
+		if tiers[i].Status == nil {
+			continue
+		}
+		if allocated, ok := byTier[tiers[i].Tier]; ok {
+			tiers[i].Status.Allocated = allocated
+		}
+	}
+	return nil
 }
 
 // GetByClusterAndTier returns a specific tier for a cluster by tier number.

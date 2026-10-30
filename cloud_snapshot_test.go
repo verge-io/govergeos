@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
@@ -531,6 +532,63 @@ func TestCloudSnapshotService_FindVMs(t *testing.T) {
 // ---------------------------------------------------------------------------
 // CloudSnapshotVMService
 // ---------------------------------------------------------------------------
+
+func TestCloudSnapshotVM_ReadsOriginalKeyAndMachineUUID(t *testing.T) {
+	var vm CloudSnapshotVM
+	if err := json.Unmarshal([]byte(`{"original_key":42,"machine_uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8","vm":7,"machine":9}`), &vm); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if vm.OriginalKey.Int() != 42 {
+		t.Fatalf("OriginalKey = %d, want 42", vm.OriginalKey.Int())
+	}
+	if vm.MachineUUID != "6ba7b810-9dad-11d1-80b4-00c04fd430c8" {
+		t.Fatalf("MachineUUID = %q", vm.MachineUUID)
+	}
+
+	var ignored CloudSnapshotVM
+	if err := json.Unmarshal([]byte(`{"vm":7,"machine":9}`), &ignored); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if ignored.OriginalKey != 0 || ignored.MachineUUID != "" {
+		t.Fatalf("vm/machine columns populated OriginalKey=%d MachineUUID=%q", ignored.OriginalKey, ignored.MachineUUID)
+	}
+
+	for _, token := range strings.Split(cloudSnapshotVMListFields, ",") {
+		if token == "vm" || token == "machine" {
+			t.Fatalf("cloud snapshot VM fields still request %q: %s", token, cloudSnapshotVMListFields)
+		}
+	}
+	if !strings.Contains(cloudSnapshotVMListFields, "original_key") || !strings.Contains(cloudSnapshotVMListFields, "machine_uuid") {
+		t.Fatalf("cloud snapshot VM fields = %s", cloudSnapshotVMListFields)
+	}
+}
+
+func TestCloudSnapshotTenant_ReadsOriginalKey(t *testing.T) {
+	var tenant CloudSnapshotTenant
+	if err := json.Unmarshal([]byte(`{"original_key":15,"tenant":4}`), &tenant); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if tenant.OriginalKey.Int() != 15 {
+		t.Fatalf("OriginalKey = %d, want 15", tenant.OriginalKey.Int())
+	}
+
+	var ignored CloudSnapshotTenant
+	if err := json.Unmarshal([]byte(`{"tenant":4}`), &ignored); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if ignored.OriginalKey != 0 {
+		t.Fatalf("tenant column populated OriginalKey=%d", ignored.OriginalKey)
+	}
+
+	for _, token := range strings.Split(cloudSnapshotTenantListFields, ",") {
+		if token == "tenant" {
+			t.Fatalf("cloud snapshot tenant fields still request tenant: %s", cloudSnapshotTenantListFields)
+		}
+	}
+	if !strings.Contains(cloudSnapshotTenantListFields, "original_key") {
+		t.Fatalf("cloud snapshot tenant fields = %s", cloudSnapshotTenantListFields)
+	}
+}
 
 func TestCloudSnapshotVMService_List(t *testing.T) {
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{

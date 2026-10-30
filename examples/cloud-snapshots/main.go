@@ -210,8 +210,8 @@ func showSnapshotContents(ctx context.Context, client *vergeos.Client) {
 			}
 			for i := 0; i < limit; i++ {
 				vm := vms[i]
-				fmt.Printf("  - %s (VM ID: %d, CPU: %d, RAM: %d MB)\n",
-					vm.Name, int(vm.VM), vm.CPUCores, vm.RAM)
+				fmt.Printf("  - %s (VM key: %d, machine: %s, CPU: %d, RAM: %d MB)\n",
+					vm.Name, int(vm.OriginalKey), vm.MachineUUID, vm.CPUCores, vm.RAM)
 			}
 			if len(vms) > limit {
 				fmt.Printf("  ... and %d more VMs\n", len(vms)-limit)
@@ -227,7 +227,7 @@ func showSnapshotContents(ctx context.Context, client *vergeos.Client) {
 		fmt.Printf("\nTenants in snapshot: %d\n", len(tenants))
 		if len(tenants) > 0 {
 			for _, tenant := range tenants {
-				fmt.Printf("  - %s (Tenant ID: %d)\n", tenant.Name, int(tenant.Tenant))
+				fmt.Printf("  - %s (tenant key: %d)\n", tenant.Name, int(tenant.OriginalKey))
 			}
 		}
 	}

@@ -133,7 +133,9 @@ type ClusterTierStatus struct {
 	Used uint64 `json:"used,omitempty"`
 	// UsedPct is the used space percentage (0-100).
 	UsedPct uint32 `json:"used_pct,omitempty"`
-	// Allocated is the allocated space in bytes.
+	// Allocated is the allocated space in bytes for this tier number.
+	// cluster_tier_status has no allocated column. ClusterTiers copies
+	// storage_tiers.allocated here after the read, matched on tier number.
 	Allocated uint64 `json:"allocated,omitempty"`
 	// Redundant indicates whether the tier has redundancy.
 	Redundant bool `json:"redundant,omitempty"`
@@ -374,7 +376,8 @@ const (
 
 	// clusterTierListFields lists all fields for cluster tier queries.
 	// Includes computed field expressions for online node/drive counts.
-	clusterTierListFields = "$key,cluster,tier,description,cost_per_gb,price_per_gb,status[tier,status,state,capacity,used,used_pct,allocated,redundant,encrypted,working,last_walk_time_ms,last_fullwalk_time_ms,transaction,repairs,bad_drives,fullwalk,progress,index_unique,state_timestamp,cur_space_throttle_ms,transaction_start_stamp],stats[reads,writes,read_bytes,write_bytes,rops,wops,rbps,wbps],vsan_drives[parent_drive#status#state as state] ? state eq 'online' as drives_online,cluster[nodes[machine#status#state as state] ? state eq 'online'] as nodes_online"
+	// status has no allocated column. Allocated is filled from storage_tiers.
+	clusterTierListFields = "$key,cluster,tier,description,cost_per_gb,price_per_gb,status[tier,status,state,capacity,used,used_pct,redundant,encrypted,working,last_walk_time_ms,last_fullwalk_time_ms,transaction,repairs,bad_drives,fullwalk,progress,index_unique,state_timestamp,cur_space_throttle_ms,transaction_start_stamp],stats[reads,writes,read_bytes,write_bytes,rops,wops,rbps,wbps],vsan_drives[parent_drive#status#state as state] ? state eq 'online' as drives_online,cluster[nodes[machine#status#state as state] ? state eq 'online'] as nodes_online"
 
 	// machineDrivePhysListFields lists all fields for machine drive physical status queries.
 	machineDrivePhysListFields = "$key,parent_drive,path,all_paths,modified,size,model,fw,serial,temp,temp_warn,encrypted,realloc_sectors,realloc_sectors_warn,wear_level,wear_level_warn,hours,hours_warn,current_pending_sector,current_pending_sector_warn,offline_uncorrectable,offline_uncorrectable_warn,smart,vsan_driveid,vsan_tier,vsan_used,vsan_max,vsan_read_errors,vsan_write_errors,vsan_avg_latency,vsan_max_latency,vsan_repairing,vsan_repair_estimate,vsan_last_error,vsan_throttle,vsan_path,vsan_online_since,spare,swap,swap_size,boot,boot_size,ybpart,ybpart_size,encryption_key,enclosure_slot,locate_status,location,bus,parent_drive#machine#name as node_display,parent_drive#status#status as statuslist"
