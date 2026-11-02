@@ -33,6 +33,34 @@ func (c *Client) machineKeyForVM(ctx context.Context, vmID int) (int, error) {
 	return vm.Machine, nil
 }
 
+// machineKeyForTenantNode returns the machine key (tenant_nodes.machine)
+// for a tenant node $key.
+//
+// Devices are stored against that machine key. The tenant node $key and the
+// machine key differ on a system that has been in use, and each number is
+// often some other object's key.
+func (c *Client) machineKeyForTenantNode(ctx context.Context, tenantNodeID int) (int, error) {
+	if tenantNodeID <= 0 {
+		return 0, &ValidationError{Field: "tenant_node", Message: "tenant node ID is required"}
+	}
+
+	params := url.Values{}
+	params.Set("fields", "$key,machine")
+
+	var node TenantNode
+	endpoint := fmt.Sprintf("/tenant_nodes/%d", tenantNodeID)
+	if err := c.get(ctx, endpoint, params, &node); err != nil {
+		if statusNotFound(err) {
+			return 0, &NotFoundError{Resource: "TenantNode", ID: tenantNodeID}
+		}
+		return 0, err
+	}
+	if node.Machine.Int() <= 0 {
+		return 0, &ValidationError{Field: "machine", Message: fmt.Sprintf("tenant node %d has no machine key", tenantNodeID)}
+	}
+	return node.Machine.Int(), nil
+}
+
 // vmKeyForMachine returns the vms.$key of the VM whose machine field equals
 // machineKey. snapshot selects the snapshot's own VM row (is_snapshot true),
 // which is what vm_actions restore must target. The live VM is the row with

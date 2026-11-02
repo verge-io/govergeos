@@ -294,6 +294,7 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 |---------|-------------|
 | `Tenants` | Tenant CRUD, power operations, cloning, isolation, and `Connect` / `ConnectByName` for a running tenant's UI |
 | `TenantNodes` | Tenant virtual node management |
+| `TenantNodeDevices` | Devices passed through to a tenant node (`machine_devices`). The tenant owns them even when unused |
 | `TenantStorage` | Tenant storage allocation |
 | `TenantRecipes` | Tenant recipes and their questions (read) |
 | `TenantRecipeInstances` | Deploy a tenant from a recipe |

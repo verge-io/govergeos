@@ -18,7 +18,7 @@ Detailed API examples for all goVergeOS services, organized by topic. For a quic
 | [VPN](VPN.md) | WireGuard, WireGuard Peers, IPSec | VPN tunnels and peer connections |
 | [Certificates](Certificates.md) | Certificates | SSL/TLS certificates (Let's Encrypt, manual, self-signed) |
 | [Storage](Storage.md) | NAS Services, NAS Antivirus, NAS Users, Volumes, Volume Snapshots, Volume Syncs, CIFS/NFS Shares, Volume Browser | NAS volumes, shares, and replication |
-| [Tenants](Tenants.md) | Tenants, Tenant Nodes, Tenant Storage, Tenant Snapshots, Tenant Recipes, Tenant Layer2, Tenant Network Blocks, Tenant External IPs, VNet Proxies, VNet Proxy Tenants, Tenant Status, Tenant Stats History Short, Shared Objects | Multi-tenant virtual data centers |
+| [Tenants](Tenants.md) | Tenants, Tenant Nodes, Tenant Node Devices, Tenant Storage, Tenant Snapshots, Tenant Recipes, Tenant Layer2, Tenant Network Blocks, Tenant External IPs, VNet Proxies, VNet Proxy Tenants, Tenant Status, Tenant Stats History Short, Shared Objects | Multi-tenant virtual data centers |
 | [Users](Users.md) | Users, Groups, API Keys, Auth Sources, OIDC Applications, Permissions | Authentication, authorization, and access control |
 | [System](System.md) | Nodes, Clusters, Settings, Time Settings, Time Dashboard, Updates, Update Packages, Update Source Status, System, GPUs, GPU stats, vGPU devices, node memory, LLDP, Billing, Machine Status, Machine Stats, Machine NICs, Machine Drive Stats | Infrastructure, hardware inventory, updates, time sync, machine metrics, billing, and system information |
 | [Tags](Tags.md) | Tags, Tag Categories, Tag Members | Resource organization and categorization |

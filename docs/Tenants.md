@@ -1,6 +1,6 @@
 ---
 title: Tenants
-description: Manage multi-tenant virtual data centers, nodes, storage, snapshots, recipes, Layer 2 networks, network blocks, external IPs, shared objects, status, stats, and the tenant UI proxy
+description: Manage multi-tenant virtual data centers, nodes, device passthrough, storage, snapshots, recipes, Layer 2 networks, network blocks, external IPs, shared objects, status, stats, and the tenant UI proxy
 tags: [tenant, multi-tenant, vdc, tenant-node, tenant-storage, tenant-snapshot, tenant-recipe, layer2, network-block, external-ip, parent-firewall, isolation, clone, vnet-proxy, shared-object, tenant-status, tenant-stats]
 categories: [Tenants]
 ---
@@ -84,6 +84,34 @@ err = client.TenantNodes.Reset(ctx, nodeID)
 // Migrate a node to another host
 err = client.TenantNodes.Migrate(ctx, nodeID, targetHostNodeID)
 ```
+
+---
+
+## Tenant Node Devices
+
+Host devices (GPU, vGPU, PCI, USB, SR-IOV) are passed into a tenant by attaching them to one of its nodes. `List` and `Create` take the tenant node `$key`. The machine key on `tenant_nodes.machine` is resolved inside the call. `VMDevices` looks that id up in `/vms`, so it cannot attach a device to a tenant node.
+
+`Get`, `Update`, and `Delete` take the device key. A device whose `machine_type` is not `tenant` is reported as not found, and update and delete leave it in place.
+
+A device passed to a tenant is thick provisioned. The tenant owns it even when no VM inside the tenant is using it.
+
+```go
+count := 1
+optional := true
+device, err := client.TenantNodeDevices.Create(ctx, nodeID, &vergeos.VMDeviceCreateRequest{
+    Type:          vergeos.DeviceTypePCI,
+    Name:          "pci0",
+    ResourceGroup: vergeos.DeviceResourceGroup("24122fab-e8fa-c4a5-dcf5-b52bf1efa474"),
+    Count:         &count,
+    Optional:      &optional,
+})
+
+devices, err := client.TenantNodeDevices.List(ctx, nodeID)
+got, err := client.TenantNodeDevices.Get(ctx, device.Key.Int())
+fmt.Println(devices, got.MachineType)
+```
+
+`ResourceGroup` is the resource group key, a UUID. `Count` is how many devices to take from that group.
 
 ---
 
