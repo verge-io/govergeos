@@ -308,7 +308,7 @@ err = client.VMs.Clone(ctx, vmID, &vergeos.VMCloneOptions{
 
 ## VM Devices
 
-USB, TPM, PCI, and NVIDIA vGPU devices. `List` and `Create` take the VM `$key`. `Create` resolves the machine key and writes it on the device row. Settings for USB, TPM, and vGPU are optional on create.
+USB, TPM, PCI, and NVIDIA vGPU devices. `List` and `Create` take the VM `$key`. `Create` resolves the machine key and writes it on the device row. Settings for USB, TPM, and vGPU are optional on create. A tenant node uses `TenantNodeDevices` for the same `machine_devices` table. `VMDevices` looks the id up in `/vms`.
 
 ```go
 devices, err := client.VMDevices.List(ctx, vm.Key.Int())

@@ -690,6 +690,7 @@ The SDK itself does NOT include built-in rate limiting because:
 - `VMSnapshotCreateRequest.VM` is the VM $key. `Create` posts the resolved machine key.
 - Cloud-init file `owner` is `vms/<VM $key>`. `CloudInitFiles.CreateForVM` and `ListByVM` take the VM $key and do not use `VM.Machine`.
 - A call with a machine key where a VM $key is required now looks up the wrong VM, or returns not found, instead of silently targeting another machine.
+- `TenantNodeDevices` `List` and `Create` take the tenant node `$key` and resolve `tenant_nodes.machine`. `Get`, `Update`, and `Delete` treat a device whose `machine_type` is not `tenant` as not found.
 
 ---
 

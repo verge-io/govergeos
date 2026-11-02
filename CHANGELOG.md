@@ -4,6 +4,7 @@
 
 ### Added
 
+- `TenantNodeDevices` attaches host devices to a tenant node (`machine_devices`). `List` and `Create` take the tenant node `$key` and resolve `tenant_nodes.machine`. `Get`, `Update`, and `Delete` report a device as not found when `machine_type` is not `tenant`, and update and delete leave that row in place. A device passed to a tenant is thick provisioned: the tenant owns it even when nothing inside the tenant is using it. Device type constants also cover host GPU (`node_host_gpu_devices`), SR-IOV (`node_sriov_nic_devices`), and the older `gpu` and `nvidia_vgpu` values.
 - VergeOS 26.2 fields are included in the default List and Get projections only when the server version recorded at `NewClient` is 26.2.0 or later. 26.0 and 26.1 keep the previous field set. The minimum version stays 26.0.
 - `VM.BIOSSerial` and `VM.VGAMemMB` (`vgamem_mb` is text: `default`, `8`, `16`, `32`, `64`, `128`, `256`). `VMCloneOptions.PreserveBIOSSerial` is sent on clone when the server is 26.2 or later.
 - VM import options `PreserveBIOSSerial`, `GuestAgentPreinstalled`, and `ReplicateTags`.
@@ -27,6 +28,7 @@
 
 ### Breaking
 
+- `VMDevice.ResourceGroup` is `DeviceResourceGroup` (a string) instead of `FlexInt`. `VMDeviceCreateRequest.ResourceGroup` and `VMDeviceUpdateRequest.ResourceGroup` use the same type instead of `int` and `*int`. The value is the resource group UUID. A JSON number still decodes, and a decimal value is still posted as a number.
 - `CloudSnapshotVM.VM` and `CloudSnapshotVM.Machine` are replaced by `OriginalKey` (`original_key`) and `MachineUUID` (`machine_uuid`). `CloudSnapshotTenant.Tenant` is replaced by `OriginalKey` (`original_key`). The old JSON names are not columns, so those fields were always zero.
 
 ### Fixed

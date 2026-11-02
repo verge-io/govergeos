@@ -483,6 +483,19 @@ type TenantServiceInterface interface {
 	ConnectByName(ctx context.Context, name string, opts ...ClientOption) (*Client, error)
 }
 
+// TenantNodeDeviceServiceInterface attaches host devices to a tenant node.
+// Methods that take tenantNodeID use the tenant node $key (TenantNode.Key).
+// The machine key stored on machine_devices is resolved internally.
+// Get, Update, and Delete report a device as not found when its machine_type
+// is not tenant.
+type TenantNodeDeviceServiceInterface interface {
+	List(ctx context.Context, tenantNodeID int) ([]VMDevice, error)
+	Get(ctx context.Context, deviceID int) (*VMDevice, error)
+	Create(ctx context.Context, tenantNodeID int, req *VMDeviceCreateRequest) (*VMDevice, error)
+	Update(ctx context.Context, deviceID int, req *VMDeviceUpdateRequest) (*VMDevice, error)
+	Delete(ctx context.Context, deviceID int) error
+}
+
 // TenantNodeServiceInterface defines the interface for TenantNode operations.
 type TenantNodeServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]TenantNode, error)
@@ -1462,6 +1475,7 @@ var (
 	_ VNetRuleAliasServiceInterface           = (*VNetRuleAliasService)(nil)
 	_ TenantServiceInterface                  = (*TenantService)(nil)
 	_ TenantNodeServiceInterface              = (*TenantNodeService)(nil)
+	_ TenantNodeDeviceServiceInterface        = (*TenantNodeDeviceService)(nil)
 	_ TenantStorageServiceInterface           = (*TenantStorageService)(nil)
 	_ SnapshotProfileServiceInterface         = (*SnapshotProfileService)(nil)
 	_ SnapshotProfilePeriodServiceInterface   = (*SnapshotProfilePeriodService)(nil)

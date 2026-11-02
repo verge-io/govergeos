@@ -1,23 +1,62 @@
 package vergeos
 
-// VMDevice represents a device attached to a VM.
+import (
+	"encoding/json"
+	"strconv"
+)
+
+// DeviceResourceGroup is the resource_groups key stored on a machine device.
+// The key is a UUID string. A JSON number still decodes, and a decimal value
+// is written back as a number so an integer key posts the way it used to.
+type DeviceResourceGroup string
+
+// UnmarshalJSON accepts a UUID string, a JSON number, or null.
+func (g *DeviceResourceGroup) UnmarshalJSON(data []byte) error {
+	var text FlexText
+	if err := text.UnmarshalJSON(data); err != nil {
+		return err
+	}
+	*g = DeviceResourceGroup(text)
+	return nil
+}
+
+// MarshalJSON writes a UUID as a string and a decimal key as a number.
+func (g DeviceResourceGroup) MarshalJSON() ([]byte, error) {
+	s := string(g)
+	if s == "" {
+		return []byte(`""`), nil
+	}
+	if n, err := strconv.ParseInt(s, 10, 64); err == nil && strconv.FormatInt(n, 10) == s {
+		return json.Marshal(n)
+	}
+	return json.Marshal(s)
+}
+
+// String returns the key text.
+func (g DeviceResourceGroup) String() string {
+	return string(g)
+}
+
+// VMDevice represents a device attached to a machine.
+// VMDevices and TenantNodeDevices both use this row (machine_devices).
 type VMDevice struct {
 	// Key is the unique identifier for the device ($key).
 	Key FlexInt `json:"$key,omitempty"`
 	// Machine is the machine reference ID.
 	Machine int `json:"machine,omitempty"`
-	// MachineType is the machine type (vm, container, node, etc.) - read-only.
+	// MachineType is the machine kind stored on the device (vm, node, vnet, tenant).
+	// DeviceMachineTypeTenant is the tenant node value.
 	MachineType string `json:"machine_type,omitempty"`
 	// OrderID is the device order (0-64).
 	OrderID int `json:"orderid,omitempty"`
-	// Type is the device type (tpm, node_usb_devices, node_pci_devices, node_nvidia_vgpu_devices, etc.).
+	// Type is the device type. See the DeviceType* constants.
 	Type string `json:"type"`
 	// Name is the device name.
 	Name string `json:"name"`
 	// Description is an optional description.
 	Description string `json:"description,omitempty"`
-	// ResourceGroup is the resource group ID.
-	ResourceGroup FlexInt `json:"resource_group,omitempty"`
+	// ResourceGroup is the resource group key (a UUID). A JSON number still decodes.
+	ResourceGroup DeviceResourceGroup `json:"resource_group,omitempty"`
 	// UUID is the device UUID.
 	UUID string `json:"uuid,omitempty"`
 	// Enabled indicates whether the device is enabled.
@@ -91,14 +130,14 @@ type VMDeviceCreateRequest struct {
 	Machine int `json:"machine"`
 	// OrderID is the device order (0-64, auto-assigned if not specified).
 	OrderID *int `json:"orderid,omitempty"`
-	// Type is the device type (tpm, node_usb_devices, node_pci_devices, node_nvidia_vgpu_devices, etc.).
+	// Type is the device type. See the DeviceType* constants.
 	Type string `json:"type"`
 	// Name is the device name (auto-generated if blank).
 	Name string `json:"name"`
 	// Description is an optional description.
 	Description string `json:"description,omitempty"`
-	// ResourceGroup is the resource group ID.
-	ResourceGroup int `json:"resource_group,omitempty"`
+	// ResourceGroup is the resource group key (a UUID). A decimal key is posted as a JSON number.
+	ResourceGroup DeviceResourceGroup `json:"resource_group,omitempty"`
 	// UUID is the device UUID (leave blank for system-generated).
 	UUID string `json:"uuid,omitempty"`
 	// Enabled indicates whether the device is enabled.
@@ -126,8 +165,8 @@ type VMDeviceUpdateRequest struct {
 	Name *string `json:"name,omitempty"`
 	// Description is the description.
 	Description *string `json:"description,omitempty"`
-	// ResourceGroup is the resource group ID.
-	ResourceGroup *int `json:"resource_group,omitempty"`
+	// ResourceGroup is the resource group key (a UUID). A decimal key is posted as a JSON number.
+	ResourceGroup *DeviceResourceGroup `json:"resource_group,omitempty"`
 	// UUID is the device UUID.
 	UUID *string `json:"uuid,omitempty"`
 	// Enabled indicates whether the device is enabled.
@@ -145,13 +184,23 @@ type VMDeviceUpdateRequest struct {
 	VGPUSettings *VGPUDeviceSettings `json:"-"`
 }
 
-// Device type constants
+// Device type values stored on machine_devices.type.
+// pyVergeOS creates the node_* values. gpu and nvidia_vgpu remain in the
+// type list and are the older names.
 const (
-	DeviceTypeUSB  = "node_usb_devices"
-	DeviceTypeTPM  = "tpm"
-	DeviceTypePCI  = "node_pci_devices"
-	DeviceTypeVGPU = "node_nvidia_vgpu_devices"
+	DeviceTypeUSB        = "node_usb_devices"
+	DeviceTypeTPM        = "tpm"
+	DeviceTypePCI        = "node_pci_devices"
+	DeviceTypeVGPU       = "node_nvidia_vgpu_devices"
+	DeviceTypeHostGPU    = "node_host_gpu_devices"
+	DeviceTypeSRIOVNIC   = "node_sriov_nic_devices"
+	DeviceTypeGPULegacy  = "gpu"
+	DeviceTypeVGPULegacy = "nvidia_vgpu"
 )
+
+// DeviceMachineTypeTenant is machine_devices.machine_type for a tenant node.
+// The schema lists the value as tenant and the label as "Tenant Node".
+const DeviceMachineTypeTenant = "tenant"
 
 // deviceListFields are the fields to request when listing devices.
 const deviceListFields = "$key,machine,machine_type,orderid,type,name,description,resource_group,uuid,enabled,optional,asset,created,modified"

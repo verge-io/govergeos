@@ -120,6 +120,7 @@ type Client struct {
 	VNetRuleAliases          VNetRuleAliasServiceInterface
 	Tenants                  TenantServiceInterface
 	TenantNodes              TenantNodeServiceInterface
+	TenantNodeDevices        TenantNodeDeviceServiceInterface
 	TenantStorage            TenantStorageServiceInterface
 	TenantStatus             TenantStatusServiceInterface
 	TenantStatsHistoryShort  TenantStatsHistoryShortServiceInterface
@@ -731,6 +732,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.VNetRuleAliases = &VNetRuleAliasService{client: c}
 	c.Tenants = &TenantService{client: c}
 	c.TenantNodes = &TenantNodeService{client: c}
+	c.TenantNodeDevices = &TenantNodeDeviceService{client: c}
 	c.TenantStorage = &TenantStorageService{client: c}
 	c.TenantStatus = &TenantStatusService{client: c}
 	c.TenantStatsHistoryShort = &TenantStatsHistoryShortService{client: c}

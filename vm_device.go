@@ -19,7 +19,11 @@ func (s *VMDeviceService) List(ctx context.Context, vmID int) ([]VMDevice, error
 	if err != nil {
 		return nil, err
 	}
+	return s.listByMachine(ctx, machine)
+}
 
+// listByMachine returns devices stored against a machine key.
+func (s *VMDeviceService) listByMachine(ctx context.Context, machine int) ([]VMDevice, error) {
 	params := url.Values{}
 	params.Set("fields", deviceListFields)
 	params.Set("filter", fmt.Sprintf("machine eq %d", machine))
@@ -146,20 +150,32 @@ func (s *VMDeviceService) getVGPUSettings(ctx context.Context, deviceID int) (*V
 // Create creates a new device and returns the created device.
 // vmID is the VM $key (VM.Key). It is resolved to the machine key stored on the device.
 func (s *VMDeviceService) Create(ctx context.Context, vmID int, req *VMDeviceCreateRequest) (*VMDevice, error) {
-	if req == nil {
-		return nil, &ValidationError{Message: "create request is required"}
-	}
-	if req.Name == "" {
-		return nil, &ValidationError{Field: "name", Message: "name is required"}
-	}
-	if req.Type == "" {
-		return nil, &ValidationError{Field: "type", Message: "type is required"}
+	if err := validateDeviceCreate(req); err != nil {
+		return nil, err
 	}
 
 	machine, err := s.client.machineKeyForVM(ctx, vmID)
 	if err != nil {
 		return nil, err
 	}
+	return s.createOnMachine(ctx, machine, req)
+}
+
+func validateDeviceCreate(req *VMDeviceCreateRequest) error {
+	if req == nil {
+		return &ValidationError{Message: "create request is required"}
+	}
+	if req.Name == "" {
+		return &ValidationError{Field: "name", Message: "name is required"}
+	}
+	if req.Type == "" {
+		return &ValidationError{Field: "type", Message: "type is required"}
+	}
+	return nil
+}
+
+// createOnMachine posts a device against an already resolved machine key.
+func (s *VMDeviceService) createOnMachine(ctx context.Context, machine int, req *VMDeviceCreateRequest) (*VMDevice, error) {
 	req.Machine = machine
 
 	// Set defaults
