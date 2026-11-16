@@ -78,6 +78,18 @@ func (s *VMRecipeInstanceService) GetByName(ctx context.Context, name string) (*
 	return got, nil
 }
 
+// Delete deletes a VM recipe instance.
+func (s *VMRecipeInstanceService) Delete(ctx context.Context, id int) error {
+	endpoint := fmt.Sprintf("/vm_recipe_instances/%d", id)
+	if err := s.client.delete(ctx, endpoint); err != nil {
+		if statusNotFound(err) {
+			return &NotFoundError{Resource: "VMRecipeInstance", ID: id}
+		}
+		return err
+	}
+	return nil
+}
+
 // Deploy creates a VM from a recipe.
 //
 // Answers are checked against the recipe's questions before the request is

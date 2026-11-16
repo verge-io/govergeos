@@ -150,6 +150,7 @@ type VMRecipeInstanceServiceInterface interface {
 	ListByRecipe(ctx context.Context, recipeID string, opts ...ListOption) ([]VMRecipeInstance, error)
 	Get(ctx context.Context, id int) (*VMRecipeInstance, error)
 	GetByName(ctx context.Context, name string) (*VMRecipeInstance, error)
+	Delete(ctx context.Context, id int) error
 	Deploy(ctx context.Context, req *VMRecipeDeployRequest) (*VMRecipeInstance, error)
 	Preview(ctx context.Context, req *VMRecipeDeployRequest) (*VMRecipePreview, error)
 }
@@ -1195,6 +1196,7 @@ type TenantRecipeInstanceServiceInterface interface {
 	ListByRecipe(ctx context.Context, recipeID string, opts ...ListOption) ([]TenantRecipeInstance, error)
 	Get(ctx context.Context, id int) (*TenantRecipeInstance, error)
 	GetByName(ctx context.Context, name string) (*TenantRecipeInstance, error)
+	Delete(ctx context.Context, id int) error
 	Deploy(ctx context.Context, req *TenantRecipeDeployRequest) (*TenantRecipeInstance, error)
 }
 

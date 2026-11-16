@@ -191,7 +191,7 @@ err = client.TenantSnapshots.Delete(ctx, snapshotID)
 
 ## Tenant Recipes
 
-List catalog tenant recipes and deploy a tenant from one.
+List catalog tenant recipes, deploy a tenant from one, and delete the instance row afterward.
 
 ```go
 // List tenant recipes (filter downloaded with WithFilter("downloaded eq 1"))
@@ -222,6 +222,9 @@ instance, err := client.TenantRecipeInstances.Deploy(ctx, &vergeos.TenantRecipeD
 instances, err := client.TenantRecipeInstances.ListByRecipe(ctx, recipe.Key)
 instance, err = client.TenantRecipeInstances.Get(ctx, int(instance.Key))
 instance, err = client.TenantRecipeInstances.GetByName(ctx, "customer-a")
+
+// Delete removes the recipe instance row.
+err = client.TenantRecipeInstances.Delete(ctx, int(instance.Key))
 ```
 
 ---

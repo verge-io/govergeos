@@ -76,6 +76,18 @@ func (s *TenantRecipeInstanceService) GetByName(ctx context.Context, name string
 	return got, nil
 }
 
+// Delete deletes a tenant recipe instance.
+func (s *TenantRecipeInstanceService) Delete(ctx context.Context, id int) error {
+	endpoint := fmt.Sprintf("/tenant_recipe_instances/%d", id)
+	if err := s.client.delete(ctx, endpoint); err != nil {
+		if statusNotFound(err) {
+			return &NotFoundError{Resource: "TenantRecipeInstance", ID: id}
+		}
+		return err
+	}
+	return nil
+}
+
 // Deploy creates a tenant from a recipe.
 //
 // Answers are checked against the recipe's questions before the request is
