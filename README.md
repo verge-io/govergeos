@@ -143,6 +143,9 @@ instance, err := client.VMRecipeInstances.Deploy(ctx, &vergeos.VMRecipeDeployReq
     Recipe: recipe.Key, Name: "web-01", Answers: answers,
 })
 
+// Delete removes that recipe instance row.
+err = client.VMRecipeInstances.Delete(ctx, int(instance.Key))
+
 // Take a snapshot. Retention is a lifetime in seconds, sent as expires.
 // Quiesce requires a running guest agent; leave it false to snapshot
 // a VM that does not have one.
@@ -223,7 +226,7 @@ devClient, _ := vergeos.NewClient(
 | `VMDevices` | VM device management (USB, TPM, vGPU) |
 | `Catalogs` | Recipe catalogs (read) |
 | `VMRecipes` | VM recipes and their questions (read) |
-| `VMRecipeInstances` | Deploy a VM from a recipe, or preview that deploy |
+| `VMRecipeInstances` | Deploy a VM from a recipe, preview that deploy, or delete the instance row |
 | `VMImports` | Import an OVA or OVF from a file or URL, with status, logs, and delete |
 | `VMImportLogs` | Log lines for VM imports |
 | `VMExports` | Export a VM to a NAS volume |
@@ -297,7 +300,7 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | `TenantNodeDevices` | Devices passed through to a tenant node (`machine_devices`). The tenant owns them even when unused |
 | `TenantStorage` | Tenant storage allocation |
 | `TenantRecipes` | Tenant recipes and their questions (read) |
-| `TenantRecipeInstances` | Deploy a tenant from a recipe |
+| `TenantRecipeInstances` | Deploy a tenant from a recipe, or delete the instance row |
 | `TenantSnapshots` | Tenant snapshot management |
 | `TenantLayer2Networks` | Layer 2 network assignments to tenants |
 | `TenantNetworkBlocks` | CIDR blocks assigned to a tenant (`vnet_cidrs`). Create/Delete return `ParentFirewallStatus`; `WithApplyParentFirewall` applies parent rules |

@@ -4,6 +4,7 @@ package integration
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -62,4 +63,45 @@ func TestCatalogsAndVMRecipes(t *testing.T) {
 		t.Fatalf("Failed to list recipe instances: %v", err)
 	}
 	t.Logf("Found %d recipe instance(s) in the first page", len(instances))
+}
+
+// TestVMRecipeInstanceDelete deletes one VM recipe instance whose name
+// already starts with sdk- or goVergeOS-test-. It does not deploy a VM.
+// setupTestClient skips when VERGEOS_HOST is unset. The test skips when
+// no such instance is present.
+func TestVMRecipeInstanceDelete(t *testing.T) {
+	client := setupTestClient(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	instance, ok := findRecipeInstanceFixture(t, ctx, client)
+	if !ok {
+		t.Skip("No VM recipe instance fixture - skipping Delete")
+	}
+
+	id := int(instance.Key)
+	t.Logf("Deleting recipe instance %d %q", id, instance.Name)
+	if err := client.VMRecipeInstances.Delete(ctx, id); err != nil {
+		t.Fatalf("VMRecipeInstances.Delete(%d) failed: %v", id, err)
+	}
+	_, err := client.VMRecipeInstances.Get(ctx, id)
+	if !vergeos.IsNotFoundError(err) {
+		t.Fatalf("Get after delete = %v, want not found", err)
+	}
+}
+
+func findRecipeInstanceFixture(t *testing.T, ctx context.Context, client *vergeos.Client) (vergeos.VMRecipeInstance, bool) {
+	t.Helper()
+	for _, prefix := range []string{"sdk-", "goVergeOS-test-"} {
+		rows, err := client.VMRecipeInstances.List(ctx, vergeos.WithFilter("name bw '"+prefix+"'"), vergeos.WithLimit(1))
+		if err != nil {
+			t.Fatalf("Failed to list recipe instances named %s: %v", prefix, err)
+		}
+		for _, row := range rows {
+			if strings.HasPrefix(row.Name, prefix) {
+				return row, true
+			}
+		}
+	}
+	return vergeos.VMRecipeInstance{}, false
 }

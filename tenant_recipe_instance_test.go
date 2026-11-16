@@ -3,6 +3,7 @@ package vergeos
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -172,5 +173,54 @@ func TestTenantRecipeInstanceService_GetByName(t *testing.T) {
 	_, err = missing.TenantRecipeInstances.Deploy(context.Background(), &TenantRecipeDeployRequest{Recipe: tenantRecipeHexKey})
 	if !IsValidationError(err) {
 		t.Fatalf("missing name: %v", err)
+	}
+}
+
+func TestTenantRecipeInstanceService_Delete(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"DELETE /api/v4/tenant_recipe_instances/1": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+		},
+	}))
+
+	err := client.TenantRecipeInstances.Delete(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("Delete failed: %v", err)
+	}
+}
+
+func TestTenantRecipeInstanceService_Delete_NotFound(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"DELETE /api/v4/tenant_recipe_instances/999": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 404, map[string]string{"err": "not found"})
+		},
+	}))
+
+	err := client.TenantRecipeInstances.Delete(context.Background(), 999)
+	if err == nil {
+		t.Fatal("expected error for not found")
+	}
+	if !IsNotFoundError(err) {
+		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	}
+}
+
+func TestTenantRecipeInstanceService_Delete_ServerError(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"DELETE /api/v4/tenant_recipe_instances/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 500, map[string]string{"err": "internal error"})
+		},
+	}))
+
+	err := client.TenantRecipeInstances.Delete(context.Background(), 1)
+	if err == nil {
+		t.Fatal("expected error for server error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) || apiErr.StatusCode != 500 {
+		t.Fatalf("expected API 500, got %T: %v", err, err)
+	}
+	if IsNotFoundError(err) {
+		t.Fatal("server error was reported as not found")
 	}
 }

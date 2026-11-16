@@ -79,7 +79,7 @@ consoleURL, err := client.VMs.GetConsoleURL(ctx, vmID)
 
 ## Recipes
 
-`Catalogs`, `VMRecipes`, and `VMRecipeInstances` deploy a VM from a catalog template. `Questions` reads `recipe_questions`. `Deploy` checks answers against those question types before POST. Bool values it does not recognize are refused. Disk sizes are bytes. A value above zero and under 1 MB is refused. `Preview` is the dry run. It cannot return an instance. A successful HTTP status on that POST is `RecipePreviewPersistedError`, because the platform created a VM and this call will not hand it back.
+`Catalogs`, `VMRecipes`, and `VMRecipeInstances` deploy a VM from a catalog template. `Questions` reads `recipe_questions`. `Deploy` checks answers against those question types before POST. Bool values it does not recognize are refused. Disk sizes are bytes. A value above zero and under 1 MB is refused. `Preview` is the dry run. It cannot return an instance. A successful HTTP status on that POST is `RecipePreviewPersistedError`, because the platform created a VM and this call will not hand it back. `Delete` removes the recipe instance row.
 
 ```go
 catalogs, err := client.Catalogs.List(ctx)
@@ -99,6 +99,9 @@ preview, err := client.VMRecipeInstances.Preview(ctx, &vergeos.VMRecipeDeployReq
 instance, err := client.VMRecipeInstances.Deploy(ctx, &vergeos.VMRecipeDeployRequest{
     Recipe: recipe.Key, Name: "web-01", Answers: answers,
 })
+
+// Delete removes the recipe instance row.
+err = client.VMRecipeInstances.Delete(ctx, int(instance.Key))
 ```
 
 ---

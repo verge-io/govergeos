@@ -4,6 +4,7 @@
 
 ### Added
 
+- `VMRecipeInstances.Delete` and `TenantRecipeInstances.Delete` remove a recipe instance row. They send DELETE to `vm_recipe_instances` and `tenant_recipe_instances`. A missing row is `NotFoundError`.
 - `TenantNodeDevices` attaches host devices to a tenant node (`machine_devices`). `List` and `Create` take the tenant node `$key` and resolve `tenant_nodes.machine`. `Get`, `Update`, and `Delete` report a device as not found when `machine_type` is not `tenant`, and update and delete leave that row in place. A device passed to a tenant is thick provisioned: the tenant owns it even when nothing inside the tenant is using it. Device type constants also cover host GPU (`node_host_gpu_devices`), SR-IOV (`node_sriov_nic_devices`), and the older `gpu` and `nvidia_vgpu` values.
 - VergeOS 26.2 fields are included in the default List and Get projections only when the server version recorded at `NewClient` is 26.2.0 or later. 26.0 and 26.1 keep the previous field set. The minimum version stays 26.0.
 - `VM.BIOSSerial` and `VM.VGAMemMB` (`vgamem_mb` is text: `default`, `8`, `16`, `32`, `64`, `128`, `256`). `VMCloneOptions.PreserveBIOSSerial` is sent on clone when the server is 26.2 or later.
