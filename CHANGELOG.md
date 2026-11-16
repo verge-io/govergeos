@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.0 - 2026-11-16
+
 ### Added
 
 - `VMRecipeInstances.Delete` and `TenantRecipeInstances.Delete` remove a recipe instance row. They send DELETE to `vm_recipe_instances` and `tenant_recipe_instances`. A missing row is `NotFoundError`.
