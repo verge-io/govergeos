@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- `UserAPIKeys.Create` reads the new key's secret from `response.private_key`. VergeOS 26.2 returns the secret under that name, and Create was returning an empty token with no error. A response that still uses `response.token` is accepted. When the response has no secret, Create returns an error that includes the new key id. The key row already exists.
+
 ## v0.5.0 - 2026-11-16
 
 ### Added

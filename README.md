@@ -469,7 +469,7 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 The library supports HTTP Basic Authentication and API key authentication:
 
 - **Basic Auth**: User must have list and read permissions; MFA must be disabled
-- **API Keys**: Created via `UserAPIKeys` service; token shown only on creation. When an API key and username/password are both configured, the API key is used
+- **API Keys**: Created via `UserAPIKeys` service. The secret is returned only on creation. VergeOS 26.2 sends it as `private_key`, and Create returns an error when the response has no secret. When an API key and username/password are both configured, the API key is used
 - **Auth sources**: `AuthSources.Update` reads the stored settings and merges the change before sending. The API would otherwise replace the whole settings object and drop keys that were not sent, including `client_secret`. That secret is write-only and is omitted from returned auth sources
 - **OIDC applications**: `OIDCApplications.Create` returns the generated client secret as a `WriteOnlySecret`. Printing it shows `[redacted]`. `Value` reads it. Later reads do not include the secret
 

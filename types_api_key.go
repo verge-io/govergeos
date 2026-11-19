@@ -62,12 +62,15 @@ type UserAPIKeyUpdateRequest struct {
 	Expires *int64 `json:"expires,omitempty"`
 }
 
-// UserAPIKeyCreateResponse is the response from creating an API key.
-// This includes the token which is only returned on creation.
+// UserAPIKeyCreateResponse carries the secret returned when an API key is created.
+// The secret is only present on creation. VergeOS 26.2 returns it as private_key.
+// Token is the older field name for the same secret.
 type UserAPIKeyCreateResponse struct {
 	// Key is the unique identifier.
 	Key FlexInt `json:"$key,omitempty"`
-	// Token is the API key token. This is only returned on creation and cannot be retrieved later.
+	// PrivateKey is the API key secret returned by VergeOS 26.2.
+	PrivateKey string `json:"private_key,omitempty"`
+	// Token is the older field name for the API key secret.
 	Token string `json:"token,omitempty"`
 }
 
