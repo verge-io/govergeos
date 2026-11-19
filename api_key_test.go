@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -121,7 +122,8 @@ func TestUserAPIKeyService_GetByName_NotFound(t *testing.T) {
 	}
 }
 
-func TestUserAPIKeyService_Create(t *testing.T) {
+func TestUserAPIKeyService_Create_PrivateKey(t *testing.T) {
+	const secret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"POST /api/v4/user_api_keys": func(w http.ResponseWriter, r *http.Request) {
 			var req UserAPIKeyCreateRequest
@@ -132,6 +134,41 @@ func TestUserAPIKeyService_Create(t *testing.T) {
 			if req.Name != "new-key" {
 				t.Errorf("expected name 'new-key', got %q", req.Name)
 			}
+			// VergeOS 26.2 create body: the secret is response.private_key.
+			jsonResponse(w, http.StatusCreated, map[string]any{
+				"$key":     "5",
+				"$row":     3,
+				"dbpath":   "user_api_keys/5",
+				"location": "/api/v4/user_api_keys/5",
+				"response": map[string]any{"private_key": secret},
+			})
+		},
+		"GET /api/v4/user_api_keys/5": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, UserAPIKey{Key: 5, Name: "new-key", User: 10})
+		},
+	}))
+
+	key, token, err := client.UserAPIKeys.Create(context.Background(), &UserAPIKeyCreateRequest{
+		User: 10,
+		Name: "new-key",
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+	if key.Name != "new-key" {
+		t.Errorf("expected name 'new-key', got %q", key.Name)
+	}
+	if int(key.Key) != 5 {
+		t.Errorf("expected key 5, got %d", int(key.Key))
+	}
+	if token != secret {
+		t.Errorf("expected secret from private_key, got %q", token)
+	}
+}
+
+func TestUserAPIKeyService_Create_Token(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/user_api_keys": func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, 200, apiResponse{
 				Key:      float64(5),
 				Response: map[string]any{"token": "secret-token-123"},
@@ -154,6 +191,90 @@ func TestUserAPIKeyService_Create(t *testing.T) {
 	}
 	if token != "secret-token-123" {
 		t.Errorf("expected token 'secret-token-123', got %q", token)
+	}
+}
+
+func TestUserAPIKeyService_Create_PrivateKeyPreferred(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/user_api_keys": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, http.StatusCreated, map[string]any{
+				"$key": "5",
+				"response": map[string]any{
+					"private_key": "from-private-key",
+					"token":       "from-token",
+				},
+			})
+		},
+		"GET /api/v4/user_api_keys/5": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, UserAPIKey{Key: 5, Name: "new-key", User: 10})
+		},
+	}))
+
+	_, token, err := client.UserAPIKeys.Create(context.Background(), &UserAPIKeyCreateRequest{
+		User: 10,
+		Name: "new-key",
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+	if token != "from-private-key" {
+		t.Errorf("expected private_key secret, got %q", token)
+	}
+}
+
+func TestUserAPIKeyService_Create_MissingSecret(t *testing.T) {
+	cases := []struct {
+		name string
+		body any
+	}{
+		{
+			name: "no response object",
+			body: map[string]any{"$key": "5"},
+		},
+		{
+			name: "empty response object",
+			body: map[string]any{"$key": "5", "response": map[string]any{}},
+		},
+		{
+			name: "empty private_key",
+			body: map[string]any{"$key": "5", "response": map[string]any{"private_key": ""}},
+		},
+		{
+			name: "empty token",
+			body: map[string]any{"$key": "5", "response": map[string]any{"token": ""}},
+		},
+		{
+			name: "null response",
+			body: map[string]any{"$key": "5", "response": nil},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			body := tc.body
+			client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+				"POST /api/v4/user_api_keys": func(w http.ResponseWriter, r *http.Request) {
+					jsonResponse(w, http.StatusCreated, body)
+				},
+			}))
+
+			key, token, err := client.UserAPIKeys.Create(context.Background(), &UserAPIKeyCreateRequest{
+				User: 10,
+				Name: "new-key",
+			})
+			if err == nil {
+				t.Fatal("expected error when the create response has no secret")
+			}
+			if token != "" {
+				t.Errorf("expected empty token, got %q", token)
+			}
+			if key != nil {
+				t.Errorf("expected nil key, got %+v", key)
+			}
+			if !strings.Contains(err.Error(), "secret") || !strings.Contains(err.Error(), "5") {
+				t.Errorf("expected error to name the missing secret and key id, got %v", err)
+			}
+		})
 	}
 }
 

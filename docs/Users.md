@@ -79,7 +79,8 @@ keys, err := client.UserAPIKeys.List(ctx)
 // List API keys for a specific user
 keys, err := client.UserAPIKeys.ListByUser(ctx, userID)
 
-// Create an API key (token only returned on creation!)
+// Create an API key. The secret is returned only by this call.
+// VergeOS 26.2 sends it as private_key. Create returns an error when the response has no secret.
 key, token, err := client.UserAPIKeys.Create(ctx, &vergeos.UserAPIKeyCreateRequest{
     User:        userID,
     Name:        "automation-key",

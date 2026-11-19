@@ -80,8 +80,11 @@ func (s *UserAPIKeyService) GetByName(ctx context.Context, userID int, name stri
 	return got, nil
 }
 
-// Create creates a new API key and returns the created key with its token.
-// IMPORTANT: The token is only returned on creation and cannot be retrieved later.
+// Create creates a new API key and returns the key together with its secret.
+// The secret is only available from this call. VergeOS 26.2 returns it as
+// private_key inside the response object. A response that still carries the
+// secret in token is accepted. When the response includes neither, Create
+// returns an error that includes the new key id. The key row already exists.
 func (s *UserAPIKeyService) Create(ctx context.Context, req *UserAPIKeyCreateRequest) (*UserAPIKey, string, error) {
 	if req == nil {
 		return nil, "", &ValidationError{Message: "create request is required"}
@@ -103,12 +106,9 @@ func (s *UserAPIKeyService) Create(ctx context.Context, req *UserAPIKeyCreateReq
 		return nil, "", err
 	}
 
-	// Extract token from response if available
-	var token string
-	if respMap, ok := resp.Response.(map[string]any); ok {
-		if t, ok := respMap["token"].(string); ok {
-			token = t
-		}
+	token := userAPIKeySecret(resp.Response)
+	if token == "" {
+		return nil, "", fmt.Errorf("vergeos: user API key %d was created but the response did not include the secret", id)
 	}
 
 	key, err := s.Get(ctx, id)
@@ -117,6 +117,23 @@ func (s *UserAPIKeyService) Create(ctx context.Context, req *UserAPIKeyCreateReq
 	}
 
 	return key, token, nil
+}
+
+// userAPIKeySecret reads the one-time secret from a user_api_keys create
+// response object. private_key is the field VergeOS 26.2 returns. token is
+// the older field name.
+func userAPIKeySecret(response any) string {
+	respMap, ok := response.(map[string]any)
+	if !ok {
+		return ""
+	}
+	if secret, ok := respMap["private_key"].(string); ok && secret != "" {
+		return secret
+	}
+	if secret, ok := respMap["token"].(string); ok && secret != "" {
+		return secret
+	}
+	return ""
 }
 
 // Update updates an API key and returns the updated key.
