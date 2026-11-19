@@ -181,7 +181,7 @@ err = client.OIDCApplications.Delete(ctx, int(app.Key))
 
 ## Permissions
 
-Manage resource-level access control. A permission is granted to an identity. Every user and every group has an identity key, returned as `User.Identity` and `Group.Identity` from the `identity` column. That key is a different number from the user or group row key. `Users.IdentityOf` and `Groups.IdentityOf` load it when you have the row key and not the record.
+Manage resource-level access control. A permission is granted to an identity. Every user and every group has an identity key, returned as `User.Identity` and `Group.Identity` from the `identity` column. That key is a different number from the user or group row key. `Users.IdentityOf` and `Groups.IdentityOf` load it when you have the row key and not the record. Row 0 covers the whole table. A positive row is one resource.
 
 `Permissions.Create`, `Grant`, `GrantReadOnly`, `GrantFullAccess`, `Revoke`, `ListByIdentity`, and `GetByIdentityAndResource` take that `IdentityKey`. A user or group row key does not compile in that argument.
 

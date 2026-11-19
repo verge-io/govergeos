@@ -3,6 +3,7 @@
 // This example demonstrates how to manage resource-level permissions in VergeOS.
 // A permission is granted to an identity key (User.Identity or Group.Identity).
 // That key is a different number from the user or group row key.
+// Row 0 covers the whole table. A positive row is one resource.
 // Flags control list, read, create, modify, and delete.
 //
 // Usage:

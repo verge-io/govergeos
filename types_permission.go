@@ -2,7 +2,8 @@ package vergeos
 
 // Permission represents a VergeOS permission granting an identity access to a resource.
 // Permissions are row-based. The grantee is an identities-table key, the same
-// value as User.Identity or Group.Identity, for one resource instance (table + row).
+// value as User.Identity or Group.Identity. Row 0 covers the whole table.
+// A positive row is one resource instance.
 type Permission struct {
 	// Key is the unique identifier for this permission.
 	Key FlexInt `json:"$key,omitempty"`
@@ -18,7 +19,7 @@ type Permission struct {
 	Table string `json:"table,omitempty"`
 	// TableID is the internal ID of the target table (set automatically).
 	TableID int64 `json:"tableid,omitempty"`
-	// Row is the specific resource ID being granted permission to.
+	// Row is the resource id. 0 covers the whole table.
 	Row int64 `json:"row,omitempty"`
 	// RowDisplay is the display name of the resource (read-only).
 	RowDisplay string `json:"rowdisplay,omitempty"`
@@ -44,7 +45,8 @@ type PermissionCreateRequest struct {
 	Identity IdentityKey `json:"identity"`
 	// Table is the resource type (required, e.g., "vms", "networks").
 	Table string `json:"table"`
-	// Row is the specific resource ID (required).
+	// Row is the resource id. 0 covers the whole table and is sent in the JSON body.
+	// A negative value is rejected.
 	Row int64 `json:"row"`
 
 	// Permission flags (all default to false if not specified)
