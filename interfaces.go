@@ -1430,6 +1430,7 @@ type TimeDashboardServiceInterface interface {
 }
 
 // VNetBondInterfaceServiceInterface reads and updates bond members.
+// ListByNetwork filters on parent_vnet, the bond network.
 type VNetBondInterfaceServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]VNetBondInterface, error)
 	ListByNetwork(ctx context.Context, networkID int, opts ...ListOption) ([]VNetBondInterface, error)

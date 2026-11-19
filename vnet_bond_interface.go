@@ -7,7 +7,8 @@ import (
 )
 
 // VNetBondInterfaceService reads and updates bond members (vnet_bond_interfaces).
-// The primary flag is requested only when the server is VergeOS 26.2 or later.
+// List and Get request parent_vnet and child_vnet. The primary flag is requested
+// only when the server is VergeOS 26.2 or later.
 type VNetBondInterfaceService struct {
 	client *Client
 }
@@ -29,9 +30,10 @@ func (s *VNetBondInterfaceService) List(ctx context.Context, opts ...ListOption)
 	return rows, nil
 }
 
-// ListByNetwork returns the bond members of one network.
+// ListByNetwork returns the members of one bond.
+// networkID is the bond network, matched with parent_vnet eq <networkID>.
 func (s *VNetBondInterfaceService) ListByNetwork(ctx context.Context, networkID int, opts ...ListOption) ([]VNetBondInterface, error) {
-	opts = append(opts, WithFilter(fmt.Sprintf("vnet eq %d", networkID)))
+	opts = append(opts, WithFilter(fmt.Sprintf("parent_vnet eq %d", networkID)))
 	return s.List(ctx, opts...)
 }
 

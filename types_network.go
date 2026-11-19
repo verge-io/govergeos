@@ -560,27 +560,32 @@ type FRRDaemons struct {
 }
 
 // VNetBondInterface is one member of a network bond (vnet_bond_interfaces).
+// ParentVNet is the bond network and the table parent. ChildVNet is the member
+// network. Both columns are required and read-only. The unique key is
+// (child_vnet, parent_vnet).
 type VNetBondInterface struct {
 	// Key is the row key.
 	Key FlexInt `json:"$key,omitempty"`
-	// VNet is the network this member belongs to.
-	VNet FlexInt `json:"vnet,omitempty"`
-	// Interface is the member interface.
-	Interface FlexInt `json:"interface,omitempty"`
+	// ParentVNet is the bond network (parent_vnet). The column is required,
+	// read-only, and the parent field of the row.
+	ParentVNet FlexInt `json:"parent_vnet,omitempty"`
+	// ChildVNet is the member network (child_vnet). The column is required and read-only.
+	ChildVNet FlexInt `json:"child_vnet,omitempty"`
 	// Primary marks the member that stays active in active-backup and is preferred
 	// by the 26.2 load-balancing modes. The column arrived in VergeOS 26.2.
 	Primary bool `json:"primary,omitempty"`
 }
 
 // VNetBondInterfaceUpdateRequest updates a bond member.
-// Primary is the only 26.2 flag this SDK writes.
+// Primary is the writable 26.2 flag. parent_vnet and child_vnet are read-only
+// and stay off this body.
 type VNetBondInterfaceUpdateRequest struct {
 	// Primary marks this member as the bond primary.
 	Primary *bool `json:"primary,omitempty"`
 }
 
 const (
-	vnetBondInterfaceListFields = "$key,vnet,interface"
+	vnetBondInterfaceListFields = "$key,parent_vnet,child_vnet"
 	vnetBondInterface262Fields  = "primary"
 )
 

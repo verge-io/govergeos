@@ -236,7 +236,7 @@ devClient, _ := vergeos.NewClient(
 | Service | Description |
 |---------|-------------|
 | `Networks` | Virtual network CRUD, power control, diagnostics, and statistics. 26.2 adds DHCP broadcast, VLAN bond settings, and the advanced BGP console |
-| `VNetBondInterfaces` | Bond members (`vnet_bond_interfaces`), including the 26.2 primary flag |
+| `VNetBondInterfaces` | Bond members (`vnet_bond_interfaces`): `parent_vnet` is the bond and `child_vnet` is the member. `Primary` is requested on 26.2 and later |
 | `VNetRules` | Firewall rule management |
 | `VNetRuleAliases` | IP/port alias groups for rules |
 | `VNetAddresses` | IP address management (static, DHCP, aliases) |
