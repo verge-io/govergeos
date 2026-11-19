@@ -45,6 +45,7 @@ Detailed rationale in `DECISIONS.md` (ADR-001 through ADR-028). The critical one
 
 - **`$key` is `Key`**: Every resource names the row key `Key`. A separate `id` column stays `ID`.
 - **FlexInt** (`types.go`): Custom type handling VergeOS API returning IDs as int or string. String-key tables stay `string` (volumes and other SHA1 keys, resource groups as UUIDs). `StorageTier.Key` and the device-settings rows stay `int`.
+- **Permission identity**: A permission's `identity` column is an identities-table key (`IdentityKey`). `User.Identity` and `Group.Identity` read the `identity` field on `users` and `groups`. Grant methods take that key. The user or group `$key` is a different number. `Users.IdentityOf` and `Groups.IdentityOf` resolve a row key.
 - **Pointer fields** in Update requests: `*int`, `*bool` etc. distinguish "not provided" (nil) from "set to zero value".
 - **Functional options**: `WithBaseURL()`, `WithCredentials()`, `WithAPIKey()`, `WithEnvConfig()`, `WithMinimumVersion()`, `WithSkipVersionCheck()`, `WithRetry()`, `WithRateLimit()`, etc.
 - **Context-first**: All API methods take `context.Context` as first parameter.

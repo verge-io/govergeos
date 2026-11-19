@@ -319,7 +319,7 @@ BGP, OSPF, and EIGRP rows belong to one `vnet_bgp` record per network (`VNetBGP.
 | `UserAPIKeys` | API key management |
 | `AuthSources` | External identity providers (SSO). Update merges settings |
 | `OIDCApplications` | OIDC applications where VergeOS is the identity provider |
-| `Permissions` | Resource-level access control (Grant/Revoke) |
+| `Permissions` | Resource-level access control. Grants take `User.Identity` or `Group.Identity` |
 
 ### System Administration
 

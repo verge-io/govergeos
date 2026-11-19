@@ -468,3 +468,89 @@ func TestPermissionService_Revoke_NotExists(t *testing.T) {
 		t.Fatalf("Revoke of nonexistent permission should not error, got: %v", err)
 	}
 }
+
+func TestPermission_IdentityJSONString(t *testing.T) {
+	var perm Permission
+	if err := json.Unmarshal([]byte(`{"$key":22,"identity":"11","table":"users","row":11}`), &perm); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if perm.Key != 22 || perm.Identity != 11 || perm.Row != 11 || perm.Table != "users" {
+		t.Fatalf("got key %d identity %d table %s row %d", perm.Key, perm.Identity, perm.Table, perm.Row)
+	}
+}
+
+func TestPermissionService_Grant_ResolvedIdentity(t *testing.T) {
+	// User key 11 owns identity 16. Identity 11 belongs to a different user.
+	// The grant has to post 16.
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/users/11": func(w http.ResponseWriter, r *http.Request) {
+			if !fieldListHas(r.URL.Query().Get("fields"), "identity") {
+				t.Errorf("fields %q do not request identity", r.URL.Query().Get("fields"))
+			}
+			jsonResponse(w, 200, json.RawMessage(`{"$key":11,"name":"bugtest-g2-u5","identity":"16"}`))
+		},
+		"POST /api/v4/permissions": func(w http.ResponseWriter, r *http.Request) {
+			var req PermissionCreateRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+			if req.Identity != 16 {
+				t.Errorf("posted identity %d, want 16", req.Identity)
+			}
+			if req.Table != "users" || req.Row != 11 {
+				t.Errorf("posted table %s row %d", req.Table, req.Row)
+			}
+			jsonResponse(w, 201, map[string]any{"$key": 22})
+		},
+		"GET /api/v4/permissions/22": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, json.RawMessage(`{"$key":22,"identity":"16","table":"users","row":11,"list":true,"read":true}`))
+		},
+	}))
+
+	ctx := context.Background()
+	identity, err := client.Users.IdentityOf(ctx, 11)
+	if err != nil {
+		t.Fatalf("IdentityOf: %v", err)
+	}
+	perm, err := client.Permissions.GrantReadOnly(ctx, identity, "users", 11)
+	if err != nil {
+		t.Fatalf("GrantReadOnly: %v", err)
+	}
+	if perm.Identity != 16 {
+		t.Fatalf("stored identity %d, want 16", perm.Identity)
+	}
+}
+
+func TestPermissionService_Grant_GroupIdentity(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/groups/4": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, json.RawMessage(`{"$key":4,"name":"operators","identity":9}`))
+		},
+		"POST /api/v4/permissions": func(w http.ResponseWriter, r *http.Request) {
+			var req PermissionCreateRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+			if req.Identity != 9 {
+				t.Errorf("posted identity %d, want 9", req.Identity)
+			}
+			jsonResponse(w, 200, map[string]any{"$key": 3})
+		},
+		"GET /api/v4/permissions/3": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, Permission{Key: 3, Identity: 9, Table: "vms", Row: 100, List: true, Read: true, Create: true, Modify: true, Delete: true})
+		},
+	}))
+
+	ctx := context.Background()
+	identity, err := client.Groups.IdentityOf(ctx, 4)
+	if err != nil {
+		t.Fatalf("IdentityOf: %v", err)
+	}
+	perm, err := client.Permissions.GrantFullAccess(ctx, identity, "vms", 100)
+	if err != nil {
+		t.Fatalf("GrantFullAccess: %v", err)
+	}
+	if perm.Identity != identity {
+		t.Fatalf("stored identity %d, want %d", perm.Identity, identity)
+	}
+}

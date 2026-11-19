@@ -1,8 +1,9 @@
 // Example: Permissions Management
 //
 // This example demonstrates how to manage resource-level permissions in VergeOS.
-// Permissions grant identities (users or groups) access to specific resources
-// with granular control over list, read, create, modify, and delete operations.
+// A permission is granted to an identity key (User.Identity or Group.Identity).
+// That key is a different number from the user or group row key.
+// Flags control list, read, create, modify, and delete.
 //
 // Usage:
 //
@@ -105,7 +106,7 @@ func main() {
 	// =========================================================================
 	if len(permissions) > 0 && permissions[0].Identity > 0 {
 		fmt.Println("\n=== Permissions by Identity ===")
-		identityID := int(permissions[0].Identity)
+		identityID := permissions[0].Identity
 		identityPerms, err := client.Permissions.ListByIdentity(ctx, identityID)
 		if err != nil {
 			fmt.Printf("Warning: Failed to list identity permissions: %v\n", err)
@@ -177,10 +178,12 @@ func showOperationsReference() {
 	fmt.Println("\n=== Operations Reference ===")
 
 	fmt.Println("\nListing Permissions:")
-	fmt.Println("  client.Permissions.List(ctx)                           - List all permissions")
-	fmt.Println("  client.Permissions.ListByIdentity(ctx, identityID)     - List by user/group")
-	fmt.Println("  client.Permissions.ListByTable(ctx, table)             - List by resource type")
-	fmt.Println("  client.Permissions.ListByResource(ctx, table, rowID)   - List by specific resource")
+	fmt.Println("  client.Permissions.List(ctx)                              - List all permissions")
+	fmt.Println("  client.Permissions.ListByIdentity(ctx, user.Identity)     - List by identity key")
+	fmt.Println("  client.Users.IdentityOf(ctx, userKey)                     - Identity key for a user row")
+	fmt.Println("  client.Groups.IdentityOf(ctx, groupKey)                   - Identity key for a group row")
+	fmt.Println("  client.Permissions.ListByTable(ctx, table)                - List by resource type")
+	fmt.Println("  client.Permissions.ListByResource(ctx, table, rowID)      - List by specific resource")
 
 	fmt.Println("\nGetting Permissions:")
 	fmt.Println("  client.Permissions.Get(ctx, id)                                    - Get by ID")
@@ -192,10 +195,10 @@ func showOperationsReference() {
 	fmt.Println("  client.Permissions.Delete(ctx, id)         - Delete a permission")
 
 	fmt.Println("\nConvenience Methods:")
-	fmt.Println("  client.Permissions.Grant(ctx, identity, table, row, read, modify, delete)")
-	fmt.Println("  client.Permissions.GrantReadOnly(ctx, identity, table, row)")
-	fmt.Println("  client.Permissions.GrantFullAccess(ctx, identity, table, row)")
-	fmt.Println("  client.Permissions.Revoke(ctx, identity, table, row)")
+	fmt.Println("  client.Permissions.Grant(ctx, user.Identity, table, row, read, modify, delete)")
+	fmt.Println("  client.Permissions.GrantReadOnly(ctx, user.Identity, table, row)")
+	fmt.Println("  client.Permissions.GrantFullAccess(ctx, user.Identity, table, row)")
+	fmt.Println("  client.Permissions.Revoke(ctx, user.Identity, table, row)")
 
 	fmt.Println("\nCommon Table Constants:")
 	fmt.Println("  vergeos.PermissionTableVMs        = \"vms\"")

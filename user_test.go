@@ -303,3 +303,99 @@ func TestUserService_Disable(t *testing.T) {
 		t.Fatalf("Disable failed: %v", err)
 	}
 }
+
+func TestUserService_Get_Identity(t *testing.T) {
+	// The API returns identity as a string. It is a different number from $key.
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/users/11": func(w http.ResponseWriter, r *http.Request) {
+			if !fieldListHas(r.URL.Query().Get("fields"), "identity") {
+				t.Errorf("fields %q do not request identity", r.URL.Query().Get("fields"))
+			}
+			jsonResponse(w, 200, json.RawMessage(`{"$key":11,"name":"bugtest-g2-u5","identity":"16"}`))
+		},
+	}))
+
+	user, err := client.Users.Get(context.Background(), 11)
+	if err != nil {
+		t.Fatalf("Get failed: %v", err)
+	}
+	if user.Key != 11 {
+		t.Fatalf("key = %d, want 11", user.Key)
+	}
+	if user.Identity != 16 {
+		t.Fatalf("identity = %d, want 16", user.Identity)
+	}
+}
+
+func TestUserService_List_IdentityNumber(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/users": func(w http.ResponseWriter, r *http.Request) {
+			if !fieldListHas(r.URL.Query().Get("fields"), "identity") {
+				t.Errorf("fields %q do not request identity", r.URL.Query().Get("fields"))
+			}
+			jsonResponse(w, 200, json.RawMessage(`[{"$key":6,"name":"bugtest-g2-u0","identity":11}]`))
+		},
+	}))
+
+	users, err := client.Users.List(context.Background())
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if len(users) != 1 {
+		t.Fatalf("got %d users", len(users))
+	}
+	if users[0].Key != 6 || users[0].Identity != 11 {
+		t.Fatalf("user key %d identity %d, want key 6 identity 11", users[0].Key, users[0].Identity)
+	}
+}
+
+func TestUserService_IdentityOf(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/users/11": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, json.RawMessage(`{"$key":"11","name":"bugtest-g2-u5","identity":"16"}`))
+		},
+	}))
+
+	identity, err := client.Users.IdentityOf(context.Background(), 11)
+	if err != nil {
+		t.Fatalf("IdentityOf failed: %v", err)
+	}
+	if identity != 16 {
+		t.Fatalf("identity = %d, want 16", identity)
+	}
+}
+
+func TestUserService_IdentityOf_Missing(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/users/11": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, json.RawMessage(`{"$key":11,"name":"bugtest-g2-u5"}`))
+		},
+	}))
+
+	identity, err := client.Users.IdentityOf(context.Background(), 11)
+	if err == nil {
+		t.Fatal("expected error when identity is absent")
+	}
+	if !IsValidationError(err) {
+		t.Fatalf("expected ValidationError, got %T: %v", err, err)
+	}
+	if identity != 0 {
+		t.Fatalf("identity = %d, want 0", identity)
+	}
+}
+
+func TestUserService_IdentityOf_NotFound(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/users/11": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 404, map[string]string{"err": "not found"})
+		},
+	}))
+
+	_, err := client.Users.IdentityOf(context.Background(), 11)
+	if err == nil {
+		t.Fatal("expected error for not found")
+	}
+	if !IsNotFoundError(err) {
+		t.Fatalf("expected NotFoundError, got %T: %v", err, err)
+	}
+}

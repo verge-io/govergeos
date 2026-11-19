@@ -47,6 +47,7 @@ group, err := client.Groups.Get(ctx, groupID)
 
 // Get a group by name
 group, err := client.Groups.GetByName(ctx, "developers")
+fmt.Println(group.Identity) // identities-table key, used by Permissions
 
 // Create a group
 group, err := client.Groups.Create(ctx, &vergeos.GroupCreateRequest{
@@ -180,14 +181,19 @@ err = client.OIDCApplications.Delete(ctx, int(app.Key))
 
 ## Permissions
 
-Manage resource-level access control. Permissions grant identities (users/groups) access to specific resources.
+Manage resource-level access control. A permission is granted to an identity. Every user and every group has an identity key, returned as `User.Identity` and `Group.Identity` from the `identity` column. That key is a different number from the user or group row key. `Users.IdentityOf` and `Groups.IdentityOf` load it when you have the row key and not the record.
+
+`Permissions.Create`, `Grant`, `GrantReadOnly`, `GrantFullAccess`, `Revoke`, `ListByIdentity`, and `GetByIdentityAndResource` take that `IdentityKey`. A user or group row key does not compile in that argument.
 
 ```go
+user, err := client.Users.Get(ctx, userKey)
+group, err := client.Groups.Get(ctx, groupKey)
+
 // List all permissions
 permissions, err := client.Permissions.List(ctx)
 
-// List permissions for a specific identity (user or group)
-permissions, err := client.Permissions.ListByIdentity(ctx, identityID)
+// List permissions for one identity
+permissions, err = client.Permissions.ListByIdentity(ctx, user.Identity)
 
 // List permissions for a specific resource type
 vmPerms, err := client.Permissions.ListByTable(ctx, vergeos.PermissionTableVMs)
@@ -199,11 +205,11 @@ perms, err := client.Permissions.ListByResource(ctx, "vms", vmID)
 perm, err := client.Permissions.Get(ctx, permID)
 
 // Get a specific permission by identity and resource
-perm, err := client.Permissions.GetByIdentityAndResource(ctx, identityID, "vms", vmID)
+perm, err = client.Permissions.GetByIdentityAndResource(ctx, user.Identity, "vms", vmID)
 
-// Create a permission
-perm, err := client.Permissions.Create(ctx, &vergeos.PermissionCreateRequest{
-    Identity: userID,
+// Create a permission. Identity is the identities-table key.
+perm, err = client.Permissions.Create(ctx, &vergeos.PermissionCreateRequest{
+    Identity: user.Identity,
     Table:    "vms",
     Row:      vmID,
     List:     ptr(true),
@@ -213,7 +219,7 @@ perm, err := client.Permissions.Create(ctx, &vergeos.PermissionCreateRequest{
 })
 
 // Update a permission
-perm, err := client.Permissions.Update(ctx, permID, &vergeos.PermissionUpdateRequest{
+perm, err = client.Permissions.Update(ctx, permID, &vergeos.PermissionUpdateRequest{
     Delete: ptr(true), // Add delete permission
 })
 
@@ -222,21 +228,25 @@ err = client.Permissions.Delete(ctx, permID)
 
 // Convenience methods for common permission patterns
 
+// From a row key, when the user or group record is not already loaded.
+identity, err := client.Users.IdentityOf(ctx, userKey)
+identity, err = client.Groups.IdentityOf(ctx, groupKey)
+
 // Grant read-only access
-perm, err := client.Permissions.GrantReadOnly(ctx, userID, "vms", vmID)
+perm, err = client.Permissions.GrantReadOnly(ctx, identity, "vms", vmID)
 
 // Grant full access (list, read, create, modify, delete)
-perm, err := client.Permissions.GrantFullAccess(ctx, userID, "vms", vmID)
+perm, err = client.Permissions.GrantFullAccess(ctx, group.Identity, "vms", vmID)
 
 // Grant custom access
-perm, err := client.Permissions.Grant(ctx, userID, "vms", vmID,
+perm, err = client.Permissions.Grant(ctx, user.Identity, "vms", vmID,
     true,  // read
     true,  // modify
     false, // delete
 )
 
 // Revoke all access (deletes the permission if it exists)
-err = client.Permissions.Revoke(ctx, userID, "vms", vmID)
+err = client.Permissions.Revoke(ctx, user.Identity, "vms", vmID)
 ```
 
 Common table names for permissions:

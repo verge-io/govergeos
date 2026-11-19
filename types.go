@@ -49,6 +49,40 @@ func (f FlexInt) Int() int {
 	return int(f)
 }
 
+// IdentityKey is the key of a row in the identities table.
+// Permissions are stored against this key. Each user and each group has one,
+// on the identity column, and that value is a different number from the
+// user or group row key.
+//
+// Read it from User.Identity or Group.Identity. Users.IdentityOf and
+// Groups.IdentityOf load it from a row key.
+//
+// IdentityKey(n) does not load a row. It marks n as an identity key.
+// Use it when n was already read from User.Identity, Group.Identity, or
+// a permission. Wrapping a user key or a group key grants whichever
+// principal owns that identity.
+type IdentityKey int
+
+// UnmarshalJSON accepts the number or numeric string VergeOS returns for an identity.
+func (k *IdentityKey) UnmarshalJSON(data []byte) error {
+	var n FlexInt
+	if err := n.UnmarshalJSON(data); err != nil {
+		return fmt.Errorf("vergeos: cannot unmarshal %s into IdentityKey", string(data))
+	}
+	*k = IdentityKey(n)
+	return nil
+}
+
+// MarshalJSON writes the identity key as a JSON number.
+func (k IdentityKey) MarshalJSON() ([]byte, error) {
+	return json.Marshal(int(k))
+}
+
+// Int returns the identity key as an int.
+func (k IdentityKey) Int() int {
+	return int(k)
+}
+
 // FlexText is a string that also accepts a JSON number or null.
 // VergeOS uses it for values that are an id on one release and a name on another.
 type FlexText string

@@ -67,10 +67,10 @@ func TestPermissions(t *testing.T) {
 		}
 
 		// Find a permission with an identity
-		var identityID int
+		var identityID vergeos.IdentityKey
 		for _, p := range permissions {
-			if int(p.Identity) > 0 {
-				identityID = int(p.Identity)
+			if p.Identity > 0 {
+				identityID = p.Identity
 				break
 			}
 		}

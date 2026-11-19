@@ -7,7 +7,9 @@ import (
 )
 
 // PermissionService handles permission operations.
-// Permissions grant identities (users/groups) access to specific resources.
+// A permission is granted to an identities-table key. That key is
+// User.Identity or Group.Identity, which is a different number from
+// the user or group row key.
 type PermissionService struct {
 	client *Client
 }
@@ -30,9 +32,10 @@ func (s *PermissionService) List(ctx context.Context, opts ...ListOption) ([]Per
 	return permissions, nil
 }
 
-// ListByIdentity returns all permissions for a specific identity (user or group).
-func (s *PermissionService) ListByIdentity(ctx context.Context, identityID int, opts ...ListOption) ([]Permission, error) {
-	opts = append([]ListOption{WithFilter(fmt.Sprintf("identity eq %d", identityID))}, opts...)
+// ListByIdentity returns all permissions for an identities-table key.
+// identity is User.Identity, Group.Identity, or the result of IdentityOf.
+func (s *PermissionService) ListByIdentity(ctx context.Context, identity IdentityKey, opts ...ListOption) ([]Permission, error) {
+	opts = append([]ListOption{WithFilter(fmt.Sprintf("identity eq %d", identity))}, opts...)
 	return s.List(ctx, opts...)
 }
 
@@ -65,14 +68,15 @@ func (s *PermissionService) Get(ctx context.Context, id int) (*Permission, error
 	return &permission, nil
 }
 
-// GetByIdentityAndResource returns the permission for a specific identity and resource.
-func (s *PermissionService) GetByIdentityAndResource(ctx context.Context, identityID int, table string, rowID int64) (*Permission, error) {
-	permissions, err := s.List(ctx, WithFilter(fmt.Sprintf("identity eq %d and table eq '%s' and row eq %d", identityID, escapeFilterValue(table), rowID)))
+// GetByIdentityAndResource returns the permission for an identity key and resource.
+// identity is User.Identity, Group.Identity, or the result of IdentityOf.
+func (s *PermissionService) GetByIdentityAndResource(ctx context.Context, identity IdentityKey, table string, rowID int64) (*Permission, error) {
+	permissions, err := s.List(ctx, WithFilter(fmt.Sprintf("identity eq %d and table eq '%s' and row eq %d", identity, escapeFilterValue(table), rowID)))
 	if err != nil {
 		return nil, err
 	}
 	if len(permissions) == 0 {
-		return nil, &NotFoundError{Resource: "Permission", ID: fmt.Sprintf("identity=%d,table=%s,row=%d", identityID, table, rowID)}
+		return nil, &NotFoundError{Resource: "Permission", ID: fmt.Sprintf("identity=%d,table=%s,row=%d", identity, table, rowID)}
 	}
 	// Get full details
 	return s.Get(ctx, int(permissions[0].Key))
@@ -132,13 +136,13 @@ func (s *PermissionService) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-// Grant creates a permission granting an identity access to a resource.
-// This is a convenience method that creates a permission with common defaults.
-func (s *PermissionService) Grant(ctx context.Context, identityID int, table string, rowID int64, read, modify, delete bool) (*Permission, error) {
-	// If read is true, list is automatically set by the API
+// Grant creates a permission for an identity key.
+// identity is User.Identity, Group.Identity, or the result of IdentityOf.
+// When read is true, list is set as well. The API does the same when read is set.
+func (s *PermissionService) Grant(ctx context.Context, identity IdentityKey, table string, rowID int64, read, modify, delete bool) (*Permission, error) {
 	list := read
 	return s.Create(ctx, &PermissionCreateRequest{
-		Identity: identityID,
+		Identity: identity,
 		Table:    table,
 		Row:      rowID,
 		List:     &list,
@@ -148,16 +152,16 @@ func (s *PermissionService) Grant(ctx context.Context, identityID int, table str
 	})
 }
 
-// GrantReadOnly grants read-only access to a resource.
-func (s *PermissionService) GrantReadOnly(ctx context.Context, identityID int, table string, rowID int64) (*Permission, error) {
-	return s.Grant(ctx, identityID, table, rowID, true, false, false)
+// GrantReadOnly grants read-only access to a resource for an identity key.
+func (s *PermissionService) GrantReadOnly(ctx context.Context, identity IdentityKey, table string, rowID int64) (*Permission, error) {
+	return s.Grant(ctx, identity, table, rowID, true, false, false)
 }
 
-// GrantFullAccess grants full access (read, modify, delete) to a resource.
-func (s *PermissionService) GrantFullAccess(ctx context.Context, identityID int, table string, rowID int64) (*Permission, error) {
+// GrantFullAccess grants full access (read, modify, delete) to a resource for an identity key.
+func (s *PermissionService) GrantFullAccess(ctx context.Context, identity IdentityKey, table string, rowID int64) (*Permission, error) {
 	t := true
 	return s.Create(ctx, &PermissionCreateRequest{
-		Identity: identityID,
+		Identity: identity,
 		Table:    table,
 		Row:      rowID,
 		List:     &t,
@@ -168,9 +172,10 @@ func (s *PermissionService) GrantFullAccess(ctx context.Context, identityID int,
 	})
 }
 
-// Revoke deletes the permission for a specific identity and resource.
-func (s *PermissionService) Revoke(ctx context.Context, identityID int, table string, rowID int64) error {
-	perm, err := s.GetByIdentityAndResource(ctx, identityID, table, rowID)
+// Revoke deletes the permission for an identity key and resource.
+// A missing permission is not an error.
+func (s *PermissionService) Revoke(ctx context.Context, identity IdentityKey, table string, rowID int64) error {
+	perm, err := s.GetByIdentityAndResource(ctx, identity, table, rowID)
 	if err != nil {
 		if IsNotFoundError(err) {
 			// Permission doesn't exist, nothing to revoke

@@ -189,6 +189,7 @@ type UserServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]User, error)
 	Get(ctx context.Context, id int) (*User, error)
 	GetByName(ctx context.Context, name string) (*User, error)
+	IdentityOf(ctx context.Context, id int) (IdentityKey, error)
 	Create(ctx context.Context, req *UserCreateRequest) (*User, error)
 	Update(ctx context.Context, id int, req *UserUpdateRequest) (*User, error)
 	Delete(ctx context.Context, id int) error
@@ -331,6 +332,7 @@ type GroupServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]Group, error)
 	Get(ctx context.Context, id int) (*Group, error)
 	GetByName(ctx context.Context, name string) (*Group, error)
+	IdentityOf(ctx context.Context, id int) (IdentityKey, error)
 	Create(ctx context.Context, req *GroupCreateRequest) (*Group, error)
 	Update(ctx context.Context, id int, req *GroupUpdateRequest) (*Group, error)
 	Delete(ctx context.Context, id int) error
@@ -1167,18 +1169,18 @@ type VolumeSnapshotServiceInterface interface {
 // PermissionServiceInterface defines the interface for permission operations.
 type PermissionServiceInterface interface {
 	List(ctx context.Context, opts ...ListOption) ([]Permission, error)
-	ListByIdentity(ctx context.Context, identityID int, opts ...ListOption) ([]Permission, error)
+	ListByIdentity(ctx context.Context, identity IdentityKey, opts ...ListOption) ([]Permission, error)
 	ListByTable(ctx context.Context, table string, opts ...ListOption) ([]Permission, error)
 	ListByResource(ctx context.Context, table string, rowID int64, opts ...ListOption) ([]Permission, error)
 	Get(ctx context.Context, id int) (*Permission, error)
-	GetByIdentityAndResource(ctx context.Context, identityID int, table string, rowID int64) (*Permission, error)
+	GetByIdentityAndResource(ctx context.Context, identity IdentityKey, table string, rowID int64) (*Permission, error)
 	Create(ctx context.Context, req *PermissionCreateRequest) (*Permission, error)
 	Update(ctx context.Context, id int, req *PermissionUpdateRequest) (*Permission, error)
 	Delete(ctx context.Context, id int) error
-	Grant(ctx context.Context, identityID int, table string, rowID int64, read, modify, delete bool) (*Permission, error)
-	GrantReadOnly(ctx context.Context, identityID int, table string, rowID int64) (*Permission, error)
-	GrantFullAccess(ctx context.Context, identityID int, table string, rowID int64) (*Permission, error)
-	Revoke(ctx context.Context, identityID int, table string, rowID int64) error
+	Grant(ctx context.Context, identity IdentityKey, table string, rowID int64, read, modify, delete bool) (*Permission, error)
+	GrantReadOnly(ctx context.Context, identity IdentityKey, table string, rowID int64) (*Permission, error)
+	GrantFullAccess(ctx context.Context, identity IdentityKey, table string, rowID int64) (*Permission, error)
+	Revoke(ctx context.Context, identity IdentityKey, table string, rowID int64) error
 }
 
 // TenantRecipeServiceInterface defines the interface for tenant recipe reads.
