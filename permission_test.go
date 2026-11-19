@@ -3,7 +3,9 @@ package vergeos
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -237,18 +239,130 @@ func TestPermissionService_Create_MissingTable(t *testing.T) {
 	}
 }
 
-func TestPermissionService_Create_MissingRow(t *testing.T) {
-	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{}))
-
-	_, err := client.Permissions.Create(context.Background(), &PermissionCreateRequest{
-		Identity: 10,
-		Table:    "vms",
-	})
-	if err == nil {
-		t.Fatal("expected error for missing row")
+func TestPermissionService_NegativeRow(t *testing.T) {
+	tests := []struct {
+		name string
+		call func(ctx context.Context, client *Client) error
+	}{
+		{
+			name: "Create",
+			call: func(ctx context.Context, client *Client) error {
+				_, err := client.Permissions.Create(ctx, &PermissionCreateRequest{
+					Identity: 10,
+					Table:    "vms",
+					Row:      -1,
+				})
+				return err
+			},
+		},
+		{
+			name: "GrantReadOnly",
+			call: func(ctx context.Context, client *Client) error {
+				_, err := client.Permissions.GrantReadOnly(ctx, 10, "vms", -1)
+				return err
+			},
+		},
+		{
+			name: "GrantFullAccess",
+			call: func(ctx context.Context, client *Client) error {
+				_, err := client.Permissions.GrantFullAccess(ctx, 10, "vms", -1)
+				return err
+			},
+		},
 	}
-	if !IsValidationError(err) {
-		t.Errorf("expected ValidationError, got %T: %v", err, err)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			posted := false
+			client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+				"POST /api/v4/permissions": func(w http.ResponseWriter, r *http.Request) {
+					posted = true
+					w.WriteHeader(http.StatusCreated)
+				},
+			}))
+
+			err := tt.call(context.Background(), client)
+			if err == nil {
+				t.Fatal("expected error for negative row")
+			}
+			if !IsValidationError(err) {
+				t.Fatalf("expected ValidationError, got %T: %v", err, err)
+			}
+			ve := err.(*ValidationError)
+			if ve.Field != "row" {
+				t.Errorf("expected field row, got %q", ve.Field)
+			}
+			if posted {
+				t.Error("negative row was posted")
+			}
+		})
+	}
+}
+
+func TestPermissionService_TableWideRowZero(t *testing.T) {
+	readTrue := true
+	tests := []struct {
+		name string
+		call func(ctx context.Context, client *Client) error
+	}{
+		{
+			name: "Create",
+			call: func(ctx context.Context, client *Client) error {
+				_, err := client.Permissions.Create(ctx, &PermissionCreateRequest{
+					Identity: 11,
+					Table:    "webhook_urls",
+					Row:      0,
+					List:     &readTrue,
+					Read:     &readTrue,
+				})
+				return err
+			},
+		},
+		{
+			name: "GrantReadOnly",
+			call: func(ctx context.Context, client *Client) error {
+				_, err := client.Permissions.GrantReadOnly(ctx, 11, "webhook_urls", 0)
+				return err
+			},
+		},
+		{
+			name: "GrantFullAccess",
+			call: func(ctx context.Context, client *Client) error {
+				_, err := client.Permissions.GrantFullAccess(ctx, 11, "webhook_urls", 0)
+				return err
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+				"POST /api/v4/permissions": func(w http.ResponseWriter, r *http.Request) {
+					body, err := io.ReadAll(r.Body)
+					if err != nil {
+						t.Fatalf("read body: %v", err)
+					}
+					if !strings.Contains(string(body), `"row":0`) {
+						t.Fatalf("body %s does not contain \"row\":0", body)
+					}
+					var raw map[string]json.RawMessage
+					if err := json.Unmarshal(body, &raw); err != nil {
+						t.Fatalf("decode body: %v", err)
+					}
+					if string(raw["row"]) != "0" {
+						t.Fatalf("row JSON = %s, want 0", raw["row"])
+					}
+					jsonResponse(w, http.StatusCreated, map[string]any{"$key": 23})
+				},
+				"GET /api/v4/permissions/23": func(w http.ResponseWriter, r *http.Request) {
+					jsonResponse(w, 200, Permission{Key: 23, Identity: 11, Table: "webhook_urls", Row: 0, List: true, Read: true})
+				},
+			}))
+
+			if err := tt.call(context.Background(), client); err != nil {
+				t.Fatalf("%s row 0: %v", tt.name, err)
+			}
+		})
 	}
 }
 

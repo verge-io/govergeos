@@ -45,7 +45,8 @@ func (s *PermissionService) ListByTable(ctx context.Context, table string, opts 
 	return s.List(ctx, opts...)
 }
 
-// ListByResource returns all permissions for a specific resource instance.
+// ListByResource returns all permissions for one resource.
+// rowID 0 is the permission that covers the whole table.
 func (s *PermissionService) ListByResource(ctx context.Context, table string, rowID int64, opts ...ListOption) ([]Permission, error) {
 	opts = append([]ListOption{WithFilter(fmt.Sprintf("table eq '%s' and row eq %d", escapeFilterValue(table), rowID))}, opts...)
 	return s.List(ctx, opts...)
@@ -70,6 +71,7 @@ func (s *PermissionService) Get(ctx context.Context, id int) (*Permission, error
 
 // GetByIdentityAndResource returns the permission for an identity key and resource.
 // identity is User.Identity, Group.Identity, or the result of IdentityOf.
+// rowID 0 is the permission that covers the whole table.
 func (s *PermissionService) GetByIdentityAndResource(ctx context.Context, identity IdentityKey, table string, rowID int64) (*Permission, error) {
 	permissions, err := s.List(ctx, WithFilter(fmt.Sprintf("identity eq %d and table eq '%s' and row eq %d", identity, escapeFilterValue(table), rowID)))
 	if err != nil {
@@ -83,6 +85,7 @@ func (s *PermissionService) GetByIdentityAndResource(ctx context.Context, identi
 }
 
 // Create creates a new permission and returns the created permission.
+// Row 0 covers the whole table. A negative row is rejected.
 func (s *PermissionService) Create(ctx context.Context, req *PermissionCreateRequest) (*Permission, error) {
 	if req == nil {
 		return nil, &ValidationError{Message: "create request is required"}
@@ -93,8 +96,8 @@ func (s *PermissionService) Create(ctx context.Context, req *PermissionCreateReq
 	if req.Table == "" {
 		return nil, &ValidationError{Field: "table", Message: "table is required"}
 	}
-	if req.Row <= 0 {
-		return nil, &ValidationError{Field: "row", Message: "row is required"}
+	if req.Row < 0 {
+		return nil, &ValidationError{Field: "row", Message: "row must be zero or greater"}
 	}
 
 	var resp apiResponse
@@ -138,6 +141,7 @@ func (s *PermissionService) Delete(ctx context.Context, id int) error {
 
 // Grant creates a permission for an identity key.
 // identity is User.Identity, Group.Identity, or the result of IdentityOf.
+// rowID 0 covers the whole table.
 // When read is true, list is set as well. The API does the same when read is set.
 func (s *PermissionService) Grant(ctx context.Context, identity IdentityKey, table string, rowID int64, read, modify, delete bool) (*Permission, error) {
 	list := read
@@ -152,12 +156,14 @@ func (s *PermissionService) Grant(ctx context.Context, identity IdentityKey, tab
 	})
 }
 
-// GrantReadOnly grants read-only access to a resource for an identity key.
+// GrantReadOnly grants read-only access for an identity key.
+// rowID 0 covers the whole table.
 func (s *PermissionService) GrantReadOnly(ctx context.Context, identity IdentityKey, table string, rowID int64) (*Permission, error) {
 	return s.Grant(ctx, identity, table, rowID, true, false, false)
 }
 
-// GrantFullAccess grants full access (read, modify, delete) to a resource for an identity key.
+// GrantFullAccess grants full access (read, modify, delete) for an identity key.
+// rowID 0 covers the whole table.
 func (s *PermissionService) GrantFullAccess(ctx context.Context, identity IdentityKey, table string, rowID int64) (*Permission, error) {
 	t := true
 	return s.Create(ctx, &PermissionCreateRequest{
@@ -173,6 +179,7 @@ func (s *PermissionService) GrantFullAccess(ctx context.Context, identity Identi
 }
 
 // Revoke deletes the permission for an identity key and resource.
+// rowID 0 is the permission that covers the whole table.
 // A missing permission is not an error.
 func (s *PermissionService) Revoke(ctx context.Context, identity IdentityKey, table string, rowID int64) error {
 	perm, err := s.GetByIdentityAndResource(ctx, identity, table, rowID)

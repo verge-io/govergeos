@@ -13,6 +13,7 @@
 
 ### Fixed
 
+- `Permissions.Create`, `Grant`, `GrantReadOnly`, and `GrantFullAccess` accept row 0. VergeOS uses row 0 for a permission that covers a whole table. A negative row is still rejected. The create body sends `"row":0`.
 - `UserAPIKeys.Create` reads the new key's secret from `response.private_key`. VergeOS 26.2 returns the secret under that name, and Create was returning an empty token with no error. A response that still uses `response.token` is accepted. When the response has no secret, Create returns an error that includes the new key id. The key row already exists.
 - A permission grant can no longer be aimed at a user or group row key by following the old `Identity: userID` example. That call compiled, VergeOS accepted it, and the grant was stored for a different principal when the row key matched someone else's identity. The methods now require the identity key.
 
