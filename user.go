@@ -67,6 +67,19 @@ func (s *UserService) GetByName(ctx context.Context, name string) (*User, error)
 	return &users[0], nil
 }
 
+// IdentityOf returns the identities-table key for the user with this row key.
+// Permissions are granted to that key. It is loaded from the identity column.
+func (s *UserService) IdentityOf(ctx context.Context, id int) (IdentityKey, error) {
+	user, err := s.Get(ctx, id)
+	if err != nil {
+		return 0, err
+	}
+	if user.Identity <= 0 {
+		return 0, &ValidationError{Field: "identity", Message: fmt.Sprintf("user %d has no identity", id)}
+	}
+	return user.Identity, nil
+}
+
 // Create creates a new user and returns the created user.
 func (s *UserService) Create(ctx context.Context, req *UserCreateRequest) (*User, error) {
 	if req == nil {

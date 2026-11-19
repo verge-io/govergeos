@@ -176,6 +176,16 @@ func stubVMsByMachine(machine, vmID int, snapshot bool) http.HandlerFunc {
 }
 
 // jsonResponse writes a JSON response with the given status code.
+// fieldListHas reports whether a comma-separated VergeOS fields query names field.
+func fieldListHas(fields, field string) bool {
+	for _, name := range strings.Split(fields, ",") {
+		if name == field {
+			return true
+		}
+	}
+	return false
+}
+
 func jsonResponse(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

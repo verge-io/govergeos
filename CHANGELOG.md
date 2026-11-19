@@ -2,9 +2,19 @@
 
 ## Unreleased
 
+### Breaking
+
+- Permission methods take an `IdentityKey`, the identities-table key, instead of an `int`. This covers `PermissionCreateRequest.Identity`, `Permission.Identity`, `Permissions.Create`, `Grant`, `GrantReadOnly`, `GrantFullAccess`, `Revoke`, `ListByIdentity`, and `GetByIdentityAndResource`. An `int` user key or group key no longer compiles in that position. `IdentityKey` still has `Int()`, and JSON still accepts a number or a numeric string.
+- A stored identity number converts with `IdentityKey(n)`. That conversion does not read a user or a group. `IdentityKey(userKey)` and `IdentityKey(user.Key)` wrap the number as given. When that number is a row key, the grant is stored for whichever principal owns the identity with the same number. Pass `User.Identity`, `Group.Identity`, `Users.IdentityOf`, or `Groups.IdentityOf` instead.
+
+### Added
+
+- `User.Identity` and `Group.Identity` are the `identity` column on `users` and `groups`. List and Get request it. `Users.IdentityOf` and `Groups.IdentityOf` return that key for a row key, and return an error when the row has none. A missing row is `NotFoundError`.
+
 ### Fixed
 
 - `UserAPIKeys.Create` reads the new key's secret from `response.private_key`. VergeOS 26.2 returns the secret under that name, and Create was returning an empty token with no error. A response that still uses `response.token` is accepted. When the response has no secret, Create returns an error that includes the new key id. The key row already exists.
+- A permission grant can no longer be aimed at a user or group row key by following the old `Identity: userID` example. That call compiled, VergeOS accepted it, and the grant was stored for a different principal when the row key matched someone else's identity. The methods now require the identity key.
 
 ## v0.5.0 - 2026-11-16
 

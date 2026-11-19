@@ -224,3 +224,73 @@ func TestGroupService_Delete_NotFound(t *testing.T) {
 		t.Errorf("expected NotFoundError, got %T: %v", err, err)
 	}
 }
+
+func TestGroupService_Get_Identity(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/groups/4": func(w http.ResponseWriter, r *http.Request) {
+			if !fieldListHas(r.URL.Query().Get("fields"), "identity") {
+				t.Errorf("fields %q do not request identity", r.URL.Query().Get("fields"))
+			}
+			jsonResponse(w, 200, json.RawMessage(`{"$key":4,"name":"operators","identity":"9"}`))
+		},
+	}))
+
+	group, err := client.Groups.Get(context.Background(), 4)
+	if err != nil {
+		t.Fatalf("Get failed: %v", err)
+	}
+	if group.Key != 4 {
+		t.Fatalf("key = %d, want 4", group.Key)
+	}
+	if group.Identity != 9 {
+		t.Fatalf("identity = %d, want 9", group.Identity)
+	}
+}
+
+func TestGroupService_IdentityOf(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/groups/4": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, json.RawMessage(`{"$key":4,"name":"operators","identity":9}`))
+		},
+	}))
+
+	identity, err := client.Groups.IdentityOf(context.Background(), 4)
+	if err != nil {
+		t.Fatalf("IdentityOf failed: %v", err)
+	}
+	if identity != 9 {
+		t.Fatalf("identity = %d, want 9", identity)
+	}
+}
+
+func TestGroupService_IdentityOf_Missing(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/groups/4": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 200, Group{Key: 4, Name: "operators"})
+		},
+	}))
+
+	_, err := client.Groups.IdentityOf(context.Background(), 4)
+	if err == nil {
+		t.Fatal("expected error when identity is absent")
+	}
+	if !IsValidationError(err) {
+		t.Fatalf("expected ValidationError, got %T: %v", err, err)
+	}
+}
+
+func TestGroupService_IdentityOf_NotFound(t *testing.T) {
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"GET /api/v4/groups/4": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 404, map[string]string{"err": "not found"})
+		},
+	}))
+
+	_, err := client.Groups.IdentityOf(context.Background(), 4)
+	if err == nil {
+		t.Fatal("expected error for not found")
+	}
+	if !IsNotFoundError(err) {
+		t.Fatalf("expected NotFoundError, got %T: %v", err, err)
+	}
+}

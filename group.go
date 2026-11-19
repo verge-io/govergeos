@@ -66,6 +66,19 @@ func (s *GroupService) GetByName(ctx context.Context, name string) (*Group, erro
 	return &groups[0], nil
 }
 
+// IdentityOf returns the identities-table key for the group with this row key.
+// Permissions are granted to that key. It is loaded from the identity column.
+func (s *GroupService) IdentityOf(ctx context.Context, id int) (IdentityKey, error) {
+	group, err := s.Get(ctx, id)
+	if err != nil {
+		return 0, err
+	}
+	if group.Identity <= 0 {
+		return 0, &ValidationError{Field: "identity", Message: fmt.Sprintf("group %d has no identity", id)}
+	}
+	return group.Identity, nil
+}
+
 // Create creates a new group and returns it.
 func (s *GroupService) Create(ctx context.Context, req *GroupCreateRequest) (*Group, error) {
 	if req == nil {

@@ -8,6 +8,10 @@ type User struct {
 	Key FlexInt `json:"$key,omitempty"`
 	// ID is the 40-character unique user identifier string.
 	ID string `json:"id,omitempty"`
+	// Identity is the identities-table key for this user.
+	// Permissions are granted to this key. It is read from the identity
+	// column, and it is a different number from Key.
+	Identity IdentityKey `json:"identity,omitempty"`
 	// AuthSource is the authentication source ID.
 	AuthSource int `json:"auth_source,omitempty"`
 	// Name is the username.
@@ -142,7 +146,7 @@ type UserUpdateRequest struct {
 }
 
 // userListFields are the fields to request when listing users.
-const userListFields = "$key,id,auth_source,name,remote_name,enabled,displayname,email,type,created,creator,change_password,failed_attempts,account_locked,last_login,two_factor_authentication,two_factor_type,physical_access,ssh_keys,theme"
+const userListFields = "$key,id,identity,auth_source,name,remote_name,enabled,displayname,email,type,created,creator,change_password,failed_attempts,account_locked,last_login,two_factor_authentication,two_factor_type,physical_access,ssh_keys,theme"
 
 // GetSSHKeys returns the SSH keys as a slice of public key strings.
 // SSH keys are stored as newline-separated values.

@@ -112,6 +112,47 @@ func TestFlexFK_MarshalJSON(t *testing.T) {
 	}
 }
 
+func TestIdentityKey_JSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		in      string
+		want    IdentityKey
+		wantErr bool
+	}{
+		{name: "number", in: `16`, want: 16},
+		{name: "string", in: `"16"`, want: 16},
+		{name: "empty string", in: `""`, want: 0},
+		{name: "object", in: `{"$key":16}`, wantErr: true},
+		{name: "text", in: `"abc"`, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got IdentityKey
+			err := json.Unmarshal([]byte(tt.in), &got)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("expected error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("got %d, want %d", got, tt.want)
+			}
+		})
+	}
+
+	data, err := json.Marshal(IdentityKey(16))
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if string(data) != "16" {
+		t.Fatalf("marshal = %s, want 16", data)
+	}
+}
+
 func TestFlexFK_InStruct(t *testing.T) {
 	type row struct {
 		Key     FlexInt `json:"$key"`
