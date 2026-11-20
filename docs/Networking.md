@@ -75,7 +75,7 @@ if latest != nil {
 
 VergeOS 26.2 adds `DHCPBroadcast` for dynamic external networks, VLAN bond settings (`VLANBondModeBalanceSLB` is source load balancing), and `bgp_advanced` with the BGP console size. Those columns are requested only when the server is 26.2.0 or later. The saved vtysh text (`advanced_config`) and the `daemon_*` flags, including `daemon_sharpd`, are columns on `vnet_bgp`. `GetAdvancedRouter` reads that row.
 
-`VNetBondInterfaces` is the bond member table. `Primary` is included on 26.2 and later. `NetworkQueryWakeOnLAN` runs a Wake-on-LAN query.
+`VNetBondInterfaces` reads `vnet_bond_interfaces`. Each row links a bond network (`parent_vnet`, the table parent) to a member network (`child_vnet`). Both columns are required and read-only. `ListByNetwork` filters on `parent_vnet`. `Primary` is included on 26.2 and later. `NetworkQueryWakeOnLAN` runs a Wake-on-LAN query.
 
 ```go
 broadcast := true
@@ -90,11 +90,14 @@ router, err := client.Networks.GetAdvancedRouter(ctx, networkID)
 fmt.Println(router.Config, router.Daemons.BGP, router.Enabled)
 
 members, err := client.VNetBondInterfaces.ListByNetwork(ctx, networkID)
+for _, row := range members {
+    fmt.Println(int(row.ParentVNet), int(row.ChildVNet), row.Primary)
+}
 primary := true
 member, err := client.VNetBondInterfaces.Update(ctx, memberID, &vergeos.VNetBondInterfaceUpdateRequest{
     Primary: &primary,
 })
-fmt.Println(members, member.Primary)
+fmt.Println(member.Primary)
 
 wol, err := client.Networks.RunQuery(ctx, &vergeos.NetworkQueryRequest{
     VNet: networkID,

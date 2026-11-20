@@ -4,6 +4,7 @@
 
 ### Breaking
 
+- `VNetBondInterface.VNet` and `VNetBondInterface.Interface` are `ParentVNet` (`parent_vnet`) and `ChildVNet` (`child_vnet`). `vnet_bond_interfaces` stores the bond as `parent_vnet` and the member network as `child_vnet`. Both columns are required and read-only. The old names are not columns, so those fields were always zero. `ListByNetwork` filters `parent_vnet`.
 - Permission methods take an `IdentityKey`, the identities-table key, instead of an `int`. This covers `PermissionCreateRequest.Identity`, `Permission.Identity`, `Permissions.Create`, `Grant`, `GrantReadOnly`, `GrantFullAccess`, `Revoke`, `ListByIdentity`, and `GetByIdentityAndResource`. An `int` user key or group key no longer compiles in that position. `IdentityKey` still has `Int()`, and JSON still accepts a number or a numeric string.
 - A stored identity number converts with `IdentityKey(n)`. That conversion does not read a user or a group. `IdentityKey(userKey)` and `IdentityKey(user.Key)` wrap the number as given. When that number is a row key, the grant is stored for whichever principal owns the identity with the same number. Pass `User.Identity`, `Group.Identity`, `Users.IdentityOf`, or `Groups.IdentityOf` instead.
 
@@ -13,6 +14,7 @@
 
 ### Fixed
 
+- `VNetBondInterfaces` requests `$key,parent_vnet,child_vnet`. `primary` is still requested only on 26.2 and later. `ListByNetwork` filters `parent_vnet eq <id>`.
 - `Permissions.Create`, `Grant`, `GrantReadOnly`, and `GrantFullAccess` accept row 0. VergeOS uses row 0 for a permission that covers a whole table. A negative row is still rejected. The create body sends `"row":0`.
 - `UserAPIKeys.Create` reads the new key's secret from `response.private_key`. VergeOS 26.2 returns the secret under that name, and Create was returning an empty token with no error. A response that still uses `response.token` is accepted. When the response has no secret, Create returns an error that includes the new key id. The key row already exists.
 - A permission grant can no longer be aimed at a user or group row key by following the old `Identity: userID` example. That call compiled, VergeOS accepted it, and the grant was stored for a different principal when the row key matched someone else's identity. The methods now require the identity key.

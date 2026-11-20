@@ -646,10 +646,15 @@ func TestAdvancedRouterAndBondPrimary(t *testing.T) {
 			})
 		},
 		"GET /api/v4/vnet_bond_interfaces": func(w http.ResponseWriter, r *http.Request) {
-			if !fieldSet(r.URL.Query().Get("fields"))["primary"] {
-				t.Errorf("fields %s", r.URL.Query().Get("fields"))
+			fields := r.URL.Query().Get("fields")
+			if fields != vnetBondInterfaceListFields+","+vnetBondInterface262Fields {
+				t.Errorf("fields %s", fields)
 			}
-			jsonResponse(w, 200, []VNetBondInterface{{Key: 8, VNet: 3, Interface: 2, Primary: true}})
+			if r.URL.Query().Get("filter") != "parent_vnet eq 3" {
+				t.Errorf("filter %s", r.URL.Query().Get("filter"))
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`[{"$key":8,"parent_vnet":3,"child_vnet":12,"primary":true}]`))
 		},
 		"PUT /api/v4/vnet_bond_interfaces/8": func(w http.ResponseWriter, r *http.Request) {
 			var body map[string]any
@@ -676,7 +681,7 @@ func TestAdvancedRouterAndBondPrimary(t *testing.T) {
 	}
 
 	rows, err := client.VNetBondInterfaces.ListByNetwork(context.Background(), 3)
-	if err != nil || len(rows) != 1 || !rows[0].Primary {
+	if err != nil || len(rows) != 1 || !rows[0].Primary || int(rows[0].ParentVNet) != 3 || int(rows[0].ChildVNet) != 12 {
 		t.Fatalf("bonds %#v err %v", rows, err)
 	}
 	updated, err := client.VNetBondInterfaces.Update(context.Background(), 8, &VNetBondInterfaceUpdateRequest{Primary: boolPtr(true)})
