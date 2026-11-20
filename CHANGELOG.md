@@ -14,6 +14,7 @@
 
 ### Fixed
 
+- `Certificates.Create` writes `DomainName` as the first entry of `domainlist`. On `certificates`, `domainname` is read-only and is copied from the issued certificate, so a create body that sent `domainname` was accepted and ignored. A self-signed certificate with no `domainlist` was issued for the system default names (`verge-api`, `yb-api`, `localhost`), `domain` stayed empty, and `GetByDomain` missed the row. Marshaling `CertificateCreateRequest` omits `domainname` and sends the name in `domainlist`. The Go field is still `DomainName`. `Certificate.DomainName` reads the `domainname` column, and List and Get request it.
 - `VNetBondInterfaces` requests `$key,parent_vnet,child_vnet`. `primary` is still requested only on 26.2 and later. `ListByNetwork` filters `parent_vnet eq <id>`.
 - `Permissions.Create`, `Grant`, `GrantReadOnly`, and `GrantFullAccess` accept row 0. VergeOS uses row 0 for a permission that covers a whole table. A negative row is still rejected. The create body sends `"row":0`.
 - `UserAPIKeys.Create` reads the new key's secret from `response.private_key`. VergeOS 26.2 returns the secret under that name, and Create was returning an empty token with no error. A response that still uses `response.token` is accepted. When the response has no secret, Create returns an error that includes the new key id. The key row already exists.

@@ -104,7 +104,19 @@ func TestCertificatesCRUD(t *testing.T) {
 		t.Fatalf("Certificates.Create (self-signed) failed: %v", err)
 	}
 	certID := int(cert.Key)
-	t.Logf("Created certificate: [%d] Domain=%q Type=%q Valid=%v", certID, cert.Domain, cert.Type, cert.Valid)
+	t.Logf("Created certificate: [%d] Domain=%q DomainName=%q Type=%q Valid=%v", certID, cert.Domain, cert.DomainName, cert.Type, cert.Valid)
+	if cert.Domain != "sdk-test.local" {
+		t.Errorf("created certificate domain = %q, want sdk-test.local", cert.Domain)
+	}
+	if cert.DomainName != "sdk-test.local" {
+		t.Errorf("created certificate domainname = %q, want sdk-test.local", cert.DomainName)
+	}
+	byName, err := client.Certificates.GetByDomain(ctx, "sdk-test.local")
+	if err != nil {
+		t.Errorf("Certificates.GetByDomain(sdk-test.local) failed: %v", err)
+	} else if int(byName.Key) != certID {
+		t.Errorf("GetByDomain key = %d, want %d", int(byName.Key), certID)
+	}
 
 	// Cleanup: delete certificate when done
 	defer func() {

@@ -27,7 +27,12 @@ cert, err := client.Certificates.Create(ctx, &vergeos.CertificateCreateRequest{
     AgreeTOS:   ptr(true),
 })
 
-// Create a self-signed certificate
+// Create a self-signed certificate.
+// DomainName is the name VergeOS puts on the certificate. The client sends
+// it as domainlist, which is the column VergeOS stores. The domainname
+// column is filled from the issued certificate and is read-only on create.
+// A self-signed certificate with no names is issued for verge-api, yb-api,
+// and localhost, and GetByDomain cannot find it.
 cert, err := client.Certificates.Create(ctx, &vergeos.CertificateCreateRequest{
     DomainName: "internal.local",
     Type:       vergeos.CertificateTypeSelfSigned,

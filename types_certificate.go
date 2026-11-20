@@ -1,12 +1,22 @@
 package vergeos
 
+import (
+	"encoding/json"
+	"strings"
+)
+
 // Certificate represents a VergeOS SSL/TLS certificate.
 type Certificate struct {
 	// Key is the unique identifier for the certificate.
 	Key FlexInt `json:"$key,omitempty"`
-	// Domain is the primary domain for this certificate (read-only).
+	// Domain is the primary domain stored on the certificates row (read-only).
+	// VergeOS fills it from the first name in domainlist when the certificate is created.
 	Domain string `json:"domain,omitempty"`
-	// DomainList is a comma-separated list of additional domains (SANs).
+	// DomainName is the domain written on the issued certificate (read-only).
+	// The certificates table copies this from the certificate itself. A create
+	// request cannot set the column.
+	DomainName string `json:"domainname,omitempty"`
+	// DomainList is a comma-separated list of names on the certificate.
 	DomainList string `json:"domainlist,omitempty"`
 	// Description is an optional description.
 	Description string `json:"description,omitempty"`
@@ -46,9 +56,17 @@ type Certificate struct {
 
 // CertificateCreateRequest is the request body for creating a certificate.
 type CertificateCreateRequest struct {
-	// DomainName is the primary domain for the certificate (required for manual/self-signed).
+	// DomainName is the primary name to put on the certificate.
+	// VergeOS stores certificate names in domainlist. The domainname column
+	// is read-only and is filled from the issued certificate, so a create
+	// body that sends domainname is ignored. With no names in domainlist,
+	// a self-signed certificate is issued for the system default names and
+	// the domain column stays empty. MarshalJSON writes DomainName as the
+	// first domainlist entry and does not send domainname.
+	// A body that still uses domainname decodes into this field.
 	DomainName string `json:"domainname,omitempty"`
-	// DomainList is a comma-separated list of additional domains (SANs).
+	// DomainList is a comma-separated list of additional names (SANs).
+	// When DomainName is set, it is placed first and is not repeated here.
 	DomainList string `json:"domainlist,omitempty"`
 	// Description is an optional description.
 	Description string `json:"description,omitempty"`
@@ -76,6 +94,37 @@ type CertificateCreateRequest struct {
 	AgreeTOS *bool `json:"agree_tos,omitempty"`
 	// Renew forces renewal of an existing certificate.
 	Renew *bool `json:"renew,omitempty"`
+}
+
+// MarshalJSON writes DomainName into domainlist. domainname is read-only on
+// the certificates table, and VergeOS drops it on create.
+func (r CertificateCreateRequest) MarshalJSON() ([]byte, error) {
+	type certificateCreateWire CertificateCreateRequest
+	body := certificateCreateWire(r)
+	// Clear the read-only column so the encoded body cannot send it.
+	body.DomainName = ""
+	body.DomainList = certificateDomainList(r.DomainName, r.DomainList)
+	return json.Marshal(body)
+}
+
+// certificateDomainList returns the domainlist value VergeOS stores.
+// primary is the name from DomainName. It is first. A later copy of that
+// same name is dropped. When primary is empty, list is returned unchanged.
+func certificateDomainList(primary, list string) string {
+	primary = strings.TrimSpace(primary)
+	if primary == "" {
+		return list
+	}
+	var names []string
+	for _, part := range strings.Split(list, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" || part == primary {
+			continue
+		}
+		names = append(names, part)
+	}
+	names = append([]string{primary}, names...)
+	return strings.Join(names, ",")
 }
 
 // CertificateUpdateRequest is the request body for updating a certificate.
@@ -127,7 +176,7 @@ const (
 )
 
 // certificateListFields are the fields to request when listing certificates.
-const certificateListFields = "$key,domain,domainlist,description,type,acme_server,key_type,rsa_key_size,contact,agree_tos,valid,autocreated,expires,created,modified"
+const certificateListFields = "$key,domain,domainname,domainlist,description,type,acme_server,key_type,rsa_key_size,contact,agree_tos,valid,autocreated,expires,created,modified"
 
 // certificateGetFields are the fields to request when getting a single certificate.
 // Note: public, private, chain are excluded by default for security.
