@@ -47,7 +47,9 @@ func (s *CertificateService) Get(ctx context.Context, id int) (*Certificate, err
 	return &cert, nil
 }
 
-// GetByDomain returns a certificate by its primary domain.
+// GetByDomain returns a certificate by the domain column.
+// VergeOS fills that column from the first name in domainlist. A row created
+// with no domainlist has an empty domain, so this lookup does not find it.
 func (s *CertificateService) GetByDomain(ctx context.Context, domain string) (*Certificate, error) {
 	certs, err := s.List(ctx, WithFilter(fmt.Sprintf("domain eq '%s'", escapeFilterValue(domain))))
 	if err != nil {
