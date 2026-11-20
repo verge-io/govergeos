@@ -979,8 +979,41 @@ func (c *Client) putRaw(ctx context.Context, endpoint string, body any) (json.Ra
 }
 
 // delete performs a DELETE request.
+//
+// On HTTP 404, delete reads the same path with fields=$key. $key is the row
+// key on every table. When that read is also 404, the error is returned
+// unchanged and the caller reports NotFoundError. When the read is anything
+// else, the 404 is marked so the caller leaves it as an APIError carrying
+// the platform message. VergeOS uses 404 for a trigger that cannot find a
+// related row, and that delete does not remove the row. The check does not
+// use the error text: the trigger message ends with "No such file or
+// directory", which is also what a missing row says. VergeOS omits a field
+// name it does not know, so a live row is still HTTP 200.
 func (c *Client) delete(ctx context.Context, endpoint string) error {
-	return c.do(ctx, http.MethodDelete, endpoint, nil, nil, nil)
+	err := c.do(ctx, http.MethodDelete, endpoint, nil, nil, nil)
+	if err == nil {
+		return nil
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok || apiErr.StatusCode != http.StatusNotFound {
+		return err
+	}
+	if c.deletedRowAbsent(ctx, endpoint) {
+		return err
+	}
+	kept := *apiErr
+	kept.rowPresent = true
+	return &kept
+}
+
+// deletedRowAbsent reports whether a read of endpoint is HTTP 404.
+// Any other result, including a live row and a failed read, means the
+// delete 404 is not proof that the id is gone.
+func (c *Client) deletedRowAbsent(ctx context.Context, endpoint string) bool {
+	params := url.Values{}
+	params.Set("fields", "$key")
+	err := c.get(ctx, endpoint, params, nil)
+	return statusNotFound(err)
 }
 
 // getAbsolute performs a GET request to an absolute path (not under /api/v4/).
@@ -1029,9 +1062,10 @@ func (c *Client) getAbsolute(ctx context.Context, path string, params url.Values
 // apiStatusError maps a non-success HTTP status to an SDK error.
 // 401 is an authentication failure, 403 is a permission denial, and 409
 // is a conflict. Other statuses, including 404, are a plain APIError.
-// A read or delete of one row turns that 404 into NotFoundError.
-// A create or update leaves it as APIError: the 404 can name a missing
-// related row while the row being written still exists.
+// A read of one row turns that 404 into NotFoundError. A delete does too
+// when a follow-up read of the same path is missing. A create, an update,
+// or a delete whose row is still readable leaves the 404 as APIError:
+// the 404 can name a missing related row while that row still exists.
 func apiStatusError(status int, endpoint, message string) error {
 	switch status {
 	case http.StatusUnauthorized:

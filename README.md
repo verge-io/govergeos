@@ -536,7 +536,7 @@ if err != nil {
 }
 ```
 
-`IsNotFoundError` means that resource does not exist. A 404 from create or update is an `APIError` with the platform message, and `IsNotFoundError` is false: VergeOS also returns 404 when the request names a related row that is missing, while the row being written still exists. `Get` and `Delete` of a missing id are `NotFoundError`.
+`IsNotFoundError` means that resource does not exist. A 404 from create or update is an `APIError` with the platform message, and `IsNotFoundError` is false: VergeOS also returns 404 when the request names a related row that is missing, while the row being written still exists. `Get` of a missing id is `NotFoundError`. `Delete` is `NotFoundError` when a read of that same id is missing too. A delete 404 whose row is still readable stays an `APIError` with the platform message. That happens when a trigger on the row cannot find a related row: the delete is refused and the row stays.
 
 ## Thread Safety
 

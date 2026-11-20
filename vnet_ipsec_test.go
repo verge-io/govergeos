@@ -710,9 +710,24 @@ func TestVNetIPSecPhase2Service_Delete(t *testing.T) {
 }
 
 func TestVNetIPSecPhase2Service_Delete_NotFound(t *testing.T) {
+	const platform = "No such file or directory"
+	var checked bool
 	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
 		"DELETE /api/v4/vnet_ipsec_phase2s/999": func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, 404, map[string]string{"err": "not found"})
+			if r.URL.RawQuery != "" {
+				t.Errorf("delete query = %q", r.URL.RawQuery)
+			}
+			jsonResponse(w, 404, map[string]string{"err": platform})
+		},
+		"GET /api/v4/vnet_ipsec_phase2s/999": func(w http.ResponseWriter, r *http.Request) {
+			checked = true
+			if r.URL.Query().Get("fields") != "$key" {
+				t.Errorf("fields = %q, want $key", r.URL.Query().Get("fields"))
+			}
+			if r.URL.Query().Get("filter") != "" {
+				t.Errorf("filter = %q", r.URL.Query().Get("filter"))
+			}
+			jsonResponse(w, 404, map[string]string{"err": platform})
 		},
 	}))
 
@@ -722,6 +737,142 @@ func TestVNetIPSecPhase2Service_Delete_NotFound(t *testing.T) {
 	}
 	if !IsNotFoundError(err) {
 		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	}
+	if !checked {
+		t.Fatal("delete 404 was not checked with a read of the same row")
+	}
+}
+
+// ipsecPhase2Trigger404 is the VergeOS 26.2 body for DELETE /vnet_ipsec_phase2s/1
+// after the parent network has been removed. The phase 2 row is still there.
+const ipsecPhase2Trigger404 = "Error from put in trigger 'put:vnet_ipsec_phase1s/{phase1}?need_fw_apply=true' table 'vnet_ipsec_phase2s' - Error from put in trigger 'put:vnet_ipsecs/{ipsec}?need_fw_apply=true' table 'vnet_ipsec_phase1s' - Error from put in trigger 'put:vnets/{vnet}?need_fw_apply=true' table 'vnet_ipsecs' - No such file or directory"
+
+func TestVNetIPSecPhase2Service_Delete_RowStillPresent(t *testing.T) {
+	const path = "/api/v4/vnet_ipsec_phase2s/1"
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"DELETE " + path: func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != path {
+				t.Errorf("path = %s", r.URL.Path)
+			}
+			if r.URL.RawQuery != "" {
+				t.Errorf("delete query = %q", r.URL.RawQuery)
+			}
+			jsonResponse(w, 404, map[string]string{"err": ipsecPhase2Trigger404})
+		},
+		"GET " + path: func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Query().Get("filter") != "" {
+				t.Errorf("filter = %q", r.URL.Query().Get("filter"))
+			}
+			switch r.URL.Query().Get("fields") {
+			case "$key":
+				jsonResponse(w, 200, map[string]any{"$key": 1})
+			case vnetIPSecPhase2GetFields:
+				jsonResponse(w, 200, VNetIPSecPhase2{Key: 1, Name: "lan-to-lan"})
+			default:
+				t.Errorf("fields = %q", r.URL.Query().Get("fields"))
+				jsonResponse(w, 400, map[string]string{"err": "unexpected fields"})
+			}
+		},
+	}))
+
+	err := client.VNetIPSecPhase2s.Delete(context.Background(), 1)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if IsNotFoundError(err) {
+		t.Fatalf("delete reported the phase 2 as missing: %v", err)
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok || apiErr.StatusCode != 404 || apiErr.Message != ipsecPhase2Trigger404 {
+		t.Fatalf("got %T %#v", err, err)
+	}
+	if apiErr.Endpoint != "/vnet_ipsec_phase2s/1" {
+		t.Fatalf("endpoint = %q", apiErr.Endpoint)
+	}
+
+	got, gerr := client.VNetIPSecPhase2s.Get(context.Background(), 1)
+	if gerr != nil {
+		t.Fatalf("phase 2 still exists, Get failed: %v", gerr)
+	}
+	if got.Name != "lan-to-lan" {
+		t.Fatalf("phase 2 = %+v", got)
+	}
+}
+
+func TestVNetIPSecPhase2Service_Delete_ReadOmitsKey(t *testing.T) {
+	const platform = "No such file or directory"
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"DELETE /api/v4/vnet_ipsec_phase2s/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 404, map[string]string{"err": platform})
+		},
+		"GET /api/v4/vnet_ipsec_phase2s/1": func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Query().Get("fields") != "$key" {
+				t.Errorf("fields = %q, want $key", r.URL.Query().Get("fields"))
+			}
+			// A 200 with no $key is what a dropped field list looks like.
+			// The path still answered, so the id is not missing.
+			jsonResponse(w, 200, map[string]any{})
+		},
+	}))
+
+	err := client.VNetIPSecPhase2s.Delete(context.Background(), 1)
+	if IsNotFoundError(err) {
+		t.Fatalf("a 200 read was reported as a missing row: %v", err)
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok || apiErr.StatusCode != 404 || apiErr.Message != platform {
+		t.Fatalf("got %T %#v", err, err)
+	}
+}
+
+func TestVNetIPSecPhase2Service_Delete_ReadFailed(t *testing.T) {
+	const platform = ipsecPhase2Trigger404
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"DELETE /api/v4/vnet_ipsec_phase2s/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 404, map[string]string{"err": platform})
+		},
+		"GET /api/v4/vnet_ipsec_phase2s/1": func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, 500, map[string]string{"err": "read failed"})
+		},
+	}))
+
+	err := client.VNetIPSecPhase2s.Delete(context.Background(), 1)
+	if IsNotFoundError(err) {
+		t.Fatalf("a failed read reported the phase 2 as missing: %v", err)
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok || apiErr.StatusCode != 404 || apiErr.Message != platform {
+		t.Fatalf("got %T %#v", err, err)
+	}
+}
+
+func TestVNetIPSecPhase1Service_Delete_RowStillPresent(t *testing.T) {
+	const platform = "Error from put in trigger 'put:vnet_ipsecs/{ipsec}?need_fw_apply=true' table 'vnet_ipsec_phase1s' - Error from put in trigger 'put:vnets/{vnet}?need_fw_apply=true' table 'vnet_ipsecs' - No such file or directory"
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"DELETE /api/v4/vnet_ipsec_phase1s/1": func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.RawQuery != "" {
+				t.Errorf("delete query = %q", r.URL.RawQuery)
+			}
+			jsonResponse(w, 404, map[string]string{"err": platform})
+		},
+		"GET /api/v4/vnet_ipsec_phase1s/1": func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Query().Get("fields") != "$key" {
+				t.Errorf("fields = %q, want $key", r.URL.Query().Get("fields"))
+			}
+			jsonResponse(w, 200, map[string]any{"$key": 1, "name": "bugtest-conn"})
+		},
+	}))
+
+	err := client.VNetIPSecPhase1s.Delete(context.Background(), 1)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if IsNotFoundError(err) {
+		t.Fatalf("delete reported the phase 1 as missing: %v", err)
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok || apiErr.StatusCode != 404 || apiErr.Message != platform {
+		t.Fatalf("got %T %#v", err, err)
 	}
 }
 
