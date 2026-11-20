@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -1667,5 +1668,170 @@ func TestVMService_GetGuestAgentInfo_NotFound(t *testing.T) {
 	}
 	if !IsNotFoundError(err) {
 		t.Errorf("expected NotFoundError, got %T: %v", err, err)
+	}
+}
+
+// vms stores the console type in console and the video adapter in video.
+// There is no display column. VergeOS drops an unknown key and still returns
+// success, so a body that sends display looks like it worked.
+func TestVMJSONUsesConsoleAndVideo(t *testing.T) {
+	raw := []byte(`{"$key":7,"name":"web","cpu_cores":2,"ram":2048,"enabled":true,"console":"spice","video":"qxl","display":"gtk"}`)
+	var vm VM
+	if err := json.Unmarshal(raw, &vm); err != nil {
+		t.Fatalf("unmarshal vm: %v", err)
+	}
+	if vm.Console != "spice" || vm.Video != "qxl" {
+		t.Fatalf("console=%q video=%q, want spice and qxl", vm.Console, vm.Video)
+	}
+
+	encoded, err := json.Marshal(vm)
+	if err != nil {
+		t.Fatalf("marshal vm: %v", err)
+	}
+	assertJSONFields(t, encoded, map[string]string{"console": "spice", "video": "qxl"}, "display")
+
+	createBody, err := json.Marshal(VMCreateRequest{
+		Name:     "web",
+		CPUCores: 2,
+		RAM:      2048,
+		Console:  "vnc",
+		Video:    "std",
+	})
+	if err != nil {
+		t.Fatalf("marshal create: %v", err)
+	}
+	assertJSONFields(t, createBody, map[string]string{"console": "vnc", "video": "std"}, "display")
+
+	console := "serial"
+	video := "none"
+	updateBody, err := json.Marshal(VMUpdateRequest{Console: &console, Video: &video})
+	if err != nil {
+		t.Fatalf("marshal update: %v", err)
+	}
+	assertJSONFields(t, updateBody, map[string]string{"console": "serial", "video": "none"}, "display")
+}
+
+func TestVMCreateAndUpdatePostConsoleAndVideo(t *testing.T) {
+	var mu sync.Mutex
+	row := []byte(`{"$key":7,"name":"web","cpu_cores":2,"ram":2048,"enabled":true,"console":"","video":""}`)
+	client := newTestClient(t, apiMux(map[string]http.HandlerFunc{
+		"POST /api/v4/vms": func(w http.ResponseWriter, r *http.Request) {
+			body := readJSONBody(t, r)
+			if body["console"] != "spice" || body["video"] != "qxl" {
+				t.Errorf("create body console=%#v video=%#v, want spice and qxl", body["console"], body["video"])
+			}
+			if _, ok := body["display"]; ok {
+				t.Errorf("create body sent display (%#v), which VergeOS ignores", body["display"])
+			}
+			mu.Lock()
+			row = []byte(`{"$key":7,"name":"web","cpu_cores":2,"ram":2048,"enabled":true,"console":"spice","video":"qxl"}`)
+			mu.Unlock()
+			jsonResponse(w, 200, apiResponse{Key: float64(7)})
+		},
+		"PUT /api/v4/vms/7": func(w http.ResponseWriter, r *http.Request) {
+			body := readJSONBody(t, r)
+			if body["console"] != "none" || body["video"] != "virtio" {
+				t.Errorf("update body console=%#v video=%#v, want none and virtio", body["console"], body["video"])
+			}
+			if _, ok := body["display"]; ok {
+				t.Errorf("update body sent display (%#v), which VergeOS ignores", body["display"])
+			}
+			mu.Lock()
+			row = []byte(`{"$key":7,"name":"web","cpu_cores":2,"ram":2048,"enabled":true,"console":"none","video":"virtio"}`)
+			mu.Unlock()
+			w.WriteHeader(http.StatusOK)
+		},
+		"GET /api/v4/vms/7": func(w http.ResponseWriter, r *http.Request) {
+			fields := fieldTokens(r.URL.Query().Get("fields"))
+			if fields["display"] {
+				t.Errorf("get requested display: %s", r.URL.Query().Get("fields"))
+			}
+			if !fields["console"] || !fields["video"] {
+				t.Errorf("get fields %q do not request console and video", r.URL.Query().Get("fields"))
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			mu.Lock()
+			payload := append([]byte(nil), row...)
+			mu.Unlock()
+			_, _ = w.Write(payload)
+		},
+	}))
+
+	created, err := client.VMs.Create(context.Background(), &VMCreateRequest{
+		Name:     "web",
+		CPUCores: 2,
+		RAM:      2048,
+		Console:  "spice",
+		Video:    "qxl",
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+	if created.Console != "spice" || created.Video != "qxl" {
+		t.Fatalf("created console=%q video=%q, want spice and qxl", created.Console, created.Video)
+	}
+
+	console := "none"
+	video := "virtio"
+	updated, err := client.VMs.Update(context.Background(), 7, &VMUpdateRequest{
+		Console: &console,
+		Video:   &video,
+	})
+	if err != nil {
+		t.Fatalf("Update failed: %v", err)
+	}
+	if updated.Console != "none" || updated.Video != "virtio" {
+		t.Fatalf("updated console=%q video=%q, want none and virtio", updated.Console, updated.Video)
+	}
+}
+
+func TestVMFieldProjectionOmitsDisplay(t *testing.T) {
+	projections := map[string]string{
+		"list": vmListFields,
+		"get":  vmGetFields,
+		"26.2": vm262Fields,
+	}
+	for name, fields := range projections {
+		seen := fieldTokens(fields)
+		if seen["display"] {
+			t.Errorf("%s projection requests display", name)
+		}
+		if name != "26.2" && (!seen["console"] || !seen["video"]) {
+			t.Errorf("%s projection = %q, want console and video", name, fields)
+		}
+	}
+}
+
+func fieldTokens(fields string) map[string]bool {
+	seen := make(map[string]bool)
+	for _, part := range strings.Split(fields, ",") {
+		seen[strings.TrimSpace(part)] = true
+	}
+	return seen
+}
+
+func readJSONBody(t *testing.T, r *http.Request) map[string]any {
+	t.Helper()
+	var body map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	return body
+}
+
+func assertJSONFields(t *testing.T, raw []byte, want map[string]string, absent string) {
+	t.Helper()
+	var body map[string]any
+	if err := json.Unmarshal(raw, &body); err != nil {
+		t.Fatalf("decode json: %v", err)
+	}
+	for key, value := range want {
+		if body[key] != value {
+			t.Errorf("%s = %#v, want %q", key, body[key], value)
+		}
+	}
+	if _, ok := body[absent]; ok {
+		t.Errorf("json sent %s (%#v), which VergeOS ignores", absent, body[absent])
 	}
 }

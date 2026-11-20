@@ -68,12 +68,10 @@ type VM struct {
 	// BootDelay is the boot delay in seconds.
 	BootDelay int `json:"boot_delay,omitempty"`
 
-	// Display and console
-	// Console is the console type.
+	// Console and video. The vms table has no display column.
+	// Console is the console type (vnc, spice, serial, none).
 	Console string `json:"console,omitempty"`
-	// Display is the display type.
-	Display string `json:"display,omitempty"`
-	// Video is the video adapter type.
+	// Video is the video adapter (std, cirrus, vmware, qxl, virtio, none).
 	Video string `json:"video,omitempty"`
 	// Sound is the sound device type.
 	Sound string `json:"sound,omitempty"`
@@ -208,12 +206,10 @@ type VMCreateRequest struct {
 	// BootDelay is the boot delay in seconds.
 	BootDelay *int `json:"boot_delay,omitempty"`
 
-	// Display and console
-	// Console is the console type.
+	// Console and video. The vms table has no display column.
+	// Console is the console type (vnc, spice, serial, none).
 	Console string `json:"console,omitempty"`
-	// Display is the display type.
-	Display string `json:"display,omitempty"`
-	// Video is the video adapter type.
+	// Video is the video adapter (std, cirrus, vmware, qxl, virtio, none).
 	Video string `json:"video,omitempty"`
 	// Sound is the sound device type.
 	Sound string `json:"sound,omitempty"`
@@ -327,12 +323,10 @@ type VMUpdateRequest struct {
 	// BootDelay is the boot delay in seconds.
 	BootDelay *int `json:"boot_delay,omitempty"`
 
-	// Display and console
-	// Console is the console type.
+	// Console and video. The vms table has no display column.
+	// Console is the console type (vnc, spice, serial, none).
 	Console *string `json:"console,omitempty"`
-	// Display is the display type.
-	Display *string `json:"display,omitempty"`
-	// Video is the video adapter type.
+	// Video is the video adapter (std, cirrus, vmware, qxl, virtio, none).
 	Video *string `json:"video,omitempty"`
 	// Sound is the sound device type.
 	Sound *string `json:"sound,omitempty"`
