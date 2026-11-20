@@ -14,6 +14,11 @@ type APIError struct {
 	Endpoint string
 	// Message is the error message from the API.
 	Message string
+	// rowPresent is set when a delete received 404 and a read of the same
+	// path was not itself 404. statusNotFound leaves that error as APIError.
+	// A live row, and a read that failed for another reason, both take this
+	// path so the caller does not treat the id as gone.
+	rowPresent bool
 }
 
 // Error implements the error interface.
@@ -283,10 +288,11 @@ func IsTimeoutError(err error) bool {
 
 // IsNotFoundError reports whether err means the requested resource does not exist.
 //
-// That is a NotFoundError: a read or delete of that resource, or a name lookup
-// that matched nothing. A 404 APIError is not enough. VergeOS returns 404 when
-// a create or update names a related row that is missing, and the row being
-// written can still exist. The APIError carries the platform message.
+// That is a NotFoundError: a read of that resource, a delete of an id that a
+// follow-up read also misses, or a name lookup that matched nothing. A 404
+// APIError is a different error. VergeOS returns 404 when a create, update,
+// or delete names a related row that is missing, and the row being written
+// or deleted can still exist. The APIError carries the platform message.
 func IsNotFoundError(err error) bool {
 	if err == nil {
 		return false
@@ -295,10 +301,14 @@ func IsNotFoundError(err error) bool {
 	return errors.As(err, &notFound)
 }
 
-// statusNotFound reports an HTTP 404, or an error already rewritten as
-// NotFoundError. Get and Delete of one row use it so a missing id stays
-// NotFoundError. Update does not: a 404 on a field write can name a missing
-// related row while that row still exists.
+// statusNotFound reports an HTTP 404 for an id that is gone, or an error
+// already rewritten as NotFoundError. Get uses it so a missing id stays
+// NotFoundError. Delete uses it after a read of the same path: the read
+// has to be missing too. A delete 404 whose row is still readable has
+// rowPresent set, and this returns false. VergeOS answers 404 when a
+// trigger on the row cannot find a related row, and that delete leaves
+// the row in place. Update does not treat a 404 as a missing id either:
+// a field write can name a missing related row while that row still exists.
 func statusNotFound(err error) bool {
 	if err == nil {
 		return false
@@ -307,7 +317,7 @@ func statusNotFound(err error) bool {
 		return true
 	}
 	var apiErr *APIError
-	return errors.As(err, &apiErr) && apiErr.StatusCode == 404
+	return errors.As(err, &apiErr) && apiErr.StatusCode == 404 && !apiErr.rowPresent
 }
 
 // IsAuthError returns true if the error is an AuthError or a 401 API error.

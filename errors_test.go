@@ -183,6 +183,21 @@ func TestIsNotFoundError_APIError404(t *testing.T) {
 	}
 }
 
+func TestStatusNotFound_DeleteRowStillPresent(t *testing.T) {
+	err := &APIError{
+		StatusCode: 404,
+		Endpoint:   "/vnet_ipsec_phase2s/1",
+		Message:    "Error from put in trigger 'put:vnets/{vnet}?need_fw_apply=true' table 'vnet_ipsecs' - No such file or directory",
+		rowPresent: true,
+	}
+	if statusNotFound(err) {
+		t.Fatal("statusNotFound reported a row that is still readable")
+	}
+	if IsNotFoundError(err) {
+		t.Fatal("IsNotFoundError reported a row that is still readable")
+	}
+}
+
 func TestIsNotFoundError_APIError500(t *testing.T) {
 	err := &APIError{StatusCode: 500, Endpoint: "/vms", Message: "server error"}
 	if IsNotFoundError(err) {

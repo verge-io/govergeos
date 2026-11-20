@@ -89,6 +89,9 @@
 //
 // A 404 from create or update is an APIError carrying the platform message.
 // IsNotFoundError is false for that error, because VergeOS also returns 404
-// when a related row named in the request is missing. Get and Delete of a
-// missing id are NotFoundError.
+// when a related row named in the request is missing. Get of a missing id is
+// NotFoundError. Delete is NotFoundError when a read of that id is missing
+// too. A delete 404 whose row is still readable stays an APIError. That is
+// a trigger that cannot find a related row: the delete is refused and the
+// row stays.
 package vergeos
