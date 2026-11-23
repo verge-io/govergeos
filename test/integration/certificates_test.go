@@ -5,6 +5,7 @@ package integration
 import (
 	"context"
 	"testing"
+	"time"
 
 	vergeos "github.com/verge-io/govergeos"
 )
@@ -89,7 +90,8 @@ func TestCertificatesList(t *testing.T) {
 // This creates a self-signed certificate to avoid needing external domains.
 func TestCertificatesCRUD(t *testing.T) {
 	client := setupTestClient(t)
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	t.Log("Testing Certificate CRUD with self-signed certificate...")
 
@@ -105,18 +107,6 @@ func TestCertificatesCRUD(t *testing.T) {
 	}
 	certID := int(cert.Key)
 	t.Logf("Created certificate: [%d] Domain=%q DomainName=%q Type=%q Valid=%v", certID, cert.Domain, cert.DomainName, cert.Type, cert.Valid)
-	if cert.Domain != "sdk-test.local" {
-		t.Errorf("created certificate domain = %q, want sdk-test.local", cert.Domain)
-	}
-	if cert.DomainName != "sdk-test.local" {
-		t.Errorf("created certificate domainname = %q, want sdk-test.local", cert.DomainName)
-	}
-	byName, err := client.Certificates.GetByDomain(ctx, "sdk-test.local")
-	if err != nil {
-		t.Errorf("Certificates.GetByDomain(sdk-test.local) failed: %v", err)
-	} else if int(byName.Key) != certID {
-		t.Errorf("GetByDomain key = %d, want %d", int(byName.Key), certID)
-	}
 
 	// Cleanup: delete certificate when done
 	defer func() {
@@ -127,6 +117,31 @@ func TestCertificatesCRUD(t *testing.T) {
 			t.Log("Test certificate deleted successfully")
 		}
 	}()
+
+	// VergeOS generates the certificate asynchronously; wait for domain to be populated.
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		if cert.Domain != "" {
+			break
+		}
+		time.Sleep(250 * time.Millisecond)
+		cert, err = client.Certificates.Get(ctx, certID)
+		if err != nil {
+			t.Fatalf("Certificates.Get failed while waiting for certificate issuance: %v", err)
+		}
+	}
+	if cert.Domain != "sdk-test.local" {
+		t.Errorf("issued certificate domain = %q, want sdk-test.local", cert.Domain)
+	}
+	if cert.DomainName != "sdk-test.local" {
+		t.Errorf("issued certificate domainname = %q, want sdk-test.local", cert.DomainName)
+	}
+	byName, err := client.Certificates.GetByDomain(ctx, "sdk-test.local")
+	if err != nil {
+		t.Errorf("Certificates.GetByDomain(sdk-test.local) failed: %v", err)
+	} else if int(byName.Key) != certID {
+		t.Errorf("GetByDomain key = %d, want %d", int(byName.Key), certID)
+	}
 
 	// Read
 	cert, err = client.Certificates.Get(ctx, certID)
