@@ -4,9 +4,19 @@ package integration
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"testing"
+	"time"
 
 	vergeos "github.com/verge-io/govergeos"
+)
+
+const (
+	// certificateDomainWait bounds how long TestCertificatesCRUD polls for
+	// domain and domainname. VergeOS copies them after Create returns.
+	certificateDomainWait = 30 * time.Second
+	certificateDomainPoll = 200 * time.Millisecond
 )
 
 // TestCertificatesList tests the Certificates service.
@@ -87,15 +97,20 @@ func TestCertificatesList(t *testing.T) {
 
 // TestCertificatesCRUD tests certificate create/update/delete operations.
 // This creates a self-signed certificate to avoid needing external domains.
+// Domain and domainname can still be empty on the create response. The
+// certificates loop copies them after it issues the certificate, so the
+// test polls Get before asserting them.
 func TestCertificatesCRUD(t *testing.T) {
 	client := setupTestClient(t)
 	ctx := context.Background()
 
 	t.Log("Testing Certificate CRUD with self-signed certificate...")
 
+	const domain = "sdk-test.local"
+
 	// Create a self-signed certificate
 	cert, err := client.Certificates.Create(ctx, &vergeos.CertificateCreateRequest{
-		DomainName:  "sdk-test.local",
+		DomainName:  domain,
 		Type:        vergeos.CertificateTypeSelfSigned,
 		Description: "goVergeOS integration test certificate - safe to delete",
 		KeyType:     vergeos.CertificateKeyTypeECDSA,
@@ -104,29 +119,43 @@ func TestCertificatesCRUD(t *testing.T) {
 		t.Fatalf("Certificates.Create (self-signed) failed: %v", err)
 	}
 	certID := int(cert.Key)
+	if certID == 0 {
+		t.Fatal("Certificates.Create returned a certificate with no key")
+	}
 	t.Logf("Created certificate: [%d] Domain=%q DomainName=%q Type=%q Valid=%v", certID, cert.Domain, cert.DomainName, cert.Type, cert.Valid)
-	if cert.Domain != "sdk-test.local" {
-		t.Errorf("created certificate domain = %q, want sdk-test.local", cert.Domain)
-	}
-	if cert.DomainName != "sdk-test.local" {
-		t.Errorf("created certificate domainname = %q, want sdk-test.local", cert.DomainName)
-	}
-	byName, err := client.Certificates.GetByDomain(ctx, "sdk-test.local")
-	if err != nil {
-		t.Errorf("Certificates.GetByDomain(sdk-test.local) failed: %v", err)
-	} else if int(byName.Key) != certID {
-		t.Errorf("GetByDomain key = %d, want %d", int(byName.Key), certID)
-	}
 
-	// Cleanup: delete certificate when done
+	// Delete the row this test created. Cleanup uses its own context so a
+	// timed-out wait does not cancel the delete.
 	defer func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cleanupCancel()
 		t.Log("Cleaning up: deleting test certificate...")
-		if err := client.Certificates.Delete(ctx, certID); err != nil {
-			t.Logf("Warning: failed to delete test certificate: %v", err)
+		if err := client.Certificates.Delete(cleanupCtx, certID); err != nil && !vergeos.IsNotFoundError(err) {
+			t.Errorf("failed to delete test certificate %d: %v", certID, err)
 		} else {
 			t.Log("Test certificate deleted successfully")
 		}
 	}()
+
+	waitCtx, waitCancel := context.WithTimeout(ctx, certificateDomainWait)
+	defer waitCancel()
+	issued, err := waitForCertificateDomain(waitCtx, client, certID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Certificate domain populated: Domain=%q DomainName=%q", issued.Domain, issued.DomainName)
+	if issued.Domain != domain {
+		t.Errorf("certificate domain = %q, want %s", issued.Domain, domain)
+	}
+	if issued.DomainName != domain {
+		t.Errorf("certificate domainname = %q, want %s", issued.DomainName, domain)
+	}
+	byName, err := client.Certificates.GetByDomain(ctx, domain)
+	if err != nil {
+		t.Errorf("Certificates.GetByDomain(%s) failed: %v", domain, err)
+	} else if int(byName.Key) != certID {
+		t.Errorf("GetByDomain key = %d, want %d", int(byName.Key), certID)
+	}
 
 	// Read
 	cert, err = client.Certificates.Get(ctx, certID)
@@ -157,4 +186,68 @@ func TestCertificatesCRUD(t *testing.T) {
 
 	// Verify deletion after cleanup runs
 	t.Log("Certificate CRUD test completed")
+}
+
+// waitForCertificateDomain polls Get until domain and domainname are set.
+// VergeOS returns the new row before the certificates loop issues the
+// certificate and copies those columns.
+func waitForCertificateDomain(ctx context.Context, client *vergeos.Client, id int) (*vergeos.Certificate, error) {
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, certificateDomainWait)
+		defer cancel()
+	}
+
+	var last *vergeos.Certificate
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, certificateDomainTimeout(id, last, err)
+		}
+
+		cert, err := client.Certificates.Get(ctx, id)
+		if err != nil {
+			if ctx.Err() != nil {
+				return nil, certificateDomainTimeout(id, last, ctx.Err())
+			}
+			return nil, fmt.Errorf("Certificates.Get(%d) while waiting for domain and domainname: %w", id, err)
+		}
+		last = cert
+		if cert.Domain != "" && cert.DomainName != "" {
+			return cert, nil
+		}
+
+		delay := certificateDomainPoll
+		if deadline, ok := ctx.Deadline(); ok {
+			if remaining := time.Until(deadline); remaining < delay {
+				delay = remaining
+			}
+		}
+		if delay <= 0 {
+			err := ctx.Err()
+			if err == nil {
+				err = context.DeadlineExceeded
+			}
+			return nil, certificateDomainTimeout(id, last, err)
+		}
+
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil, certificateDomainTimeout(id, last, ctx.Err())
+		case <-timer.C:
+		}
+	}
+}
+
+func certificateDomainTimeout(id int, cert *vergeos.Certificate, err error) error {
+	domain, domainName := "", ""
+	if cert != nil {
+		domain = cert.Domain
+		domainName = cert.DomainName
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return fmt.Errorf("timed out after %s waiting for certificate %d domain and domainname to be populated (domain=%q domainname=%q)", certificateDomainWait, id, domain, domainName)
+	}
+	return fmt.Errorf("stopped waiting for certificate %d domain and domainname to be populated (domain=%q domainname=%q): %w", id, domain, domainName, err)
 }
