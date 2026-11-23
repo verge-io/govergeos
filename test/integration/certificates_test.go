@@ -111,7 +111,9 @@ func TestCertificatesCRUD(t *testing.T) {
 	// Cleanup: delete certificate when done
 	defer func() {
 		t.Log("Cleaning up: deleting test certificate...")
-		if err := client.Certificates.Delete(ctx, certID); err != nil {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cleanupCancel()
+		if err := client.Certificates.Delete(cleanupCtx, certID); err != nil {
 			t.Logf("Warning: failed to delete test certificate: %v", err)
 		} else {
 			t.Log("Test certificate deleted successfully")
