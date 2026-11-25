@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.6.0 - 2026-11-25
+
 ### Breaking
 
 - `VM.Display`, `VMCreateRequest.Display`, and `VMUpdateRequest.Display` are removed. The JSON name was `display`. Neither `vms` nor `machines` has that column, so VergeOS dropped the key, a create or update reported success, and a read left the field empty. Console type is `Console` (`console`: `vnc`, `spice`, `serial`, `none`). Video adapter is `Video` (`video`: `std`, `cirrus`, `vmware`, `qxl`, `virtio`, `none`).
